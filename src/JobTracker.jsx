@@ -18,7 +18,12 @@ const STATUS_CONFIG = {
   Withdrawn:   { color: "#6B7280", bg: "#F3F4F6", border: "#D1D5DB", emoji: "↩️" },
 };
 
-const TABS = ["Applications", "Analytics"];
+const TABS = [
+  { id: "Home", emoji: "🏠", label: "Home", description: "Welcome, priorities, and search guidance" },
+  { id: "Job Search", emoji: "🔎", label: "Job Search", description: "Track applications and manage search activity" },
+  { id: "Pipeline", emoji: "🧭", label: "Pipeline", description: "Follow-ups, interviews, and ghost-risk items" },
+  { id: "Analytics", emoji: "📊", label: "Analytics", description: "Performance, outcomes, and momentum trends" },
+];
 const INTERVIEW_STAGES = ["", "1st Interview", "2nd Interview", "3rd Interview", "Home Assignment", "Final Interview"];
 const EMPTY_FORM = { company: "", role: "", location: "", dateApplied: "", status: "Applied", jobUrl: "", hiringManager: "", hmLinkedIn: "", followUpDate: "", notes: "", interviewStage: "", followUpStatus: "", hmAvailable: true, hmLinkedInAvailable: true };
 
@@ -320,6 +325,23 @@ function Field({ label, value, onChange, type = "text", placeholder, required, a
   );
 }
 
+function SectionCard({ title, subtitle, actions = null, children, style = {} }) {
+  return (
+    <section style={{ background: "#fff", borderRadius: 16, padding: "18px 18px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", border: "1.5px solid #E5E7EB", ...style }}>
+      {(title || subtitle || actions) && (
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+          <div>
+            {title && <h3 style={{ margin: 0, color: "#1F4E79", fontSize: 15, fontFamily: "Georgia,serif" }}>{title}</h3>}
+            {subtitle && <p style={{ margin: title ? "4px 0 0" : 0, color: "#6B7280", fontSize: 12, lineHeight: 1.5 }}>{subtitle}</p>}
+          </div>
+          {actions}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
 function SankeyFunnel({ apps }) {
   const stages = [
     { label: "Applied", count: apps.length, color: "#3B82F6" },
@@ -389,7 +411,7 @@ function StreakBadge({ apps }) {
 export default function JobTracker({ initialApps = [], onLogout = null }) {
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("Applications");
+  const [activeTab, setActiveTab] = useState("Home");
   const [modalOpen, setModalOpen] = useState(false);
   const [detailId, setDetailId] = useState(null);
   const [editId, setEditId] = useState(null);
@@ -573,6 +595,13 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     setModalOpen(true);
   };
 
+  const openNewApplication = () => {
+    setForm(EMPTY_FORM);
+    setEditId(null);
+    setFormError("");
+    setModalOpen(true);
+  };
+
   const handleDelete = (id) => {
     const updated = apps.filter(a => a.id !== id);
     setApps(updated);
@@ -676,6 +705,34 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const interviewRate = apps.length > 0 ? Math.round((apps.filter(a=>["Interview","Offer"].includes(a.status)).length/apps.length)*100) : 0;
   const offerRate = apps.length > 0 ? Math.round((apps.filter(a=>a.status==="Offer").length/apps.length)*100) : 0;
   const ghostRate = apps.length > 0 ? Math.round((apps.filter(a=>a.status==="Ghosted").length/apps.length)*100) : 0;
+  const activeApplications = apps.filter(a => !["Rejected","Ghosted","Withdrawn"].includes(a.status)).length;
+  const recentApps = sorted.slice(0, 5);
+  const interviewQueue = sorted.filter(a => a.status === "Interview" || a.status === "Offer" || a.interviewStage).slice(0, 6);
+  const atRiskApps = sorted.filter(a => {
+    const remaining = daysUntilGhost(a);
+    return remaining !== null && remaining > 0 && remaining <= 7;
+  }).slice(0, 6);
+  const freshThisWeek = apps.filter(a => daysSince(a.dateApplied) <= 7).length;
+  const appliedToday = apps.filter(a => a.dateApplied === today).length;
+  const activeTabMeta = TABS.find(tab => tab.id === activeTab) || TABS[0];
+  const roleFocus = Object.entries(apps.reduce((acc, app) => {
+    const role = app.role?.trim();
+    if (!role) return acc;
+    acc[role] = (acc[role] || 0) + 1;
+    return acc;
+  }, {})).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const locationFocus = Object.entries(apps.reduce((acc, app) => {
+    const location = app.location?.trim();
+    if (!location) return acc;
+    acc[location] = (acc[location] || 0) + 1;
+    return acc;
+  }, {})).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const latestApplications = sorted.filter(a => a.dateApplied).slice(0, 3);
+  const homeInsight = dueFollowUps.length > 0
+    ? `You have ${dueFollowUps.length} follow-up${dueFollowUps.length !== 1 ? "s" : ""} due. The fastest win is to clear those first.`
+    : interviewQueue.length > 0
+      ? `You have ${interviewQueue.length} active interview or late-stage application${interviewQueue.length !== 1 ? "s" : ""} in play.`
+      : `You have ${activeApplications} active application${activeApplications !== 1 ? "s" : ""} in motion. Keep the search volume steady.`;
   const detailApp = detailId !== null ? appById(detailId) : null;
   const deleteApp = deleteConfirmId !== null ? appById(deleteConfirmId) : null;
 
@@ -737,16 +794,60 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 <button onClick={handleExport} title="Export backup" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontSize: 13 }}>📥</button>
                 <button onClick={handleImport} title="Import backup" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontSize: 13 }}>📤</button>
               </div>
-              <button onClick={() => { setForm(EMPTY_FORM); setEditId(null); setModalOpen(true); }} style={{ background: "#3B82F6", color: "#fff", border: "none", borderRadius: 10, padding: "10px 22px", fontWeight: 700, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 14px rgba(59,130,246,0.45)" }}>+ New Application</button>
+              <button onClick={openNewApplication} style={{ background: "#3B82F6", color: "#fff", border: "none", borderRadius: 10, padding: "10px 22px", fontWeight: 700, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 14px rgba(59,130,246,0.45)" }}>+ New Application</button>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 4 }}>
-            {TABS.map(t => <button key={t} onClick={() => setActiveTab(t)} style={{ padding: "9px 22px", background: activeTab===t?"#fff":"transparent", color: activeTab===t?"#1F4E79":"rgba(255,255,255,0.7)", border: "none", borderRadius: "10px 10px 0 0", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{t}</button>)}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  padding: "10px 16px",
+                  background: activeTab === tab.id ? "#fff" : "rgba(255,255,255,0.08)",
+                  color: activeTab === tab.id ? "#1F4E79" : "rgba(255,255,255,0.78)",
+                  border: "none",
+                  borderRadius: "12px 12px 0 0",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+                title={tab.description}
+              >
+                {tab.emoji} {tab.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px" }}>
+
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(260px, 0.8fr)", gap: 14, marginBottom: 16 }}>
+          <SectionCard
+            title={`${activeTabMeta.emoji} ${activeTabMeta.label}`}
+            subtitle={activeTabMeta.description}
+            style={{ background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)" }}
+          >
+            <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.7 }}>
+              {homeInsight}
+            </p>
+          </SectionCard>
+          <SectionCard title="Today" subtitle="Quick pulse on the search">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {[
+                { label: "Applied", value: appliedToday, color: "#3B82F6" },
+                { label: "Due", value: dueFollowUps.length, color: "#F59E0B" },
+                { label: "Interviews", value: interviewQueue.length, color: "#8B5CF6" },
+              ].map((item) => (
+                <div key={item.label} style={{ background: "#F8FAFC", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: item.color, fontFamily: "Georgia,serif" }}>{item.value}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", letterSpacing: "0.06em" }}>{item.label.toUpperCase()}</div>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        </div>
 
         {ghostedBanner.length > 0 && (
           <div style={{ background: "#F9FAFB", border: "1.5px solid #E5E7EB", borderRadius: 12, padding: "12px 18px", marginBottom: 14 }}>
@@ -756,41 +857,14 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
           </div>
         )}
 
-        {dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).length > 0 && (
-          <div style={{ background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 12, padding: "14px 18px", marginBottom: 14 }}>
-            <p style={{ margin: "0 0 10px", fontWeight: 700, color: "#92400E", fontSize: 13 }}>
-              🔔 {dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).length} follow-up{dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).length > 1 ? "s" : ""} due — update each one below:
+        {dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).length > 0 && activeTab !== "Pipeline" && (
+          <div style={{ background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 12, padding: "12px 18px", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <p style={{ margin: 0, fontWeight: 700, color: "#92400E", fontSize: 13 }}>
+              🔔 {dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).length} follow-up{dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).length > 1 ? "s are" : " is"} due.
             </p>
-            {dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).map((a) => {
-              const fs = FOLLOWUP_STATUS[a.followUpStatus || ""];
-              const hasAnswered = !!a.followUpStatus;
-              return (
-                <div key={a.id} style={{ background: "#fff", border: `1.5px solid ${fs.border}`, borderRadius: 10, padding: "10px 14px", marginBottom: 8 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: 700, fontSize: 13, color: "#111827" }}>{a.company}</span>
-                      <span style={{ fontSize: 12, color: "#6B7280" }}>— {a.role} · due {a.followUpDate}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: fs.color, background: fs.bg, border: `1px solid ${fs.border}`, padding: "1px 8px", borderRadius: 10 }}>{fs.emoji} {fs.label}</span>
-                    </div>
-                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center" }}>
-                      {a.hmLinkedIn && (
-                        <a href={a.hmLinkedIn} target="_blank" rel="noreferrer" style={{ padding: "4px 10px", background: "#EFF6FF", color: "#1F4E79", border: "1.5px solid #BFDBFE", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700, textDecoration: "none" }}>LinkedIn ↗</a>
-                      )}
-                      <button onClick={() => handleFollowUpStatus(a.id, "messaged")} style={{ padding: "4px 10px", background: a.followUpStatus==="messaged"?"#10B981":"#ECFDF5", color: a.followUpStatus==="messaged"?"#fff":"#065F46", border: "1.5px solid #A7F3D0", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>✅ Messaged</button>
-                      <button onClick={() => handleFollowUpStatus(a.id, "premium")} style={{ padding: "4px 10px", background: a.followUpStatus==="premium"?"#8B5CF6":"#F5F3FF", color: a.followUpStatus==="premium"?"#fff":"#5B21B6", border: "1.5px solid #DDD6FE", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>🔒 Premium</button>
-                      <button onClick={() => handleFollowUpStatus(a.id, "email_instead")} style={{ padding: "4px 10px", background: a.followUpStatus==="email_instead"?"#3B82F6":"#EFF6FF", color: a.followUpStatus==="email_instead"?"#fff":"#1e40af", border: "1.5px solid #BFDBFE", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>📧 Emailed</button>
-                      <button onClick={() => handleFollowUpStatus(a.id, "no_linkedin")} style={{ padding: "4px 10px", background: a.followUpStatus==="no_linkedin"?"#6B7280":"#F3F4F6", color: a.followUpStatus==="no_linkedin"?"#fff":"#374151", border: "1.5px solid #D1D5DB", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>🚫 No LinkedIn</button>
-                      {hasAnswered && (
-                        <button onClick={() => setDismissedFollowUps(prev => new Set([...prev, a.id]))}
-                          style={{ padding: "4px 10px", background: "#FEF2F2", color: "#EF4444", border: "1.5px solid #FECACA", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700, marginLeft: 4 }}>
-                          ✕ Clear
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            <button onClick={() => setActiveTab("Pipeline")} style={{ padding: "8px 14px", background: "#fff", color: "#92400E", border: "1.5px solid #FDE68A", borderRadius: 9, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+              Open Pipeline
+            </button>
           </div>
         )}
 
@@ -816,16 +890,124 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
           )}
         </div>
 
-        {activeTab === "Applications" && (
+        {activeTab === "Home" && (
           <>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(85px, 1fr))", gap:8, marginBottom:16 }}>
-              {[{label:"All",count:apps.length,color:"#1F4E79"}, ...Object.keys(STATUS_CONFIG).map(s=>({label:s,count:apps.filter(a=>a.status===s).length,color:STATUS_CONFIG[s].color}))].map(s=>(
-                <div key={s.label} onClick={()=>setFilterStatus(s.label)} style={{ background:"#fff", borderRadius:11, padding:"10px 6px", textAlign:"center", border:`2px solid ${filterStatus===s.label?s.color:"#E5E7EB"}`, cursor:"pointer", boxShadow:filterStatus===s.label?`0 0 0 3px ${s.color}22`:"0 1px 3px rgba(0,0,0,0.05)" }}>
-                  <div style={{ fontSize:18, fontWeight:800, color:s.color, fontFamily:"Georgia,serif" }}>{s.count}</div>
-                  <div style={{ fontSize:9, fontWeight:700, color:"#9CA3AF", letterSpacing:"0.03em" }}>{s.label.toUpperCase()}</div>
-                </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:12, marginBottom:16 }}>
+              {[
+                { label: "Active Search", value: activeApplications, color: "#1F4E79", note: "roles still in play" },
+                { label: "This Week", value: freshThisWeek, color: "#3B82F6", note: "applications added" },
+                { label: "Follow-Ups Due", value: dueFollowUps.length, color: "#F59E0B", note: "priority actions" },
+                { label: "Interview Queue", value: interviewQueue.length, color: "#8B5CF6", note: "late-stage roles" },
+              ].map((card) => (
+                <SectionCard key={card.label} style={{ padding: "16px 16px" }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.08em", textTransform: "uppercase" }}>{card.label}</div>
+                  <div style={{ marginTop: 6, fontSize: 30, fontWeight: 800, color: card.color, fontFamily: "Georgia,serif" }}>{card.value}</div>
+                  <div style={{ marginTop: 4, color: "#64748B", fontSize: 12 }}>{card.note}</div>
+                </SectionCard>
               ))}
             </div>
+
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:14, marginBottom:16 }}>
+              <SectionCard
+                title="Welcome Back"
+                subtitle="A quick read on where your search stands right now."
+                actions={<button onClick={openNewApplication} style={{ padding:"8px 14px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:9, cursor:"pointer", fontSize:12, fontWeight:700 }}>Add Application</button>}
+              >
+                <div style={{ display:"grid", gap:10 }}>
+                  {[
+                    dueFollowUps.length > 0 ? `Clear ${dueFollowUps.length} overdue follow-up${dueFollowUps.length !== 1 ? "s" : ""} to keep momentum.` : "No overdue follow-ups right now.",
+                    atRiskApps.length > 0 ? `${atRiskApps.length} application${atRiskApps.length !== 1 ? "s" : ""} are close to ghosting. Consider nudging the strongest ones.` : "No immediate ghost-risk applications this week.",
+                    responseRate > 0 ? `Your current response rate is ${responseRate}%. Keep targeting similar roles and companies.` : "You are still early in the cycle. Volume and consistency matter most right now.",
+                  ].map((item) => (
+                    <div key={item} style={{ background:"#F8FAFC", borderRadius:12, padding:"10px 12px", color:"#475569", fontSize:13, lineHeight:1.6 }}>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+
+              <SectionCard title="Search Focus" subtitle="Patterns from your current applications.">
+                <div style={{ display:"grid", gap:12 }}>
+                  <div>
+                    <div style={{ fontSize:11, fontWeight:800, color:"#94A3B8", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:6 }}>Top Roles</div>
+                    <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                      {roleFocus.length > 0 ? roleFocus.map(([role, count]) => (
+                        <span key={role} style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 10px", borderRadius:999, background:"#EFF6FF", border:"1px solid #BFDBFE", color:"#1F4E79", fontSize:12, fontWeight:700 }}>
+                          {role} <span style={{ color:"#64748B" }}>{count}</span>
+                        </span>
+                      )) : <span style={{ color:"#94A3B8", fontSize:12 }}>No role pattern yet.</span>}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:11, fontWeight:800, color:"#94A3B8", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:6 }}>Top Locations</div>
+                    <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                      {locationFocus.length > 0 ? locationFocus.map(([location, count]) => (
+                        <span key={location} style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 10px", borderRadius:999, background:"#F8FAFC", border:"1px solid #E2E8F0", color:"#334155", fontSize:12, fontWeight:700 }}>
+                          {location} <span style={{ color:"#64748B" }}>{count}</span>
+                        </span>
+                      )) : <span style={{ color:"#94A3B8", fontSize:12 }}>No location pattern yet.</span>}
+                    </div>
+                  </div>
+                </div>
+              </SectionCard>
+            </div>
+
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))", gap:14 }}>
+              <SectionCard
+                title="Latest Applications"
+                subtitle="Your newest entries and their current status."
+                actions={<button onClick={() => setActiveTab("Job Search")} style={{ padding:"8px 14px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:9, cursor:"pointer", fontSize:12, fontWeight:700 }}>Open Job Search</button>}
+              >
+                {latestApplications.length > 0 ? latestApplications.map((app) => (
+                  <div key={app.id} style={{ padding:"12px 0", borderTop:"1px solid #F1F5F9" }}>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap" }}>
+                      <div>
+                        <div style={{ fontWeight:700, color:"#111827", fontSize:14 }}>{app.company}</div>
+                        <div style={{ color:"#64748B", fontSize:12 }}>{app.role} · {app.dateApplied}</div>
+                      </div>
+                      <Badge status={app.status} />
+                    </div>
+                  </div>
+                )) : <p style={{ margin:0, color:"#94A3B8", fontSize:13 }}>No applications yet.</p>}
+              </SectionCard>
+
+              <SectionCard
+                title="Next Best Actions"
+                subtitle="Use these shortcuts to keep the workflow moving."
+              >
+                <div style={{ display:"grid", gap:10 }}>
+                  {[
+                    { label: "Review follow-ups", helper: `${dueFollowUps.length} due right now`, action: () => setActiveTab("Pipeline") },
+                    { label: "Update search list", helper: `${filtered.length} visible application${filtered.length !== 1 ? "s" : ""}`, action: () => setActiveTab("Job Search") },
+                    { label: "Check performance", helper: `${responseRate}% response rate`, action: () => setActiveTab("Analytics") },
+                  ].map((item) => (
+                    <button key={item.label} onClick={item.action} style={{ textAlign:"left", padding:"12px 14px", borderRadius:12, border:"1.5px solid #E2E8F0", background:"#F8FAFC", cursor:"pointer" }}>
+                      <div style={{ fontWeight:700, color:"#0F172A", fontSize:13 }}>{item.label}</div>
+                      <div style={{ marginTop:4, color:"#64748B", fontSize:12 }}>{item.helper}</div>
+                    </button>
+                  ))}
+                </div>
+              </SectionCard>
+            </div>
+          </>
+        )}
+
+        {activeTab === "Job Search" && (
+          <>
+            <SectionCard
+              title="Job Search Workspace"
+              subtitle="Manage the active search list, keep statuses current, and add fresh leads."
+              style={{ marginBottom: 16 }}
+            >
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(85px, 1fr))", gap:8 }}>
+                {[{label:"All",count:apps.length,color:"#1F4E79"}, ...Object.keys(STATUS_CONFIG).map(s=>({label:s,count:apps.filter(a=>a.status===s).length,color:STATUS_CONFIG[s].color}))].map(s=>(
+                  <div key={s.label} onClick={()=>setFilterStatus(s.label)} style={{ background:"#fff", borderRadius:11, padding:"10px 6px", textAlign:"center", border:`2px solid ${filterStatus===s.label?s.color:"#E5E7EB"}`, cursor:"pointer", boxShadow:filterStatus===s.label?`0 0 0 3px ${s.color}22`:"0 1px 3px rgba(0,0,0,0.05)" }}>
+                    <div style={{ fontSize:18, fontWeight:800, color:s.color, fontFamily:"Georgia,serif" }}>{s.count}</div>
+                    <div style={{ fontSize:9, fontWeight:700, color:"#9CA3AF", letterSpacing:"0.03em" }}>{s.label.toUpperCase()}</div>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
 
             <div style={{ display:"flex", gap:10, marginBottom:14, flexWrap:"wrap" }}>
               <input placeholder="🔍 Search company or role…" value={search} onChange={e=>setSearch(e.target.value)} style={{ flex:1, minWidth:180, padding:"9px 14px", border:"1.5px solid #E5E7EB", borderRadius:9, fontSize:13, background:"#fff", outline:"none", fontFamily:"inherit" }}/>
@@ -873,6 +1055,91 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 </div>
               );
             })}
+          </>
+        )}
+
+        {activeTab === "Pipeline" && (
+          <>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:14, marginBottom:14 }}>
+              <SectionCard title="Follow-Ups" subtitle="Clear the overdue queue first.">
+                {dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).length > 0 ? dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).map((a) => {
+                  const fs = FOLLOWUP_STATUS[a.followUpStatus || ""];
+                  const hasAnswered = !!a.followUpStatus;
+                  return (
+                    <div key={a.id} style={{ background: "#fff", border: `1.5px solid ${fs.border}`, borderRadius: 10, padding: "10px 14px", marginBottom: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ fontWeight: 700, fontSize: 13, color: "#111827" }}>{a.company}</span>
+                          <span style={{ fontSize: 12, color: "#6B7280" }}>— {a.role} · due {a.followUpDate}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: fs.color, background: fs.bg, border: `1px solid ${fs.border}`, padding: "1px 8px", borderRadius: 10 }}>{fs.emoji} {fs.label}</span>
+                        </div>
+                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center" }}>
+                          {a.hmLinkedIn && (
+                            <a href={a.hmLinkedIn} target="_blank" rel="noreferrer" style={{ padding: "4px 10px", background: "#EFF6FF", color: "#1F4E79", border: "1.5px solid #BFDBFE", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700, textDecoration: "none" }}>LinkedIn ↗</a>
+                          )}
+                          <button onClick={() => handleFollowUpStatus(a.id, "messaged")} style={{ padding: "4px 10px", background: a.followUpStatus==="messaged"?"#10B981":"#ECFDF5", color: a.followUpStatus==="messaged"?"#fff":"#065F46", border: "1.5px solid #A7F3D0", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>✅ Messaged</button>
+                          <button onClick={() => handleFollowUpStatus(a.id, "premium")} style={{ padding: "4px 10px", background: a.followUpStatus==="premium"?"#8B5CF6":"#F5F3FF", color: a.followUpStatus==="premium"?"#fff":"#5B21B6", border: "1.5px solid #DDD6FE", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>🔒 Premium</button>
+                          <button onClick={() => handleFollowUpStatus(a.id, "email_instead")} style={{ padding: "4px 10px", background: a.followUpStatus==="email_instead"?"#3B82F6":"#EFF6FF", color: a.followUpStatus==="email_instead"?"#fff":"#1e40af", border: "1.5px solid #BFDBFE", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>📧 Emailed</button>
+                          <button onClick={() => handleFollowUpStatus(a.id, "no_linkedin")} style={{ padding: "4px 10px", background: a.followUpStatus==="no_linkedin"?"#6B7280":"#F3F4F6", color: a.followUpStatus==="no_linkedin"?"#fff":"#374151", border: "1.5px solid #D1D5DB", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>🚫 No LinkedIn</button>
+                          {hasAnswered && (
+                            <button onClick={() => setDismissedFollowUps(prev => new Set([...prev, a.id]))}
+                              style={{ padding: "4px 10px", background: "#FEF2F2", color: "#EF4444", border: "1.5px solid #FECACA", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700, marginLeft: 4 }}>
+                              ✕ Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }) : <p style={{ margin:0, color:"#94A3B8", fontSize:13 }}>No overdue follow-ups. Good.</p>}
+              </SectionCard>
+
+              <SectionCard title="Interview & Offer Queue" subtitle="Roles that need close attention.">
+                {interviewQueue.length > 0 ? interviewQueue.map((app) => (
+                  <div key={app.id} style={{ padding:"10px 0", borderTop:"1px solid #F1F5F9", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap" }}>
+                    <div>
+                      <div style={{ fontWeight:700, color:"#111827", fontSize:13 }}>{app.company}</div>
+                      <div style={{ color:"#64748B", fontSize:12 }}>{app.role}{app.interviewStage ? ` · ${app.interviewStage}` : ""}</div>
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+                      <Badge status={app.status} />
+                      <button onClick={() => setDetailId(app.id)} style={{ padding:"5px 10px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:8, cursor:"pointer", fontSize:11, fontWeight:700 }}>Open</button>
+                    </div>
+                  </div>
+                )) : <p style={{ margin:0, color:"#94A3B8", fontSize:13 }}>No interviews or offers in the queue yet.</p>}
+              </SectionCard>
+            </div>
+
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:14 }}>
+              <SectionCard title="Ghost Risk" subtitle={`Applications likely to ghost within ${GHOST_DAYS} days if untouched.`}>
+                {atRiskApps.length > 0 ? atRiskApps.map((app) => {
+                  const dLeft = daysUntilGhost(app);
+                  return (
+                    <div key={app.id} style={{ padding:"10px 0", borderTop:"1px solid #F1F5F9", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap" }}>
+                      <div>
+                        <div style={{ fontWeight:700, color:"#111827", fontSize:13 }}>{app.company}</div>
+                        <div style={{ color:"#64748B", fontSize:12 }}>{app.role} · {dLeft} day{dLeft !== 1 ? "s" : ""} left</div>
+                      </div>
+                      <button onClick={() => openEdit(app.id)} style={{ padding:"5px 10px", background:"#FFF7ED", color:"#C2410C", border:"1.5px solid #FED7AA", borderRadius:8, cursor:"pointer", fontSize:11, fontWeight:700 }}>Update</button>
+                    </div>
+                  );
+                }) : <p style={{ margin:0, color:"#94A3B8", fontSize:13 }}>No ghost-risk applications this week.</p>}
+              </SectionCard>
+
+              <SectionCard title="Pipeline Notes" subtitle="Useful reminders for keeping the process disciplined.">
+                <div style={{ display:"grid", gap:10 }}>
+                  {[
+                    "Prioritise overdue follow-ups before adding low-fit new applications.",
+                    "Update interview stages immediately after each recruiter or hiring manager touchpoint.",
+                    "Export a fresh backup after large edits or imports.",
+                  ].map((tip) => (
+                    <div key={tip} style={{ background:"#F8FAFC", borderRadius:12, padding:"11px 12px", color:"#475569", fontSize:13, lineHeight:1.6 }}>
+                      {tip}
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+            </div>
           </>
         )}
 
