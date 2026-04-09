@@ -1,0 +1,7 @@
+node_modules
+dist
+.DS_Store
+
+# Raw personal exports should stay local
+job-tracker-backup.json
+job-tracker-backup-json.rtf
