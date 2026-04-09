@@ -1242,6 +1242,12 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         )}
       </div>
 
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 16px 20px" }}>
+        <div style={{ color: "#94A3B8", fontSize: 12, textAlign: "center" }}>
+          Live build v{__APP_VERSION__} · updated {__BUILD_DATE__} · encrypted starter data, browser-first storage, GitHub Pages deployment
+        </div>
+      </div>
+
       <Modal open={modalOpen} onClose={()=>{setModalOpen(false);setEditId(null);setForm(EMPTY_FORM);setFormError("");}}>
         <div style={{padding:"22px 26px 12px",borderBottom:"1px solid #F3F4F6"}}>
           <h2 style={{margin:0,fontSize:18,color:"#1F4E79",fontFamily:"Georgia,serif"}}>{editId!==null?"✏️ Edit Application":"📤 New Application"}</h2>

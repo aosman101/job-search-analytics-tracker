@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Job Tracker Analytics preview">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EFF6FF" />
+      <stop offset="50%" stop-color="#F8FAFC" />
+      <stop offset="100%" stop-color="#DBEAFE" />
+    </linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#173756" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <circle cx="1040" cy="120" r="180" fill="#BFDBFE" opacity="0.35" />
+  <circle cx="120" cy="560" r="220" fill="#DBEAFE" opacity="0.55" />
+
+  <rect x="70" y="72" width="1060" height="486" rx="34" fill="#FFFFFF" opacity="0.9" />
+  <rect x="110" y="120" width="520" height="390" rx="28" fill="url(#hero)" />
+  <text x="150" y="190" fill="#93C5FD" font-family="Arial, sans-serif" font-size="26" font-weight="700" letter-spacing="5">PERSONAL DASHBOARD</text>
+  <text x="150" y="275" fill="#FFFFFF" font-family="Georgia, serif" font-size="70" font-weight="700">Job Tracker</text>
+  <text x="150" y="342" fill="#FFFFFF" font-family="Georgia, serif" font-size="70" font-weight="700">Analytics</text>
+  <text x="150" y="404" fill="#DBEAFE" font-family="Arial, sans-serif" font-size="28">Applications, follow-ups, pipeline management,</text>
+  <text x="150" y="444" fill="#DBEAFE" font-family="Arial, sans-serif" font-size="28">and performance insights in one place.</text>
+
+  <rect x="690" y="124" width="360" height="130" rx="24" fill="#F8FAFC" stroke="#DBEAFE" stroke-width="3" />
+  <text x="724" y="168" fill="#94A3B8" font-family="Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="2">ACTIVE SEARCH</text>
+  <text x="724" y="228" fill="#173756" font-family="Georgia, serif" font-size="54" font-weight="700">61 roles</text>
+
+  <rect x="690" y="276" width="170" height="112" rx="24" fill="#FFF7ED" stroke="#FED7AA" stroke-width="3" />
+  <text x="718" y="317" fill="#C2410C" font-family="Arial, sans-serif" font-size="17" font-weight="700">FOLLOW-UPS</text>
+  <text x="718" y="364" fill="#9A3412" font-family="Georgia, serif" font-size="40" font-weight="700">Due</text>
+
+  <rect x="880" y="276" width="170" height="112" rx="24" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="3" />
+  <text x="908" y="317" fill="#6D28D9" font-family="Arial, sans-serif" font-size="17" font-weight="700">PIPELINE</text>
+  <text x="908" y="364" fill="#4C1D95" font-family="Georgia, serif" font-size="40" font-weight="700">Focus</text>
+
+  <rect x="690" y="410" width="360" height="100" rx="24" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="3" />
+  <path d="M734 478l34-36 34 20 42-48 28 16 42-52" fill="none" stroke="#2563EB" stroke-linecap="round" stroke-linejoin="round" stroke-width="10" />
+  <circle cx="734" cy="478" r="8" fill="#2563EB" />
+  <circle cx="768" cy="442" r="8" fill="#2563EB" />
+  <circle cx="802" cy="462" r="8" fill="#2563EB" />
+  <circle cx="844" cy="414" r="8" fill="#2563EB" />
+  <circle cx="872" cy="430" r="8" fill="#2563EB" />
+  <circle cx="914" cy="378" r="8" fill="#2563EB" />
+
+  <text x="110" y="590" fill="#64748B" font-family="Arial, sans-serif" font-size="24">https://aosman101.github.io/job-search-analytics-tracker/</text>
+</svg>
