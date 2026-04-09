@@ -8,7 +8,7 @@
   <img alt="Seed Data" src="https://img.shields.io/badge/Seed-61_Applications-10B981" />
 </p>
 
-Personal job search tracker built for my own workflow. It runs locally in the browser, supports encrypted starter data, and deploys cleanly to GitHub Pages.
+Job search tracker designed for my workflow. It operates locally in the browser, supports encrypted initial data, and deploys seamlessly to GitHub Pages.
 
 ## Architecture
 
@@ -23,11 +23,11 @@ flowchart LR
 
 ## What It Does
 
-- Track applications, statuses, interview stages, follow-ups, and notes.
-- Show quick analytics for progress, response rate, and outcomes.
-- Auto-mark stale applications as ghosted after 21 days.
-- Import and export JSON backups.
-- Seed the app from the encrypted starter dataset on first unlock.
+- Monitor applications, their statuses, interview stages, follow-ups, and notes.
+- Provide quick analytics on progress, response rates, and outcomes.
+- Automatically mark applications as "ghosted" after 21 days of inactivity.
+- Allow importing and exporting of JSON backups.
+- Initialise the app using an encrypted starter dataset upon first unlock.
 
 ## Run Locally
 
