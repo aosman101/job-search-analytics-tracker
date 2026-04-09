@@ -1,4 +1,4 @@
-# Adil's Job Tracker V2
+# Job Tracker Analytics
 
 <p align="center">
   <img alt="React 19" src="https://img.shields.io/badge/React-19.2.5-61DAFB?logo=react&logoColor=0b1220" />
