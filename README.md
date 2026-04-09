@@ -4,11 +4,15 @@
   <img alt="React 19" src="https://img.shields.io/badge/React-19.2.5-61DAFB?logo=react&logoColor=0b1220" />
   <img alt="Vite 8" src="https://img.shields.io/badge/Vite-8.0.8-646CFF?logo=vite&logoColor=white" />
   <img alt="GitHub Pages" src="https://img.shields.io/badge/GitHub_Pages-Ready-0F172A?logo=github&logoColor=white" />
+  <a href="https://aosman101.github.io/job-search-analytics-tracker/"><img alt="Live Site" src="https://img.shields.io/badge/Live_Site-Open-10B981?logo=googlechrome&logoColor=white" /></a>
   <img alt="Local Storage" src="https://img.shields.io/badge/Storage-IndexedDB_%2B_localStorage-1F4E79" />
   <img alt="Seed Data" src="https://img.shields.io/badge/Seed-61_Applications-10B981" />
 </p>
 
 Job search tracker designed for my workflow. It operates locally in the browser, supports encrypted initial data, and deploys seamlessly to GitHub Pages.
+
+Live website:
+https://aosman101.github.io/job-search-analytics-tracker/
 
 ## Architecture
 
