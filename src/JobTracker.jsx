@@ -1,5 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
+
+const InterviewPrep = lazy(() => import("./InterviewPrep"));
 
 const STORAGE_KEY = "adil-job-tracker-v2";
 const STORAGE_BACKUP_KEY = `${STORAGE_KEY}:backup`;
@@ -23,6 +25,7 @@ const TABS = [
   { id: "Job Search", emoji: "🔎", label: "Job Search", description: "Track applications and manage search activity" },
   { id: "Pipeline", emoji: "🧭", label: "Pipeline", description: "Follow-ups, interviews, and ghost-risk items" },
   { id: "Analytics", emoji: "📊", label: "Analytics", description: "Performance, outcomes, and momentum trends" },
+  { id: "Interview Prep", emoji: "🎯", label: "Interview Prep", description: "Role-specific prep, study guides, and stage-aware tips" },
 ];
 const INTERVIEW_STAGES = ["", "1st Interview", "2nd Interview", "3rd Interview", "Home Assignment", "Final Interview"];
 const EMPTY_FORM = { company: "", role: "", location: "", dateApplied: "", status: "Applied", jobUrl: "", hiringManager: "", hmLinkedIn: "", followUpDate: "", notes: "", interviewStage: "", followUpStatus: "", hmAvailable: true, hmLinkedInAvailable: true };
