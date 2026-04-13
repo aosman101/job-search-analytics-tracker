@@ -1244,6 +1244,12 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
             )}
           </>
         )}
+
+        {activeTab === "Interview Prep" && (
+          <Suspense fallback={<div style={{ textAlign: "center", padding: 40, color: "#6B7280" }}>Loading interview prep...</div>}>
+            <InterviewPrep apps={apps} />
+          </Suspense>
+        )}
       </div>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 16px 20px" }}>
