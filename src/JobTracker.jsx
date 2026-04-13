@@ -380,30 +380,6 @@ function SankeyFunnel({ apps }) {
   );
 }
 
-function StreakBadge({ apps }) {
-  let streak = 0;
-  const today = new Date().toISOString().split("T")[0];
-  const d = new Date();
-  for (let i = 0; i < 366; i++) {
-    const ds = d.toISOString().split("T")[0];
-    const isWknd = isWeekend(d);
-    const hasApp = apps.some(a => a.dateApplied === ds);
-    if (isWknd) {
-      d.setDate(d.getDate() - 1);
-      continue;
-    }
-    if (hasApp) { streak++; }
-    else if (ds !== today) break;
-    d.setDate(d.getDate() - 1);
-  }
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "5px 14px" }}>
-      <span style={{ fontSize: 16 }}>🔥</span>
-      <span style={{ color: "#fff", fontWeight: 700, fontSize: 13 }}>{streak} day streak</span>
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -732,7 +708,27 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     ? `You have ${dueFollowUps.length} follow-up${dueFollowUps.length !== 1 ? "s" : ""} due. The fastest win is to clear those first.`
     : interviewQueue.length > 0
       ? `You have ${interviewQueue.length} active interview or late-stage application${interviewQueue.length !== 1 ? "s" : ""} in play.`
-      : `You have ${activeApplications} active application${activeApplications !== 1 ? "s" : ""} in motion. Keep the search volume steady.`;
+      : `You have ${activeApplications} active application${activeApplications !== 1 ? "s" : ""} in motion. Keep the pipeline current at a pace that works for you.`;
+  const todayBannerTone = todayIsWeekend
+    ? { background: "#F3F4F6", border: "#E5E7EB", text: "#6B7280", badgeBackground: "#FFFFFF", badgeColor: "#6B7280", badgeBorder: "#E5E7EB" }
+    : todayCount > 0
+      ? { background: "#EFF6FF", border: "#BFDBFE", text: "#1E40AF", badgeBackground: "#DBEAFE", badgeColor: "#1D4ED8", badgeBorder: "#93C5FD" }
+      : { background: "#F8FAFC", border: "#E2E8F0", text: "#475569", badgeBackground: "#FFFFFF", badgeColor: "#64748B", badgeBorder: "#CBD5E1" };
+  const todayBannerMessage = todayIsWeekend
+    ? (todayCount > 0
+      ? `Weekend check-in: ${todayCount} application${todayCount !== 1 ? "s" : ""} logged today.`
+      : "Weekend check-in. No pressure to log applications today.")
+    : (todayCount > 0
+      ? `You've logged ${todayCount} application${todayCount !== 1 ? "s" : ""} today.`
+      : "No applications logged today yet. Use the tracker when you're ready.");
+  const todayBannerHelper = dueFollowUps.length > 0
+    ? `${dueFollowUps.length} follow-up${dueFollowUps.length !== 1 ? "s" : ""} still need attention.`
+    : "A quick update here keeps your pipeline accurate.";
+  const todaySummaryValue = todayIsWeekend
+    ? (todayCount > 0 ? `${todayCount} logged` : "Weekend")
+    : (todayCount > 0 ? `${todayCount} logged` : "No activity");
+  const todaySummaryColor = todayIsWeekend ? "#9CA3AF" : todayCount > 0 ? "#3B82F6" : "#64748B";
+  const todaySummaryEmoji = todayIsWeekend ? "🛋️" : "📆";
   const detailApp = detailId !== null ? appById(detailId) : null;
   const deleteApp = deleteConfirmId !== null ? appById(deleteConfirmId) : null;
 
@@ -789,7 +785,6 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                   {storageBackend} · {storageMessage}
                 </span>
               </div>
-              <StreakBadge apps={apps} />
               <div style={{ display: "flex", gap: 4 }}>
                 <button onClick={handleExport} title="Export backup" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontSize: 13 }}>📥</button>
                 <button onClick={handleImport} title="Import backup" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontSize: 13 }}>📤</button>
@@ -869,25 +864,31 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         )}
 
         <div style={{
-          background: todayIsWeekend ? "#F3F4F6" : todayCount>=5?"#ECFDF5":"#EFF6FF",
-          border:`1.5px solid ${todayIsWeekend?"#E5E7EB":todayCount>=5?"#A7F3D0":"#BFDBFE"}`,
-          borderRadius:12, padding:"10px 18px", marginBottom:18,
-          display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8
+          background: todayBannerTone.background,
+          border: `1.5px solid ${todayBannerTone.border}`,
+          borderRadius:12, padding:"12px 18px", marginBottom:18,
+          display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12
         }}>
-          {todayIsWeekend ? (
-            <p style={{ margin:0, fontWeight:700, color:"#6B7280", fontSize:13 }}>
-              🛋️ It's the weekend — rest up! No goal today. Back to it on Monday.
+          <div>
+            <p style={{ margin:0, fontWeight:700, color:todayBannerTone.text, fontSize:13 }}>
+              {todayIsWeekend ? "🛋️ " : "📆 "}{todayBannerMessage}
             </p>
-          ) : (
-            <>
-              <p style={{ margin:0, fontWeight:700, color:todayCount>=5?"#065F46":"#1e40af", fontSize:13 }}>
-                {todayCount>=5?"🎯 Goal smashed! ":"🎯 Today's goal: "}{todayCount}/5 applications today
-              </p>
-              <div style={{ display:"flex", gap:4 }}>
-                {[1,2,3,4,5].map(n=><div key={n} style={{ width:20, height:20, borderRadius:4, background:n<=todayCount?(todayCount>=5?"#10B981":"#3B82F6"):"#E5E7EB" }}/>)}
-              </div>
-            </>
-          )}
+            <p style={{ margin:"4px 0 0", color:"#64748B", fontSize:12 }}>
+              {todayBannerHelper}
+            </p>
+          </div>
+          <div style={{
+            padding:"7px 12px",
+            borderRadius:999,
+            background: todayBannerTone.badgeBackground,
+            border: `1px solid ${todayBannerTone.badgeBorder}`,
+            color: todayBannerTone.badgeColor,
+            fontSize:12,
+            fontWeight:700,
+            whiteSpace:"nowrap",
+          }}>
+            {todayCount} logged today
+          </div>
         </div>
 
         {activeTab === "Home" && (
@@ -917,7 +918,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                   {[
                     dueFollowUps.length > 0 ? `Clear ${dueFollowUps.length} overdue follow-up${dueFollowUps.length !== 1 ? "s" : ""} to keep momentum.` : "No overdue follow-ups right now.",
                     atRiskApps.length > 0 ? `${atRiskApps.length} application${atRiskApps.length !== 1 ? "s" : ""} are close to ghosting. Consider nudging the strongest ones.` : "No immediate ghost-risk applications this week.",
-                    responseRate > 0 ? `Your current response rate is ${responseRate}%. Keep targeting similar roles and companies.` : "You are still early in the cycle. Volume and consistency matter most right now.",
+                    responseRate > 0 ? `Your current response rate is ${responseRate}%. Keep targeting similar roles and companies.` : "You are still early in the cycle. Keep the tracker current and focus on the roles that fit best.",
                   ].map((item) => (
                     <div key={item} style={{ background:"#F8FAFC", borderRadius:12, padding:"10px 12px", color:"#475569", fontSize:13, lineHeight:1.6 }}>
                       {item}
@@ -1159,7 +1160,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                     {label:"Interview Rate",value:interviewRate+"%",color:"#3B82F6",emoji:"🗣️"},
                     {label:"Offer Rate",value:offerRate+"%",color:"#10B981",emoji:"🎉"},
                     {label:"Ghost Rate",value:ghostRate+"%",color:"#9CA3AF",emoji:"👻"},
-                    {label:"Today",value:todayIsWeekend?"Rest day":todayCount+" / 5",color:todayIsWeekend?"#9CA3AF":todayCount>=5?"#10B981":"#F59E0B",emoji:todayIsWeekend?"🛋️":"🎯"},
+                    {label:"Today",value:todaySummaryValue,color:todaySummaryColor,emoji:todaySummaryEmoji},
                   ].map(k=>(
                     <div key={k.label} style={{ background:"#fff", borderRadius:13, padding:"16px 12px", textAlign:"center", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1.5px solid #E5E7EB" }}>
                       <div style={{ fontSize:20 }}>{k.emoji}</div>
@@ -1176,12 +1177,12 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                       <XAxis dataKey="day" tick={{fontSize:11}}/>
                       <YAxis tick={{fontSize:11}} allowDecimals={false}/>
                       <Tooltip/>
-                      <Bar dataKey="count" name="Applications" radius={[5,5,0,0]}>
-                        {last7.map((e,i)=><Cell key={i} fill={e.weekend?"#D1D5DB":e.count>=5?"#10B981":e.count>0?"#3B82F6":"#E5E7EB"}/>)}
+                      <Bar dataKey="count" name="Applications logged" radius={[5,5,0,0]}>
+                        {last7.map((e,i)=><Cell key={i} fill={e.weekend ? "#D1D5DB" : e.count >= 3 ? "#10B981" : e.count > 0 ? "#3B82F6" : "#E5E7EB"}/>)}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
-                  <p style={{ margin:"6px 0 0", fontSize:11, color:"#9CA3AF", textAlign:"center" }}>🟢 5+ apps (goal hit) · 🔵 Some activity · ⬜ No applications · ▪️ Weekend (no goal)</p>
+                  <p style={{ margin:"6px 0 0", fontSize:11, color:"#9CA3AF", textAlign:"center" }}>🟢 Higher activity · 🔵 Activity logged · ⬜ No applications · ▪️ Weekend</p>
                 </div>
 
                 <div style={{ background:"#fff", borderRadius:14, padding:"18px 18px", marginBottom:14, boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1.5px solid #E5E7EB" }}>
