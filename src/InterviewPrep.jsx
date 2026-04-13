@@ -71,14 +71,19 @@ const MY_PROJECTS = [
     id: "tfl-travel-app",
     name: "TfL Travel App (Somalis in Tech)",
     emoji: "🚌",
-    category: "Community / Data Engineering",
-    stack: ["Python", "TfL API", "React", "Data Pipeline"],
-    summary: "Community data engineering project built with Somalis in Tech that became a real tool for London students and commuters. Provides practical transportation information using live TfL data. Born from the TfL Lakehouse infrastructure and used as a teaching resource for early-career data engineers.",
+    category: "Community / Production Data Engineering",
+    stack: ["Python", "Apache Airflow", "dbt", "DuckDB", "Parquet", "Great Expectations", "OpenLineage", "TfL Unified API", "Docker"],
+    summary: "Production data engineering project built with Somalis in Tech, born from a student's question: 'How do I actually know when my bus is coming?' Four-layer architecture — Airflow ingests from TfL Unified API every 3 minutes into date/hour-partitioned Parquet, dbt transforms through staging → intermediate → marts (medallion pattern), Great Expectations validates quality, and OpenLineage tracks lineage. Features real-time arrival predictions, line disruption alerts, and historical reliability patterns. Improved data freshness from 6 hours to 45 minutes (87%), reduced manual reporting by 65%, and served as a teaching platform for ~12 early-career engineers via the Caawi Mentorship Platform.",
     interviewUse: [
-      "Community impact: turned a technical project into a practical tool for real users",
-      "Mentorship: used as a teaching resource for ~12 early-career data engineering candidates",
-      "End-to-end delivery: from data pipeline to user-facing application",
-      "Stakeholder awareness: designed for non-technical users (students, commuters)",
+      "Origin story: a student asked 'How do I know when my bus is coming?' — identified a real gap in how TfL data served commuters",
+      "Four-layer architecture: ingestion (Airflow, 3-min polling) → storage (Parquet, date/hour partitioned) → transformation (dbt medallion) → quality (Great Expectations + OpenLineage)",
+      "API rate limiting solved with priority-based polling: high-traffic stops refresh more frequently, graceful degradation to cached data when limits hit",
+      "Schema evolution handled defensively: raw layer stores unmodified responses, staging uses explicit column selection, dbt tests catch breaks before downstream propagation",
+      "Modularity: designed so DuckDB can swap for BigQuery, local Parquet for S3 — config changes only, no rewrites",
+      "Three data products: real-time arrival predictions, line disruption alerts, historical reliability patterns (students said this was most valuable)",
+      "Mentorship: taught 12 candidates across 4 modules — API ingestion, data modelling, data quality, pipeline orchestration",
+      "Impact: 87% freshness improvement, 65% manual reporting reduction, mentees went on to build their own lakehouses",
+      "Key insight: 'The gap between it works and it helps is the difference between engineering and software worth building'",
     ],
     github: "https://github.com/aosman101/tfl-realtime-lakehouse",
   },
@@ -207,7 +212,7 @@ const TAILORED_ANSWERS = {
   behavioral: [
     {
       question: "Tell me about yourself / Walk me through your background.",
-      answer: "I'm Adil, a London-based data engineer with a First Class BSc in Data Science & Computing from Birkbeck. Most recently I was a Junior Data Engineer at Somalis in Tech where I built production pipelines using Python, SQL, dbt, and Airflow — I improved data freshness from 6 hours to 45 minutes and mentored about 12 early-career candidates. Before that I was a Data Analyst at HQ Analytics in Dubai, where I built Power BI dashboards for 25+ users and contributed to an 8% reduction in logistics costs. On the side, I built a TfL Travel App that became a real tool for London students and commuters, and my portfolio includes CDC streaming pipelines, analytics warehouses on BigQuery, and ML platforms. I'm drawn to roles where I can design reliable, observable data systems and see the downstream impact on real stakeholders.",
+      answer: "I'm Adil, a London-based data engineer with a First Class BSc in Data Science & Computing from Birkbeck. Most recently I was a Junior Data Engineer at Somalis in Tech where I built production data pipelines and mentored 12 early-career engineers. My proudest work there was the TfL Travel App — it started when a student asked 'How do I actually know when my bus is coming?' and I turned that into a full production system: Airflow ingesting live TfL data every 3 minutes, dbt transforming through a medallion architecture, Great Expectations validating quality. It improved data freshness from 6 hours to 45 minutes and became a real tool for London students and commuters. Before that I was a Data Analyst at HQ Analytics in Dubai, where I built Power BI dashboards for 25+ users and contributed to an 8% reduction in logistics costs. My portfolio also includes CDC streaming pipelines, analytics warehouses on BigQuery, and ML platforms. I'm drawn to roles where I can build reliable data systems that genuinely help people.",
       tags: ["1st Interview", "Screening"],
     },
     {
@@ -222,12 +227,12 @@ const TAILORED_ANSWERS = {
     },
     {
       question: "How do you ensure data quality in your pipelines?",
-      answer: "I build quality in at multiple layers rather than bolting it on at the end. In my TfL Lakehouse, Great Expectations validates staging tables for nullability and time-to-station bounds before data moves downstream. In the StreamShop CDC project, I use Avro schema validation at ingestion and dbt tests (unique, not_null, accepted_values, relationships) at the transformation layer. I also track lineage with OpenLineage and Marquez, so when something does break, I can trace impact across the entire DAG. For me, data quality means contracts at ingestion, tests at transformation, and observability everywhere.",
+      answer: "I build quality in at multiple layers rather than bolting it on at the end. The TfL Travel App is a good example — TfL periodically modifies their API response schemas, adding fields or changing data types. I handled this by storing raw responses unmodified in the raw layer, then using defensive casting with explicit column selection in dbt staging models. When schema changes break staging, dbt tests catch it before anything propagates downstream. On top of that, Great Expectations validates staging tables for nullability and time-to-station bounds, and OpenLineage tracks lineage across the entire DAG via Marquez. In the StreamShop CDC project I added Avro schema validation at ingestion as a contract layer. For me, data quality means: raw layer preserves truth, staging layer is defensive, marts are tested, and lineage is tracked everywhere.",
       tags: ["2nd Interview", "Data Quality"],
     },
     {
       question: "Walk me through how you'd design a data pipeline from scratch.",
-      answer: "I'd start with four questions: What's the source? What's the destination? What's the SLA? What's the volume? For example, when I built the London Air Quality Lakehouse, the source was the OpenAQ API (hourly sensor readings), destination was PostgreSQL marts for Metabase dashboards, SLA was daily freshness, and volume was manageable. I designed a medallion architecture: Airflow pulls from the API into MinIO (raw S3-compatible layer), loads flattened data into PostgreSQL, and dbt transforms through staging to fact tables with incremental materialisation. Idempotent upserts on (sensor_id, ts_utc) handle reruns safely. I'd apply the same framework to any pipeline — clarify requirements, then layer ingestion → transformation → serving with quality checks at each boundary.",
+      answer: "I'd start with four questions: What's the source? What's the destination? What's the SLA? What's the volume? Take my TfL Travel App — the source was the TfL Unified API (arrivals every 3 minutes, line statuses every 10, stop data daily), the destination was mart tables serving real-time predictions for students and commuters, and the SLA was sub-minute latency for arrivals. I designed a four-layer architecture: Airflow orchestrates ingestion into date/hour-partitioned Parquet, dbt transforms through a medallion pattern (staging → intermediate → marts), Great Expectations validates at each boundary, and OpenLineage tracks lineage. A key design decision was priority-based API polling — high-traffic stops like major tube stations refresh more frequently, and when rate limits hit, the system gracefully degrades to cached data rather than failing. I'd apply the same framework to any pipeline: clarify requirements, design for graceful degradation, and layer quality checks at every boundary.",
       tags: ["System Design", "Pipeline"],
     },
     {
@@ -247,8 +252,28 @@ const TAILORED_ANSWERS = {
     },
     {
       question: "What interests you about this role?",
-      answer: "I've had the chance to build production pipelines at Somalis in Tech and deliver analytics at HQ Analytics, and now I want to take that experience to a team where data reliability directly impacts business decisions at scale. At Somalis in Tech I saw the impact of my work first-hand — the TfL app I built became a real tool for London students and commuters, and the pipeline improvements I made cut data freshness from 6 hours to 45 minutes. I'm particularly excited about [company-specific detail] because [tailored reason]. I want to keep growing technically while also mentoring others, which is something I discovered I love through mentoring 12 junior engineers at Somalis in Tech.",
+      answer: "Building the TfL Travel App taught me something — the gap between 'it works' and 'it helps' is the difference between engineering and software worth building. That pipeline processed data correctly, but more importantly it reduced someone's commuting stress and gave 12 mentees a real system to learn from. That's the kind of engineering I want to keep doing. At HQ Analytics I saw the same thing — my dashboards didn't just display numbers, they contributed to an 8% cut in logistics costs because the operations team could actually act on the data. I'm particularly excited about [company-specific detail] because [tailored reason]. I want to bring that same mindset — build reliable systems that genuinely make a difference — to a team operating at a larger scale.",
       tags: ["1st Interview", "Final Interview", "Motivation"],
+    },
+    {
+      question: "Tell me about a project you built that had real-world impact.",
+      answer: "The TfL Travel App is the project I'm most proud of. It started when a student at Somalis in Tech asked: 'How do I actually know when my bus is coming?' The existing TfL app worked, but it didn't serve the actual travel patterns of students hopping between buses and tubes on tight schedules. I saw an opportunity to build something that solved a real problem and doubled as a teaching platform. I built a four-layer production system: Airflow ingests live data from the TfL Unified API — arrivals every 3 minutes, line statuses every 10, stop data daily — into date/hour-partitioned Parquet files. dbt transforms through a medallion architecture: staging handles type-casting and deduplication, intermediate applies business logic, and mart tables are optimised for the three features users care about — real-time arrival predictions, disruption alerts, and historical reliability patterns. Great Expectations validates at every layer, and OpenLineage tracks lineage via Marquez. The result: data freshness went from 6 hours to 45 minutes — an 87% improvement — manual reporting dropped by 65%, and the system is still running and actively used by the Somalis in Tech community. Students told me the historical reliability patterns were the most valuable feature because the official TfL app doesn't show that.",
+      tags: ["1st Interview", "2nd Interview", "Impact"],
+    },
+    {
+      question: "Describe a time you mentored or led others.",
+      answer: "At Somalis in Tech, I mentored about 12 early-career data engineering candidates through the Caawi Mentorship Platform, and I structured the teaching around the TfL Travel App rather than abstract exercises. I broke it into four modules: API ingestion — they learned REST integration, rate limiting, retry logic using the real TfL API. Data modelling — they built their own dbt models against actual TfL data, learning why the staging-to-marts pattern matters. Data quality — they authored Great Expectations suites and grappled with what 'correct data' means in a live transport feed. Pipeline orchestration — Airflow DAGs gave them visual representations of real data flow with dependencies, retries, and SLAs. My philosophy was that the best way to teach data engineering isn't to lecture — it's to build something real and let people pull it apart. It worked: several mentees went on to build their own projects independently, including a weather data lakehouse and a sports analytics warehouse using the same dbt patterns they learned from the TfL project.",
+      tags: ["Behavioral", "Leadership", "Mentorship"],
+    },
+    {
+      question: "How do you handle API rate limits and external dependencies?",
+      answer: "This was a real challenge with the TfL Travel App. The TfL Unified API imposes rate limits, and when you're polling thousands of stops every few minutes, you hit them fast. I solved it with priority-based polling: high-traffic stops like major tube stations and university-adjacent bus terminals get more frequent refreshes, while quieter stops run on extended intervals. Critically, when rate limits do trigger, the pipeline doesn't fail — it gracefully degrades to cached recent data. Users still see predictions, just slightly older ones. This is a pattern I'd apply to any external API dependency: differentiate by priority, cache aggressively, and design for graceful degradation rather than hard failure. The Airflow DAG handles retry logic natively, and I set SLA monitoring so I know if freshness drops below acceptable thresholds.",
+      tags: ["2nd Interview", "Technical", "System Design"],
+    },
+    {
+      question: "Tell me about a time you identified a problem nobody else noticed.",
+      answer: "At Somalis in Tech, a student asked a simple question — 'How do I know when my bus is coming?' — and everyone accepted the existing TfL app as the answer. But I noticed a real gap: the official app doesn't serve the actual travel patterns of students managing tight schedules on limited budgets. They're hopping between buses, checking multiple stops simultaneously, and planning around disruptions — and the existing tools didn't support that workflow. I proposed building a data-driven alternative and got buy-in by framing it as both a community tool and a teaching platform. That dual purpose was key — it wasn't just a side project, it was an educational vehicle for 12 mentees and a practical tool for the whole community. The historical reliability patterns feature — showing which routes consistently delay at certain times — was something the official app simply doesn't offer, and students said it was the most valuable feature.",
+      tags: ["Behavioral", "Ownership", "Initiative"],
     },
   ],
   technical: [
@@ -264,7 +289,7 @@ const TAILORED_ANSWERS = {
     },
     {
       question: "Describe your experience with streaming vs batch.",
-      answer: "I've built both. My TfL and London Air Quality projects are near-real-time batch: Airflow polls APIs on a schedule, writes to a raw layer, and dbt transforms downstream. My StreamShop project is true streaming: Debezium captures PostgreSQL WAL changes, Redpanda brokers them, and a Python consumer writes to ClickHouse continuously. The key lesson is that streaming adds significant operational complexity — you need to handle back-pressure, exactly-once semantics, and consumer group management. I'd only recommend streaming when the business genuinely needs sub-minute latency. For most analytics use cases, well-designed batch with hourly or even daily refreshes is simpler, cheaper, and easier to debug.",
+      answer: "I've built both and I've learned when each is appropriate. The TfL Travel App is a great example of smart near-real-time batch — Airflow polls arrivals every 3 minutes, line statuses every 10 minutes, and stop data daily. That's not true streaming, but it's fast enough for commuters who need to know when their bus is coming. I also built priority-based polling so high-traffic stops refresh more frequently. On the other hand, my StreamShop project is true streaming: Debezium captures PostgreSQL WAL changes, Redpanda brokers them, and a Python consumer writes to ClickHouse continuously. The key lesson is that streaming adds significant operational complexity — back-pressure, exactly-once semantics, consumer group management. I'd only recommend it when the business genuinely needs sub-minute latency. For most use cases, well-designed batch with the right polling cadence — like the TfL approach — is simpler, cheaper, and easier to debug.",
       tags: ["System Design", "Streaming"],
     },
   ],
