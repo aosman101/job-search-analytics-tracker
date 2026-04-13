@@ -1,6 +1,276 @@
 import { useState, useMemo } from "react";
 
 // ---------------------------------------------------------------------------
+// Personal profile — tailored from GitHub, portfolio & LinkedIn
+// ---------------------------------------------------------------------------
+
+const MY_PROFILE = {
+  name: "Adil Osman",
+  title: "Data Engineer | Analytics Engineer | Data Scientist",
+  location: "London, UK",
+  education: "First Class BSc in Data Science & Computing — Birkbeck, University of London",
+  bio: "London-based data professional with professional experience as a Junior Data Engineer at Somalis in Tech and Junior Data Analyst at HQ Analytics (Dubai). Designs reliable, observable data pipelines and analytics-ready warehouse systems. Experience spans real-time ingestion, CDC architectures, lakehouses, and dbt-driven transformations across finance, sports, transport, and environmental sectors.",
+  elevatorPitch: "I'm Adil, a London-based data engineer with a First Class BSc from Birkbeck. Most recently I was a Junior Data Engineer at Somalis in Tech where I built production pipelines with Python, SQL, dbt, and Airflow — improving data freshness from 6 hours to 45 minutes and mentoring 12 early-career candidates. Before that, I was a Data Analyst at HQ Analytics in Dubai where I built Power BI dashboards, reduced data defects by 30%, and contributed to an 8% cut in logistics costs. I also created a TfL Travel App for London students and commuters as a community project. My portfolio spans CDC streaming, lakehouses, analytics warehouses, and ML platforms.",
+  workExperience: [
+    {
+      role: "Junior Data Engineer & Peer Mentor",
+      company: "Somalis in Tech",
+      period: "Apr 2024 – Jul 2025 (1 yr 4 mos)",
+      location: "London, UK (Hybrid)",
+      highlights: [
+        "Built production data pipelines using Python, SQL, dbt, and Apache Airflow",
+        "Improved data freshness from 6 hours to 45 minutes (87% improvement)",
+        "Achieved 95% on-time SLA compliance with sub-60-minute pipeline latency",
+        "Mentored ~12 early-career data engineering candidates",
+        "Created TfL Real-Time Lakehouse and TfL Travel App as community teaching resources",
+      ],
+    },
+    {
+      role: "Junior Data Analyst",
+      company: "HQ Analytics",
+      period: "Jun 2023 – Feb 2024 (9 mos)",
+      location: "Dubai, UAE (Remote)",
+      highlights: [
+        "Preprocessed multi-source datasets, reducing data defects by 30%",
+        "Accelerated stakeholder turnaround from 3 days to same-day (67% efficiency gain)",
+        "Conducted exploratory analysis producing 12+ actionable recommendations",
+        "Built Power BI dashboards for 25+ users across operations teams",
+        "Contributed to 8% reduction in logistics costs and 12% improvement in on-time delivery",
+      ],
+    },
+  ],
+  coreSkills: [
+    "Python", "SQL", "dbt", "Apache Airflow", "Apache Spark", "DuckDB", "PostgreSQL",
+    "BigQuery", "ClickHouse", "Kafka/Redpanda", "Debezium", "Great Expectations",
+    "OpenLineage", "FastAPI", "Docker", "GitHub Actions", "PyTorch", "LightGBM", "React",
+  ],
+  links: {
+    github: "https://github.com/aosman101",
+    portfolio: "https://aosman101.github.io",
+    linkedin: "https://www.linkedin.com/in/adil-osman-303185297/",
+  },
+};
+
+const MY_PROJECTS = [
+  {
+    id: "tfl-lakehouse",
+    name: "TfL Real-Time Lakehouse",
+    emoji: "🚇",
+    category: "Data Engineering / Real-Time",
+    stack: ["Python", "Airflow", "dbt", "DuckDB", "Parquet", "Great Expectations", "OpenLineage", "Docker"],
+    summary: "Production-pattern lakehouse ingesting live Transport for London arrival data. Airflow orchestrates ingestion from the TfL API into partitioned Parquet, dbt transforms into analytics-ready marts, Great Expectations validates data quality, and OpenLineage tracks end-to-end lineage via Marquez.",
+    interviewUse: [
+      "Pipeline architecture: real-time ingestion → raw Parquet → DuckDB silver layer → dbt marts",
+      "Data quality: Great Expectations validates nullability, time-to-station bounds at staging",
+      "Observability: OpenLineage + Marquez for full lineage tracking",
+      "Idempotent design: date-partitioned writes, incremental dbt models",
+    ],
+    github: "https://github.com/aosman101/tfl-realtime-lakehouse",
+  },
+  {
+    id: "tfl-travel-app",
+    name: "TfL Travel App (Somalis in Tech)",
+    emoji: "🚌",
+    category: "Community / Data Engineering",
+    stack: ["Python", "TfL API", "React", "Data Pipeline"],
+    summary: "Community data engineering project built with Somalis in Tech that became a real tool for London students and commuters. Provides practical transportation information using live TfL data. Born from the TfL Lakehouse infrastructure and used as a teaching resource for early-career data engineers.",
+    interviewUse: [
+      "Community impact: turned a technical project into a practical tool for real users",
+      "Mentorship: used as a teaching resource for ~12 early-career data engineering candidates",
+      "End-to-end delivery: from data pipeline to user-facing application",
+      "Stakeholder awareness: designed for non-technical users (students, commuters)",
+    ],
+    github: "https://github.com/aosman101/tfl-realtime-lakehouse",
+  },
+  {
+    id: "streamshop-cdc",
+    name: "StreamShop CDC Analytics",
+    emoji: "🔄",
+    category: "Data Engineering / CDC Streaming",
+    stack: ["Python", "Debezium", "Redpanda", "ClickHouse", "dbt", "PostgreSQL", "Docker"],
+    summary: "Full production-style Change Data Capture pipeline: PostgreSQL → Debezium → Redpanda → Python consumer → ClickHouse, with dbt modelling including SCD2 snapshots, outbox pattern, and Avro schema registry.",
+    interviewUse: [
+      "CDC architecture: explain Debezium, WAL, Redpanda as Kafka-compatible broker",
+      "SCD2 implementation in dbt on ClickHouse with _version and _deleted fields",
+      "Schema evolution: Avro validation + schema registry for contract enforcement",
+      "Outbox pattern for reliable domain event publishing",
+    ],
+    github: "https://github.com/aosman101/streamshop-cdc-analytics",
+  },
+  {
+    id: "deep-stocks",
+    name: "Deep Stock Insights",
+    emoji: "📊",
+    category: "Machine Learning / Full-Stack",
+    stack: ["Python", "FastAPI", "React", "TensorFlow", "LightGBM", "XGBoost", "WebSocket", "SQLite"],
+    summary: "ML platform predicting prices across 53 assets (crypto, equities, commodities) using N-HiTS, LightGBM, and XGBoost. Features live WebSocket streaming, walk-forward backtesting, 18+ technical indicators, and a React dashboard.",
+    interviewUse: [
+      "End-to-end ML pipeline: feature engineering → model training → API serving → React frontend",
+      "Model evaluation: walk-forward validation, MAE, RMSE, R², directional accuracy",
+      "Technical indicators: RSI, MACD, Bollinger Bands, ADX — domain feature engineering",
+      "System design: FastAPI backend + WebSocket for real-time price updates",
+    ],
+    github: "https://github.com/aosman101/deep-stocks-insights",
+  },
+  {
+    id: "f1-raceops",
+    name: "F1 RaceOps Analytics Warehouse",
+    emoji: "🏎️",
+    category: "Analytics Engineering",
+    stack: ["Python", "PostgreSQL", "dbt", "Docker", "Tableau", "GitHub Actions"],
+    summary: "Local-first F1 analytics warehouse with Ergast-compatible schema. Three-layer dbt architecture (staging → core dimensions/facts → RaceOps marts) for pit stop performance, reliability metrics, and seasonal summaries.",
+    interviewUse: [
+      "Data modelling: star schema with 9 staging views, 9 dim/fact tables, 4 specialised marts",
+      "dbt project structure: staging → core → marts layering",
+      "Dimensional modelling: driver, constructor, circuit, race dimensions + facts",
+      "CI/CD: GitHub Actions pipeline for automated dbt builds",
+    ],
+    github: "https://github.com/aosman101/f1-raceops-analytics-warehouse",
+  },
+  {
+    id: "pl-warehouse",
+    name: "Premier League Analytics Warehouse",
+    emoji: "⚽",
+    category: "Analytics Engineering / Cloud",
+    stack: ["Python", "BigQuery", "dbt", "GitHub Actions"],
+    summary: "End-to-end analytics warehouse on BigQuery for Premier League data (2014–2025). dbt models include dim_team, fct_match_results, fct_team_season_stats, and a time_spine. CI pipeline auto-loads raw data and runs dbt build.",
+    interviewUse: [
+      "Cloud warehouse: BigQuery cost management, partitioning, service account auth",
+      "dbt on BigQuery: materialisation strategies, incremental models",
+      "CI/CD: GitHub Actions loads raw data → runs dbt build --target ci",
+      "Metrics layer: team season aggregations, match result facts",
+    ],
+    github: "https://github.com/aosman101/premier-league-analytics-warehouse",
+  },
+  {
+    id: "london-air",
+    name: "London Air Quality & Weather Lakehouse",
+    emoji: "🌫️",
+    category: "Data Engineering / Lakehouse",
+    stack: ["Python", "Airflow", "dbt", "PostgreSQL", "MinIO", "Great Expectations", "Metabase", "Docker"],
+    summary: "Medallion-pattern lakehouse: OpenAQ + Open-Meteo APIs → Airflow → MinIO (raw) → PostgreSQL → dbt transformations → Metabase dashboards. Idempotent upserts, incremental fact modelling, and data quality validation.",
+    interviewUse: [
+      "Medallion architecture: raw (MinIO/S3) → warehouse (PostgreSQL) → marts (dbt)",
+      "Idempotent upserts: (sensor_id, ts_utc) deduplication",
+      "Visualisation layer: Metabase dashboards connected to PostgreSQL",
+      "API ingestion: handling sensor discovery, hourly pulls, error recovery",
+    ],
+    github: "https://github.com/aosman101/london-air-quality-weather-lakehouse",
+  },
+  {
+    id: "mini-lake",
+    name: "Mini Lake dbt + DuckDB",
+    emoji: "🦆",
+    category: "Analytics Engineering / Demo",
+    stack: ["dbt", "DuckDB", "Python", "GitHub Actions"],
+    summary: "Compact local-first analytics demo: CSV seeds → staging views → mart aggregations, with schema-based validation, dbt docs generation, and CI enforcement on every push.",
+    interviewUse: [
+      "dbt fundamentals: seeds, staging, marts, materialisation strategies",
+      "Data quality: not_null, unique, accepted_values schema tests",
+      "Local development: DuckDB as zero-infrastructure analytical engine",
+      "CI/CD: automated dbt build + test on every PR",
+    ],
+    github: "https://github.com/aosman101/mini-lake-dbt-duckdb",
+  },
+  {
+    id: "ai-trading",
+    name: "AI Trading Agent",
+    emoji: "🤖",
+    category: "ML / Reinforcement Learning",
+    stack: ["Python", "PyTorch", "LightGBM", "FastAPI", "Supabase", "Docker"],
+    summary: "Autonomous swing trading agent combining N-HiTS, TFT, LightGBM, FinBERT sentiment, and PPO/DQN reinforcement learning into a risk-managed ensemble. Features ATR-based position sizing, daily loss limits, and paper-trading safety gates via Alpaca.",
+    interviewUse: [
+      "Ensemble architecture: multiple models with dynamic weighting",
+      "Risk management: ATR stops, heat caps, daily loss limits, kill switch",
+      "RL in practice: PPO/DQN as meta-controllers for buy/sell/hold decisions",
+      "System design: FastAPI + Supabase for state management and API exposure",
+    ],
+    github: "https://github.com/aosman101/ai-trading-agent",
+  },
+  {
+    id: "stock-prediction",
+    name: "Stock Market Prediction (LSTM)",
+    emoji: "📈",
+    category: "Machine Learning",
+    stack: ["Python", "TensorFlow", "Keras", "Jupyter"],
+    summary: "LSTM deep learning model for equity price forecasting achieving R² of 0.95. Includes KNN baseline, backtesting, and time series analysis.",
+    interviewUse: [
+      "Deep learning: LSTM for sequential time series prediction",
+      "Model evaluation: R² of 0.95, comparison with KNN baseline",
+      "Feature engineering for financial time series",
+    ],
+    github: "https://github.com/aosman101/Stock-Market-Prediction",
+  },
+];
+
+const TAILORED_ANSWERS = {
+  behavioral: [
+    {
+      question: "Tell me about yourself / Walk me through your background.",
+      answer: "I'm Adil, a London-based data engineer with a First Class BSc in Data Science & Computing from Birkbeck. Most recently I was a Junior Data Engineer at Somalis in Tech where I built production pipelines using Python, SQL, dbt, and Airflow — I improved data freshness from 6 hours to 45 minutes and mentored about 12 early-career candidates. Before that I was a Data Analyst at HQ Analytics in Dubai, where I built Power BI dashboards for 25+ users and contributed to an 8% reduction in logistics costs. On the side, I built a TfL Travel App that became a real tool for London students and commuters, and my portfolio includes CDC streaming pipelines, analytics warehouses on BigQuery, and ML platforms. I'm drawn to roles where I can design reliable, observable data systems and see the downstream impact on real stakeholders.",
+      tags: ["1st Interview", "Screening"],
+    },
+    {
+      question: "Tell me about a technically challenging project.",
+      answer: "My StreamShop CDC Analytics project was the most complex. I built a full Change Data Capture pipeline: PostgreSQL captures row-level changes via Debezium, streams them through Redpanda (a Kafka-compatible broker), and a Python consumer lands them in ClickHouse. The trickiest parts were handling SCD Type 2 snapshots in dbt on ClickHouse using _version and _deleted fields for upserts and tombstones, and implementing the outbox pattern so domain events were published reliably alongside database transactions. I also added Avro schema validation to enforce contracts as the schema evolved. The result was a fully production-style CDC stack running locally in Docker Compose.",
+      tags: ["2nd Interview", "Technical"],
+    },
+    {
+      question: "Describe a project where you had to learn something new quickly.",
+      answer: "When I built the AI Trading Agent, I needed to combine multiple ML paradigms I hadn't used together before — N-HiTS temporal models, FinBERT for NLP sentiment, and PPO/DQN reinforcement learning — all in one ensemble. I gave myself a structured learning plan: first understood each model individually, then focused on the integration layer that dynamically weights their signals. The key challenge was the risk management layer — implementing ATR-based position sizing and daily loss limits. Within a few weeks I had a working system with paper-trading safety gates via the Alpaca broker API.",
+      tags: ["Behavioral", "Growth"],
+    },
+    {
+      question: "How do you ensure data quality in your pipelines?",
+      answer: "I build quality in at multiple layers rather than bolting it on at the end. In my TfL Lakehouse, Great Expectations validates staging tables for nullability and time-to-station bounds before data moves downstream. In the StreamShop CDC project, I use Avro schema validation at ingestion and dbt tests (unique, not_null, accepted_values, relationships) at the transformation layer. I also track lineage with OpenLineage and Marquez, so when something does break, I can trace impact across the entire DAG. For me, data quality means contracts at ingestion, tests at transformation, and observability everywhere.",
+      tags: ["2nd Interview", "Data Quality"],
+    },
+    {
+      question: "Walk me through how you'd design a data pipeline from scratch.",
+      answer: "I'd start with four questions: What's the source? What's the destination? What's the SLA? What's the volume? For example, when I built the London Air Quality Lakehouse, the source was the OpenAQ API (hourly sensor readings), destination was PostgreSQL marts for Metabase dashboards, SLA was daily freshness, and volume was manageable. I designed a medallion architecture: Airflow pulls from the API into MinIO (raw S3-compatible layer), loads flattened data into PostgreSQL, and dbt transforms through staging to fact tables with incremental materialisation. Idempotent upserts on (sensor_id, ts_utc) handle reruns safely. I'd apply the same framework to any pipeline — clarify requirements, then layer ingestion → transformation → serving with quality checks at each boundary.",
+      tags: ["System Design", "Pipeline"],
+    },
+    {
+      question: "Tell me about a time you disagreed with a technical approach.",
+      answer: "While working on the Premier League Analytics Warehouse, I initially considered using views for all dbt models to keep compute costs low on BigQuery. But as the dataset grew across 10 seasons, query times degraded for the fct_team_season_stats mart. I had to weigh cost vs performance and ultimately moved the marts to table materialisation with incremental loading, keeping staging as views. The lesson was that materialisation strategy isn't one-size-fits-all — it depends on query patterns, data volume, and cost constraints. I documented the rationale in the dbt project so future decisions would have context.",
+      tags: ["Behavioral", "Technical Decision"],
+    },
+    {
+      question: "How do you explain a complex data issue to a non-technical stakeholder?",
+      answer: "I focus on impact and analogy rather than implementation. At HQ Analytics, when a dashboard showed conflicting numbers due to a data source refresh delay, I explained to the operations team: 'The data feeding this report is still catching up — think of it like a delayed train. We've identified the issue and the numbers will be accurate within the hour.' I always pair the explanation with what I'm doing about it and when they can expect resolution. At Somalis in Tech, I mentored junior engineers on this same skill — translating pipeline failures into business-friendly language. I also build self-serve dashboards (Power BI at HQ, Metabase in my projects) to reduce these conversations in the first place.",
+      tags: ["Behavioral", "Communication"],
+    },
+    {
+      question: "What's your experience with dbt?",
+      answer: "dbt is central to almost all my projects. In the F1 RaceOps warehouse, I built a three-layer architecture: 9 staging views standardising Ergast source tables, 9 core dimension and fact tables (drivers, constructors, circuits, races), and 4 specialised RaceOps marts for pit stop performance and reliability metrics. In the StreamShop CDC project, I used dbt on ClickHouse with contracts, SCD2 snapshots, and CI that runs on every PR. I also have a Mini Lake demo project specifically built to demonstrate dbt + DuckDB fundamentals — seeds, staging, marts, schema tests, and docs generation with full CI enforcement.",
+      tags: ["2nd Interview", "dbt", "Analytics Engineering"],
+    },
+    {
+      question: "What interests you about this role?",
+      answer: "I've had the chance to build production pipelines at Somalis in Tech and deliver analytics at HQ Analytics, and now I want to take that experience to a team where data reliability directly impacts business decisions at scale. At Somalis in Tech I saw the impact of my work first-hand — the TfL app I built became a real tool for London students and commuters, and the pipeline improvements I made cut data freshness from 6 hours to 45 minutes. I'm particularly excited about [company-specific detail] because [tailored reason]. I want to keep growing technically while also mentoring others, which is something I discovered I love through mentoring 12 junior engineers at Somalis in Tech.",
+      tags: ["1st Interview", "Final Interview", "Motivation"],
+    },
+  ],
+  technical: [
+    {
+      question: "Explain ETL vs ELT and when you'd use each.",
+      answer: "ETL transforms data before loading — useful when the target system has limited compute (e.g., a traditional database). ELT loads raw data first and transforms in the warehouse — this is my default approach because modern warehouses like BigQuery and ClickHouse have the compute power to handle transformations efficiently. In my Premier League project, I load raw JSON into BigQuery first, then dbt handles all transformations. In the StreamShop CDC project, raw CDC events land in ClickHouse via a Python consumer, and dbt builds the marts. ELT gives me lineage visibility and version-controlled transformations.",
+      tags: ["System Design", "Pipeline"],
+    },
+    {
+      question: "How do you handle late-arriving data?",
+      answer: "It depends on the SLA and architecture. In my TfL Lakehouse, I use date-partitioned Parquet writes — late arrivals naturally land in the correct partition on reprocessing because the ingestion is idempotent. In the London Air Quality project, I use upserts keyed on (sensor_id, ts_utc), so late data overwrites cleanly without duplicates. For a streaming context like my CDC stack, I'd leverage event timestamps rather than processing timestamps, and design the consumer to handle out-of-order events by using the Debezium transaction sequence for ordering.",
+      tags: ["Data Engineering", "Pipeline"],
+    },
+    {
+      question: "Describe your experience with streaming vs batch.",
+      answer: "I've built both. My TfL and London Air Quality projects are near-real-time batch: Airflow polls APIs on a schedule, writes to a raw layer, and dbt transforms downstream. My StreamShop project is true streaming: Debezium captures PostgreSQL WAL changes, Redpanda brokers them, and a Python consumer writes to ClickHouse continuously. The key lesson is that streaming adds significant operational complexity — you need to handle back-pressure, exactly-once semantics, and consumer group management. I'd only recommend streaming when the business genuinely needs sub-minute latency. For most analytics use cases, well-designed batch with hourly or even daily refreshes is simpler, cheaper, and easier to debug.",
+      tags: ["System Design", "Streaming"],
+    },
+  ],
+};
+
+// ---------------------------------------------------------------------------
 // Study guide content — structured by domain and topic
 // ---------------------------------------------------------------------------
 
@@ -98,7 +368,7 @@ const STUDY_GUIDE = [
           "Calculate a 7-day rolling average of daily revenue.",
           "Identify consecutive login streaks per user.",
         ],
-        tips: "Window functions are the #1 most tested SQL concept. Practice until they feel natural. Always clarify the partition and ordering before writing.",
+        tips: "Window functions are the #1 most tested SQL concept. Practice until they feel natural. Always clarify the partition and ordering before writing. Your F1 RaceOps project uses window functions for ranking drivers and pit stop performance — reference it.",
       },
       {
         name: "CTEs & Subqueries",
@@ -109,7 +379,7 @@ const STUDY_GUIDE = [
           "Find customers whose first purchase was above average.",
           "Chain multiple CTEs to build a funnel analysis.",
         ],
-        tips: "CTEs make your thinking visible to the interviewer. Use them liberally — they show you write maintainable SQL.",
+        tips: "CTEs make your thinking visible to the interviewer. Use them liberally — they show you write maintainable SQL. Your dbt models (F1 RaceOps, Premier League) are essentially CTEs made permanent — mention this to show you think in layers.",
       },
       {
         name: "Query Optimisation",
@@ -120,7 +390,7 @@ const STUDY_GUIDE = [
           "When would you choose a composite index over separate indexes?",
           "Explain the difference between a hash join and a nested loop join.",
         ],
-        tips: "You won't always be asked to optimise, but understanding why a query is slow signals senior-level thinking.",
+        tips: "You won't always be asked to optimise, but understanding why a query is slow signals senior-level thinking. Reference your BigQuery cost optimisation experience from the Premier League warehouse.",
       },
       {
         name: "Data Modeling",
@@ -131,7 +401,7 @@ const STUDY_GUIDE = [
           "How would you handle a customer who changes their address over time?",
           "When is denormalisation the right choice?",
         ],
-        tips: "Data modeling questions test how you think about data relationships. Start with entities and relationships before jumping to tables.",
+        tips: "Data modeling questions test how you think about data relationships. Start with entities and relationships before jumping to tables. Your F1 RaceOps star schema (9 dims + facts) and StreamShop SCD2 implementation are strong examples to reference.",
       },
       {
         name: "Joins & Set Operations",
@@ -163,7 +433,7 @@ const STUDY_GUIDE = [
           "Clean and reshape a messy CSV with inconsistent date formats and missing values.",
           "Calculate month-over-month growth rates from a time series DataFrame.",
         ],
-        tips: "Pandas is tested practically. Speed matters less than correctness and clean code. Use .pipe() for readable chains.",
+        tips: "Pandas is tested practically. Speed matters less than correctness and clean code. Use .pipe() for readable chains. Your Deep Stock Insights project uses heavy pandas for 18+ technical indicators — great example of real-world data manipulation.",
       },
       {
         name: "Data Structures & Algorithms",
@@ -185,7 +455,7 @@ const STUDY_GUIDE = [
           "How would you handle a flaky API that occasionally returns 500 errors?",
           "Parse a nested JSON response into a flat DataFrame.",
         ],
-        tips: "Real-world data ingestion is messy. Showing you handle edge cases (timeouts, malformed data, encoding issues) is a strong signal.",
+        tips: "Real-world data ingestion is messy. Showing you handle edge cases (timeouts, malformed data, encoding issues) is a strong signal. Your TfL and London Air Quality projects both pull from live APIs with error handling — reference these.",
       },
       {
         name: "Testing & Code Quality",
@@ -216,7 +486,7 @@ const STUDY_GUIDE = [
           "How would you handle late-arriving data in a daily batch pipeline?",
           "Compare Airflow and Dagster — when would you choose one over the other?",
         ],
-        tips: "Always start with: What's the source? What's the destination? What's the SLA? What's the volume? These four questions frame everything.",
+        tips: "Always start with: What's the source? What's the destination? What's the SLA? What's the volume? These four questions frame everything. You've built both batch (TfL, London Air Quality) and streaming (StreamShop CDC) pipelines — use them as contrasting examples.",
       },
       {
         name: "Data Warehousing",
@@ -227,7 +497,7 @@ const STUDY_GUIDE = [
           "How would you optimise a Snowflake/BigQuery warehouse that's costing too much?",
           "Explain how you'd implement incremental loading for a fact table.",
         ],
-        tips: "Warehouse design questions are really about trade-offs. There's no single right answer — show your reasoning process.",
+        tips: "Warehouse design questions are really about trade-offs. There's no single right answer — show your reasoning process. Reference your Premier League BigQuery warehouse for cloud and F1 RaceOps PostgreSQL warehouse for local — you've done both.",
       },
       {
         name: "Streaming & Real-Time",
@@ -238,7 +508,7 @@ const STUDY_GUIDE = [
           "How would you handle out-of-order events in a streaming pipeline?",
           "When is streaming overkill and batch is the right answer?",
         ],
-        tips: "Most companies don't need real-time everything. Showing you can identify when streaming is warranted (and when it's not) is a strong signal.",
+        tips: "Most companies don't need real-time everything. Showing you can identify when streaming is warranted (and when it's not) is a strong signal. Your StreamShop CDC project (Debezium → Redpanda → ClickHouse) is your go-to streaming example.",
       },
       {
         name: "Data Quality & Observability",
@@ -249,7 +519,7 @@ const STUDY_GUIDE = [
           "Design a data quality monitoring system for a critical dashboard.",
           "Walk me through how you'd investigate a data discrepancy reported by a stakeholder.",
         ],
-        tips: "Data quality is increasingly a first-class interview topic. Having concrete examples of quality issues you caught and fixed is very valuable.",
+        tips: "Data quality is increasingly a first-class interview topic. Having concrete examples of quality issues you caught and fixed is very valuable. You use Great Expectations in TfL + London Air Quality, dbt tests across all projects, Avro schema validation in StreamShop, and OpenLineage for lineage.",
       },
     ],
   },
@@ -270,7 +540,7 @@ const STUDY_GUIDE = [
           "Describe a situation where you disagreed with a teammate's technical approach.",
           "Give an example of a project where you had to learn something new quickly.",
         ],
-        tips: "Prepare 5-6 strong stories that can be adapted to different questions. Each story should have a clear conflict and resolution.",
+        tips: "Prepare 5-6 strong stories that can be adapted to different questions. Each story should have a clear conflict and resolution. Your stories: StreamShop (technical complexity), TfL (learning new tools), AI Trading Agent (learning fast), Premier League (cost trade-offs), F1 (data modelling decisions).",
       },
       {
         name: "Stakeholder Communication",
@@ -324,7 +594,7 @@ const STUDY_GUIDE = [
           "Design a CI/CD pipeline for a dbt project.",
           "When would you choose Kubernetes over a managed service?",
         ],
-        tips: "Orchestration is the backbone of DE work. Show you understand not just how to build pipelines, but how to operate them reliably.",
+        tips: "Orchestration is the backbone of DE work. Show you understand not just how to build pipelines, but how to operate them reliably. You've built Airflow DAGs in TfL Lakehouse and London Air Quality, plus CI/CD with GitHub Actions across multiple projects — reference these.",
       },
       {
         name: "Cloud Platforms",
@@ -538,6 +808,94 @@ function TopicCard({ topic, defaultOpen = false }) {
   );
 }
 
+function TailoredAnswerCard({ item, index }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ border: "1.5px solid #E5E7EB", borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: "100%", padding: "14px 16px", background: open ? "#F8FAFC" : "#fff",
+          border: "none", cursor: "pointer", textAlign: "left",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", flex: 1 }}>
+          <span style={{ color: "#9CA3AF", fontWeight: 800, fontSize: 13 }}>Q{index + 1}.</span>
+          <span style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{item.question}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          {item.tags.map(tag => (
+            <span key={tag} style={{ display: "inline-block", padding: "2px 8px", borderRadius: 8, fontSize: 9, fontWeight: 700, color: "#6B7280", background: "#F3F4F6", border: "1px solid #E5E7EB", whiteSpace: "nowrap" }}>{tag}</span>
+          ))}
+          <span style={{ fontSize: 16, color: "#9CA3AF", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", marginLeft: 4 }}>▼</span>
+        </div>
+      </button>
+      {open && (
+        <div style={{ padding: "4px 16px 16px", background: "#FAFBFC" }}>
+          <div style={{ background: "#fff", border: "1.5px solid #E5E7EB", borderRadius: 10, padding: "14px 16px", lineHeight: 1.8, fontSize: 13, color: "#374151" }}>
+            {item.answer}
+          </div>
+          <div style={{ marginTop: 10, padding: "8px 12px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 8 }}>
+            <p style={{ margin: 0, fontSize: 11, color: "#92400E", fontWeight: 600 }}>💡 Key points to hit: mention specific project names, tech choices, and quantifiable outcomes. Adapt the ending to the company you're interviewing at.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProjectArsenalCard({ project }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ border: "1.5px solid #E5E7EB", borderRadius: 14, overflow: "hidden", background: "#fff" }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: "100%", padding: "14px 18px", background: open ? "#F8FAFC" : "#fff", border: "none",
+          cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 22 }}>{project.emoji}</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: "#111827" }}>{project.name}</div>
+            <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{project.category}</div>
+          </div>
+        </div>
+        <span style={{ fontSize: 16, color: "#9CA3AF", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▼</span>
+      </button>
+      {open && (
+        <div style={{ padding: "4px 18px 18px" }}>
+          <p style={{ margin: "0 0 12px", fontSize: 13, color: "#374151", lineHeight: 1.7 }}>{project.summary}</p>
+
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Tech Stack</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {project.stack.map(tech => (
+                <span key={tech} style={{ display: "inline-block", padding: "4px 10px", borderRadius: 8, background: "#F1F5F9", border: "1px solid #E2E8F0", fontSize: 12, color: "#334155", fontWeight: 600 }}>{tech}</span>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Interview Talking Points</div>
+            {project.interviewUse.map((point, i) => (
+              <div key={i} style={{ padding: "8px 12px", background: i % 2 === 0 ? "#EFF6FF" : "#fff", border: "1px solid #BFDBFE", borderRadius: 8, marginBottom: 6, fontSize: 13, color: "#1E3A5F", lineHeight: 1.5 }}>
+                <span style={{ color: "#3B82F6", fontWeight: 800, marginRight: 6 }}>•</span> {point}
+              </div>
+            ))}
+          </div>
+
+          <a href={project.github} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, background: "#F6F8FA", border: "1.5px solid #D1D5DB", color: "#24292E", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
+            View on GitHub ↗
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StageCard({ stage, company, role }) {
   const [open, setOpen] = useState(true);
   const config = STAGE_GUIDANCE[stage];
@@ -596,6 +954,9 @@ export default function InterviewPrep({ apps = [] }) {
 
   const sections = [
     { id: "dynamic", label: "Your Interviews", emoji: "🎯" },
+    { id: "profile", label: "Your Profile", emoji: "👤" },
+    { id: "answers", label: "Tailored Answers", emoji: "💬" },
+    { id: "arsenal", label: "Project Arsenal", emoji: "🚀" },
     { id: "guide", label: "Study Guide", emoji: "📖" },
     { id: "quick-ref", label: "Quick Reference", emoji: "⚡" },
   ];
@@ -710,6 +1071,145 @@ export default function InterviewPrep({ apps = [] }) {
               </div>
             </SectionCard>
           )}
+        </>
+      )}
+
+      {/* Profile Section — Elevator pitch & skills overview */}
+      {activeSection === "profile" && (
+        <>
+          <SectionCard
+            title="Your Elevator Pitch"
+            subtitle="Memorise this 30-second introduction. Adapt the ending for each role."
+            style={{ marginBottom: 16, background: "linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%)" }}
+          >
+            <div style={{ background: "#F0F7FF", border: "1.5px solid #BFDBFE", borderRadius: 12, padding: "16px 18px", lineHeight: 1.8, fontSize: 14, color: "#1E3A5F" }}>
+              <p style={{ margin: 0, fontStyle: "italic" }}>"{MY_PROFILE.elevatorPitch}"</p>
+            </div>
+            <div style={{ marginTop: 12, padding: "10px 14px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10 }}>
+              <p style={{ margin: 0, fontSize: 12, color: "#92400E", fontWeight: 600 }}>💡 Tip: Replace the last sentence with something specific to the company you're interviewing at. E.g., "I'm particularly excited about [Company]'s approach to [X] because..."</p>
+            </div>
+          </SectionCard>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14, marginBottom: 16 }}>
+            <SectionCard title="📋 Key Facts to Remember" style={{ background: "linear-gradient(135deg, #fff 0%, #ecfdf5 100%)" }}>
+              <div style={{ display: "grid", gap: 8 }}>
+                {[
+                  { label: "Degree", value: MY_PROFILE.education },
+                  { label: "Location", value: MY_PROFILE.location },
+                  { label: "Focus", value: "Data pipelines, analytics engineering, CDC streaming, ML" },
+                  { label: "Domains", value: "Finance, Sports, Transport, Environment" },
+                  { label: "Projects", value: `${MY_PROJECTS.length} portfolio projects spanning DE, AE, and ML` },
+                  { label: "Writing", value: "2 published articles on building lakehouses and community tech" },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, padding: "8px 12px", background: "#F8FAFC", borderRadius: 8, alignItems: "baseline" }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#6B7280", minWidth: 80, textTransform: "uppercase", letterSpacing: "0.04em" }}>{item.label}</span>
+                    <span style={{ fontSize: 13, color: "#111827", fontWeight: 600 }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+
+            <SectionCard title="🛠️ Technical Stack" style={{ background: "linear-gradient(135deg, #fff 0%, #f5f3ff 100%)" }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {MY_PROFILE.coreSkills.map(skill => (
+                  <span key={skill} style={{ display: "inline-block", padding: "6px 12px", borderRadius: 8, background: "#EDE9FE", border: "1px solid #DDD6FE", fontSize: 12, color: "#5B21B6", fontWeight: 700 }}>{skill}</span>
+                ))}
+              </div>
+              <div style={{ marginTop: 14, padding: "10px 14px", background: "#F8FAFC", borderRadius: 10 }}>
+                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", lineHeight: 1.6 }}>
+                  <strong>When asked "What's your tech stack?":</strong> Lead with Python and SQL, then mention dbt and Airflow for the transformation/orchestration layer, then databases (PostgreSQL, BigQuery, ClickHouse, DuckDB), then streaming (Kafka/Redpanda, Debezium). Mention Docker and GitHub Actions for DevOps.
+                </p>
+              </div>
+            </SectionCard>
+          </div>
+
+          <SectionCard title="💼 Work Experience" subtitle="Reference these achievements with specific numbers in your answers." style={{ marginBottom: 16 }}>
+            {MY_PROFILE.workExperience.map((job, i) => (
+              <div key={i} style={{ background: i === 0 ? "#EFF6FF" : "#F8FAFC", border: `1.5px solid ${i === 0 ? "#BFDBFE" : "#E5E7EB"}`, borderRadius: 12, padding: "16px 18px", marginBottom: i < MY_PROFILE.workExperience.length - 1 ? 12 : 0 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: "#111827" }}>{job.role}</div>
+                    <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>{job.company} · {job.location}</div>
+                  </div>
+                  <span style={{ fontSize: 12, color: "#6B7280", fontWeight: 600, whiteSpace: "nowrap" }}>{job.period}</span>
+                </div>
+                <div style={{ display: "grid", gap: 4 }}>
+                  {job.highlights.map((h, j) => (
+                    <div key={j} style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, paddingLeft: 14, position: "relative" }}>
+                      <span style={{ position: "absolute", left: 0, color: "#3B82F6", fontWeight: 800 }}>•</span> {h}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div style={{ marginTop: 12, padding: "10px 14px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10 }}>
+              <p style={{ margin: 0, fontSize: 12, color: "#92400E", fontWeight: 600 }}>💡 Key numbers to remember: 87% freshness improvement, 95% SLA compliance, 12 mentees, 30% defect reduction, 67% faster turnaround, 25+ dashboard users, 8% logistics cost reduction, 12% delivery improvement.</p>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="🔗 Quick Links" subtitle="Have these ready to share during or after interviews.">
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {[
+                { label: "GitHub", url: MY_PROFILE.links.github, color: "#24292E", bg: "#F6F8FA" },
+                { label: "Portfolio", url: MY_PROFILE.links.portfolio, color: "#1F4E79", bg: "#EFF6FF" },
+                { label: "LinkedIn", url: MY_PROFILE.links.linkedin, color: "#0A66C2", bg: "#EFF6FF" },
+              ].map(link => (
+                <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 16px", borderRadius: 10, background: link.bg, color: link.color, fontWeight: 700, fontSize: 13, textDecoration: "none", border: `1.5px solid ${link.color}22` }}>
+                  {link.label} ↗
+                </a>
+              ))}
+            </div>
+          </SectionCard>
+        </>
+      )}
+
+      {/* Tailored Answers Section — Pre-written answers using your projects */}
+      {activeSection === "answers" && (
+        <>
+          <SectionCard
+            title="Tailored Interview Answers"
+            subtitle="Pre-written answers referencing your actual projects and experience. Memorise the structure, then adapt naturally."
+            style={{ marginBottom: 16, background: "linear-gradient(135deg, #ffffff 0%, #fdf2f8 100%)" }}
+          >
+            <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "10px 14px" }}>
+              <p style={{ margin: 0, fontSize: 12, color: "#991B1B", fontWeight: 600 }}>🎯 These answers use the STAR method and reference your real projects. Don't memorise word-for-word — internalise the key points and project references, then deliver naturally.</p>
+            </div>
+          </SectionCard>
+
+          <div style={{ marginBottom: 20 }}>
+            <h3 style={{ fontFamily: "Georgia,serif", color: "#1F4E79", fontSize: 16, marginBottom: 12 }}>🤝 Behavioral & General Questions</h3>
+            {TAILORED_ANSWERS.behavioral.map((item, i) => (
+              <TailoredAnswerCard key={i} item={item} index={i} />
+            ))}
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <h3 style={{ fontFamily: "Georgia,serif", color: "#1F4E79", fontSize: 16, marginBottom: 12 }}>🔧 Technical Questions</h3>
+            {TAILORED_ANSWERS.technical.map((item, i) => (
+              <TailoredAnswerCard key={i} item={item} index={i} />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Project Arsenal — Quick reference cards for all projects */}
+      {activeSection === "arsenal" && (
+        <>
+          <SectionCard
+            title="Your Project Arsenal"
+            subtitle={`${MY_PROJECTS.length} projects you can reference in interviews. Each card has key talking points.`}
+            style={{ marginBottom: 16, background: "linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)" }}
+          >
+            <p style={{ margin: 0, fontSize: 13, color: "#475569", lineHeight: 1.7 }}>
+              When an interviewer asks a technical question, reference a specific project. Concrete examples beat abstract knowledge every time. Use the "Interview Talking Points" on each card to structure your answer.
+            </p>
+          </SectionCard>
+
+          <div style={{ display: "grid", gap: 14 }}>
+            {MY_PROJECTS.map(project => (
+              <ProjectArsenalCard key={project.id} project={project} />
+            ))}
+          </div>
         </>
       )}
 
