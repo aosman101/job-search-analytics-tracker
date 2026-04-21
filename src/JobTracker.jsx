@@ -1,14 +1,20 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
 import { Home as HomeIcon, Search as SearchIcon, Route as RouteIcon, BarChart3 as BarChartIcon, Target as TargetIcon } from "lucide-react";
+import {
+  STORAGE_KEY,
+  createSaveQueue,
+  decodeStoredApps,
+  exportPayload,
+  isQuotaError,
+  migrateToIDB,
+  safeStorageCandidates,
+  storageSize,
+  storeCorruptPayload,
+} from "./storage";
 
 const InterviewPrep = lazy(() => import("./InterviewPrep"));
 
-const STORAGE_KEY = "adil-job-tracker-v2";
-const STORAGE_BACKUP_KEY = `${STORAGE_KEY}:backup`;
-const STORAGE_CORRUPT_KEY = `${STORAGE_KEY}:corrupt`;
-const IDB_NAME = "adil-job-tracker-db";
-const IDB_STORE = "tracker";
 const GHOST_DAYS = 21;
 
 const STATUS_CONFIG = {
@@ -796,35 +802,57 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               <button onClick={openNewApplication} style={{ background: "#3B82F6", color: "#fff", border: "none", borderRadius: 10, padding: "10px 22px", fontWeight: 700, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 14px rgba(59,130,246,0.45)" }}>+ New Application</button>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {TABS.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  padding: "10px 16px",
-                  background: activeTab === tab.id ? "#fff" : "rgba(255,255,255,0.08)",
-                  color: activeTab === tab.id ? "#1F4E79" : "rgba(255,255,255,0.78)",
-                  border: "none",
-                  borderRadius: "12px 12px 0 0",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
-                title={tab.description}
-              >
-                {tab.emoji} {tab.label}
-              </button>
-            ))}
+          <div role="tablist" aria-label="Job tracker sections" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {TABS.map(tab => {
+              const TabIcon = tab.icon;
+              const isActive = activeTab === tab.id;
+              const panelId = `tabpanel-${tab.id.replace(/\s+/g, "-").toLowerCase()}`;
+              return (
+                <button
+                  key={tab.id}
+                  id={`tab-${tab.id.replace(/\s+/g, "-").toLowerCase()}`}
+                  role="tab"
+                  type="button"
+                  aria-selected={isActive}
+                  aria-controls={panelId}
+                  tabIndex={isActive ? 0 : -1}
+                  onClick={() => setActiveTab(tab.id)}
+                  className="tracker-tab"
+                  style={{
+                    padding: "10px 16px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: isActive ? "#fff" : "rgba(255,255,255,0.08)",
+                    color: isActive ? "#1F4E79" : "rgba(255,255,255,0.78)",
+                    border: "none",
+                    borderRadius: "12px 12px 0 0",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                  title={tab.description}
+                >
+                  <TabIcon size={16} strokeWidth={2.4} aria-hidden="true" />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px" }}>
+      <div
+        role="tabpanel"
+        id={`tabpanel-${activeTab.replace(/\s+/g, "-").toLowerCase()}`}
+        aria-labelledby={`tab-${activeTab.replace(/\s+/g, "-").toLowerCase()}`}
+        tabIndex={0}
+        style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px" }}
+      >
 
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(260px, 0.8fr)", gap: 14, marginBottom: 16 }}>
           <SectionCard
-            title={`${activeTabMeta.emoji} ${activeTabMeta.label}`}
+            title={activeTabMeta.label}
             subtitle={activeTabMeta.description}
             style={{ background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)" }}
           >
