@@ -3,7 +3,6 @@ import {
   AUTH_SESSION_DATA_KEY,
   AUTH_SESSION_KEY,
   AUTH_USERNAME,
-  getSecureSeedCount,
   readSessionApps,
   unlockSeed,
 } from "./auth";
@@ -71,17 +70,51 @@ export default function App() {
 
           <div className="info-grid">
             <article className="info-card">
-              <span className="info-label">Seeded Records</span>
-              <strong>{getSecureSeedCount()} applications</strong>
+              <span className="info-label">Privacy First</span>
+              <strong>Your data never leaves this device</strong>
             </article>
             <article className="info-card">
-              <span className="info-label">Storage Model</span>
-              <strong>IndexedDB + local backup</strong>
+              <span className="info-label">Offline Ready</span>
+              <strong>Works with zero server round-trips</strong>
             </article>
             <article className="info-card">
               <span className="info-label">Hosting Target</span>
               <strong>GitHub Pages ready</strong>
             </article>
+          </div>
+
+          <div className="preview-section">
+            <p className="preview-heading">A peek inside</p>
+            <ul className="preview-list">
+              <li>
+                <span className="preview-dot" aria-hidden="true" />
+                <div>
+                  <strong>Application pipeline</strong>
+                  <span>Statuses, follow-up nudges, and a ghosted-lead detector in one board.</span>
+                </div>
+              </li>
+              <li>
+                <span className="preview-dot" aria-hidden="true" />
+                <div>
+                  <strong>Interview prep workspace</strong>
+                  <span>Tailored practice answers and recruiter research living next to each role.</span>
+                </div>
+              </li>
+              <li>
+                <span className="preview-dot" aria-hidden="true" />
+                <div>
+                  <strong>Resilient local storage</strong>
+                  <span>Browser-first persistence with an encrypted export so your data travels with you.</span>
+                </div>
+              </li>
+              <li>
+                <span className="preview-dot" aria-hidden="true" />
+                <div>
+                  <strong>Hand-built single page</strong>
+                  <span>React and Vite, no backend, deployed straight from a GitHub repo.</span>
+                </div>
+              </li>
+            </ul>
           </div>
         </div>
 

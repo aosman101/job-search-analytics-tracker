@@ -140,6 +140,59 @@ a {
   color: var(--muted);
 }
 
+.preview-section {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(31, 78, 121, 0.1);
+}
+
+.preview-heading {
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.preview-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.preview-list li {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.preview-list li strong {
+  display: block;
+  font-size: 0.98rem;
+  color: var(--ink);
+}
+
+.preview-list li span:not(.preview-dot) {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.preview-dot {
+  flex-shrink: 0;
+  margin-top: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 4px 10px rgba(31, 78, 121, 0.25);
+}
+
 .login-card {
   padding: 30px 28px;
   display: flex;
