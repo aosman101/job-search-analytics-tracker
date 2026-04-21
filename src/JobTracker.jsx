@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
+import { Home as HomeIcon, Search as SearchIcon, Route as RouteIcon, BarChart3 as BarChartIcon, Target as TargetIcon } from "lucide-react";
 
 const InterviewPrep = lazy(() => import("./InterviewPrep"));
 
@@ -21,11 +22,11 @@ const STATUS_CONFIG = {
 };
 
 const TABS = [
-  { id: "Home", emoji: "🏠", label: "Home", description: "Welcome, priorities, and search guidance" },
-  { id: "Job Search", emoji: "🔎", label: "Job Search", description: "Track applications and manage search activity" },
-  { id: "Pipeline", emoji: "🧭", label: "Pipeline", description: "Follow-ups, interviews, and ghost-risk items" },
-  { id: "Analytics", emoji: "📊", label: "Analytics", description: "Performance, outcomes, and momentum trends" },
-  { id: "Interview Prep", emoji: "🎯", label: "Interview Prep", description: "Role-specific prep, study guides, and stage-aware tips" },
+  { id: "Home", icon: HomeIcon, label: "Home", description: "Welcome, priorities, and search guidance" },
+  { id: "Job Search", icon: SearchIcon, label: "Job Search", description: "Track applications and manage search activity" },
+  { id: "Pipeline", icon: RouteIcon, label: "Pipeline", description: "Follow-ups, interviews, and ghost-risk items" },
+  { id: "Analytics", icon: BarChartIcon, label: "Analytics", description: "Performance, outcomes, and momentum trends" },
+  { id: "Interview Prep", icon: TargetIcon, label: "Interview Prep", description: "Role-specific prep, study guides, and stage-aware tips" },
 ];
 const INTERVIEW_STAGES = ["", "1st Interview", "2nd Interview", "3rd Interview", "Home Assignment", "Final Interview"];
 const EMPTY_FORM = { company: "", role: "", location: "", dateApplied: "", status: "Applied", jobUrl: "", hiringManager: "", hmLinkedIn: "", followUpDate: "", notes: "", interviewStage: "", followUpStatus: "", hmAvailable: true, hmLinkedInAvailable: true };
