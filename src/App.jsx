@@ -6,6 +6,19 @@ import {
   readSessionApps,
   unlockSeed,
 } from "./auth";
+import changelog from "./data/changelog.json";
+
+const CHANGELOG_DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+function formatChangelogDate(value) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return CHANGELOG_DATE_FORMATTER.format(parsed);
+}
 
 const sessionApps = readSessionApps();
 const JobTracker = lazy(() => import("./JobTracker"));
@@ -116,6 +129,23 @@ export default function App() {
               </li>
             </ul>
           </div>
+
+          {changelog.length > 0 && (
+            <div className="changelog-section" aria-label="Recent updates">
+              <p className="preview-heading">What&apos;s new</p>
+              <ol className="changelog-list">
+                {changelog.slice(0, 3).map((entry) => (
+                  <li key={`${entry.date}-${entry.title}`} className="changelog-item">
+                    <time className="changelog-date" dateTime={entry.date}>
+                      {formatChangelogDate(entry.date)}
+                    </time>
+                    <strong className="changelog-title">{entry.title}</strong>
+                    <span className="changelog-note">{entry.note}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </div>
 
         <form className="login-card" onSubmit={handleLogin}>

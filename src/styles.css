@@ -193,6 +193,55 @@ a {
   box-shadow: 0 4px 10px rgba(31, 78, 121, 0.25);
 }
 
+.changelog-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(31, 78, 121, 0.1);
+}
+
+.changelog-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.changelog-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 14px;
+  row-gap: 2px;
+  align-items: baseline;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.82));
+  border: 1px solid rgba(31, 78, 121, 0.08);
+}
+
+.changelog-date {
+  grid-row: 1 / span 2;
+  align-self: start;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.changelog-title {
+  font-size: 0.96rem;
+  color: var(--ink);
+}
+
+.changelog-note {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
 .login-card {
   padding: 30px 28px;
   display: flex;

@@ -1,0 +1,17 @@
+[
+  {
+    "date": "2026-04-21",
+    "title": "Public login redesign",
+    "note": "New peek-inside preview, privacy-first copy, and a What's New strip for visitors."
+  },
+  {
+    "date": "2026-04-18",
+    "title": "Interview prep workspace",
+    "note": "Tailored practice answers and recruiter research now live beside each role."
+  },
+  {
+    "date": "2026-04-10",
+    "title": "Ghosted detection",
+    "note": "Automatic flagging of stalled conversations after 21 days with no response."
+  }
+]
