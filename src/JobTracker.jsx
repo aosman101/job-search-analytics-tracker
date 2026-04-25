@@ -91,14 +91,31 @@ function findNewlyGhosted(before, after) {
 // UI components
 // ---------------------------------------------------------------------------
 
-function Badge({ status }) {
+function Badge({ status, interviewStage }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG["Applied"];
+  const showStage = interviewStage && interviewStage !== "" && ["Rejected", "Withdrawn", "Ghosted"].includes(status);
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
-      {cfg.emoji} {status.toUpperCase()}
+      {cfg.emoji} {status.toUpperCase()}{showStage ? ` · ${interviewStage.toUpperCase()}` : ""}
     </span>
   );
 }
+
+// True if the application ever reached an interview (current Interview/Offer status,
+// or a stage was recorded even if it ended in Rejected/Ghosted/Withdrawn).
+function reachedInterview(a) {
+  return ["Interview", "Offer"].includes(a.status) || (a.interviewStage && a.interviewStage !== "");
+}
+
+// Map a stage label to a numeric depth — used for "furthest stage reached" comparisons.
+const STAGE_DEPTH = {
+  "": 0,
+  "1st Interview": 1,
+  "2nd Interview": 2,
+  "3rd Interview": 3,
+  "Home Assignment": 4,
+  "Final Interview": 5,
+};
 
 function Modal({ open, onClose, children }) {
   if (!open) return null;
@@ -147,11 +164,20 @@ function SectionCard({ title, subtitle, actions = null, children, style = {} }) 
 }
 
 function SankeyFunnel({ apps }) {
+  // "Ever reached this stage or beyond" — independent of current status, so rejected-after-interview still counts.
+  const reachedAtLeast = (depth) => apps.filter(a => {
+    const ownDepth = STAGE_DEPTH[a.interviewStage] || 0;
+    if (ownDepth >= depth) return true;
+    // Offer implies they passed at least the final-round stage; Interview alone implies 1st.
+    if (a.status === "Offer" && depth <= 5) return true;
+    if (a.status === "Interview" && depth <= 1) return true;
+    return false;
+  }).length;
   const stages = [
     { label: "Applied", count: apps.length, color: "#3B82F6" },
-    { label: "1st Interview", count: apps.filter(a => a.interviewStage && a.interviewStage !== "").length, color: "#8B5CF6" },
-    { label: "2nd+ Interview", count: apps.filter(a => ["2nd Interview","3rd Interview","Home Assignment","Final Interview"].includes(a.interviewStage)).length, color: "#EC4899" },
-    { label: "Final Round", count: apps.filter(a => ["Final Interview","Home Assignment"].includes(a.interviewStage)).length, color: "#F59E0B" },
+    { label: "1st Interview", count: reachedAtLeast(1), color: "#8B5CF6" },
+    { label: "2nd+ Interview", count: reachedAtLeast(2), color: "#EC4899" },
+    { label: "Final Round", count: reachedAtLeast(4), color: "#F59E0B" },
     { label: "Offer", count: apps.filter(a => a.status === "Offer").length, color: "#10B981" },
   ];
   const maxCount = stages[0].count || 1;
@@ -164,6 +190,7 @@ function SankeyFunnel({ apps }) {
           const barH = Math.max(8, (s.count / maxCount) * (H - 40));
           const y = (H - barH) / 2 + 10;
           const next = stages[i + 1];
+          const conversion = next && s.count > 0 ? Math.round((next.count / s.count) * 100) : null;
           return (
             <g key={s.label}>
               {next && (() => {
@@ -171,7 +198,14 @@ function SankeyFunnel({ apps }) {
                 const nextH = Math.max(8, (next.count / maxCount) * (H - 40));
                 const ny = (H - nextH) / 2 + 10;
                 const midX = (x + barW + nx) / 2;
-                return <path d={`M ${x+barW} ${y} C ${midX} ${y}, ${midX} ${ny}, ${nx} ${ny} L ${nx} ${ny+nextH} C ${midX} ${ny+nextH}, ${midX} ${y+barH}, ${x+barW} ${y+barH} Z`} fill={s.color} fillOpacity={0.15} />;
+                return (
+                  <>
+                    <path d={`M ${x+barW} ${y} C ${midX} ${y}, ${midX} ${ny}, ${nx} ${ny} L ${nx} ${ny+nextH} C ${midX} ${ny+nextH}, ${midX} ${y+barH}, ${x+barW} ${y+barH} Z`} fill={s.color} fillOpacity={0.15} />
+                    {conversion !== null && (
+                      <text x={midX} y={(y + barH/2 + ny + nextH/2) / 2} textAnchor="middle" fontSize={10} fontWeight={700} fill="#475569">{conversion}%</text>
+                    )}
+                  </>
+                );
               })()}
               <rect x={x} y={y} width={barW} height={barH} rx={6} fill={s.color} />
               <text x={x+barW/2} y={y-8} textAnchor="middle" fontSize={15} fontWeight={800} fill={s.color}>{s.count}</text>
@@ -482,12 +516,27 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const todayCount = apps.filter(a => a.dateApplied === today).length;
   const todayIsWeekend = isTodayWeekend();
   const responseRate = apps.length > 0 ? Math.round((apps.filter(a=>!["Applied","Ghosted"].includes(a.status)).length/apps.length)*100) : 0;
-  const interviewRate = apps.length > 0 ? Math.round((apps.filter(a=>["Interview","Offer"].includes(a.status)).length/apps.length)*100) : 0;
+  // Counts every app that ever reached an interview, even if it ended in Rejected/Ghosted/Withdrawn.
+  const interviewRate = apps.length > 0 ? Math.round((apps.filter(reachedInterview).length/apps.length)*100) : 0;
   const offerRate = apps.length > 0 ? Math.round((apps.filter(a=>a.status==="Offer").length/apps.length)*100) : 0;
   const ghostRate = apps.length > 0 ? Math.round((apps.filter(a=>a.status==="Ghosted").length/apps.length)*100) : 0;
   const activeApplications = apps.filter(a => !["Rejected","Ghosted","Withdrawn"].includes(a.status)).length;
   const recentApps = sorted.slice(0, 5);
-  const interviewQueue = sorted.filter(a => a.status === "Interview" || a.status === "Offer" || a.interviewStage).slice(0, 6);
+  // Queue is for active conversations only — exclude closed-out outcomes even if a stage was recorded.
+  const interviewQueue = sorted.filter(a => !["Rejected","Withdrawn","Ghosted"].includes(a.status) && (a.status === "Interview" || a.status === "Offer" || a.interviewStage)).slice(0, 6);
+
+  // Outcomes after reaching an interview — used for "Rejection by Stage" and time-to-rejection.
+  const rejectedApps = apps.filter(a => a.status === "Rejected");
+  const rejectionsByStage = rejectedApps.reduce((acc, a) => {
+    const key = a.interviewStage && a.interviewStage !== "" ? a.interviewStage : "No Interview";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const everInterviewedCount = apps.filter(reachedInterview).length;
+  const rejectionsWithDates = rejectedApps.filter(a => a.dateApplied);
+  const avgDaysToRejection = rejectionsWithDates.length > 0
+    ? Math.round(rejectionsWithDates.reduce((sum, a) => sum + daysSince(a.dateApplied), 0) / rejectionsWithDates.length)
+    : null;
   const atRiskApps = sorted.filter(a => {
     const remaining = daysUntilGhost(a);
     return remaining !== null && remaining > 0 && remaining <= 7;
@@ -792,7 +841,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                         <div style={{ fontWeight:700, color:"#111827", fontSize:14 }}>{app.company}</div>
                         <div style={{ color:"#64748B", fontSize:12 }}>{app.role} · {app.dateApplied}</div>
                       </div>
-                      <Badge status={app.status} />
+                      <Badge status={app.status} interviewStage={app.interviewStage} />
                     </div>
                   </div>
                 )) : <p style={{ margin:0, color:"#94A3B8", fontSize:13 }}>No applications yet.</p>}
@@ -861,8 +910,8 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                     <div style={{ flex:1 }}>
                       <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
                         <span style={{ fontWeight:700, fontSize:15, color:"#111827", fontFamily:"Georgia,serif" }}>{app.company}</span>
-                        <Badge status={app.status}/>
-                        {app.interviewStage&&<span style={{ fontSize:11, color:"#8B5CF6", fontWeight:600, background:"#F5F3FF", padding:"2px 8px", borderRadius:10, border:"1px solid #DDD6FE" }}>{app.interviewStage}</span>}
+                        <Badge status={app.status} interviewStage={app.interviewStage}/>
+                        {app.interviewStage && !["Rejected","Withdrawn","Ghosted"].includes(app.status) && <span style={{ fontSize:11, color:"#8B5CF6", fontWeight:600, background:"#F5F3FF", padding:"2px 8px", borderRadius:10, border:"1px solid #DDD6FE" }}>{app.interviewStage}</span>}
                         {isOverdue&&<span style={{ fontSize:10, color:"#F59E0B", fontWeight:700 }}>🔔 FOLLOW-UP DUE</span>}
                         {isOverdue && app.followUpStatus && (() => { const fs=FOLLOWUP_STATUS[app.followUpStatus]; return <span style={{ fontSize:10, fontWeight:700, color:fs.color, background:fs.bg, border:`1px solid ${fs.border}`, padding:"1px 7px", borderRadius:10 }}>{fs.emoji} {fs.label}</span>; })()}
                         {warningSoon&&<span style={{ fontSize:10, color:"#EA580C", fontWeight:700 }}>⏳ {dLeft}d to ghost</span>}
@@ -929,7 +978,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                       <div style={{ color:"#64748B", fontSize:12 }}>{app.role}{app.interviewStage ? ` · ${app.interviewStage}` : ""}</div>
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
-                      <Badge status={app.status} />
+                      <Badge status={app.status} interviewStage={app.interviewStage} />
                       <button onClick={() => setDetailId(app.id)} style={{ padding:"5px 10px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:8, cursor:"pointer", fontSize:11, fontWeight:700 }}>Open</button>
                     </div>
                   </div>
@@ -984,7 +1033,9 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                     {label:"Total Applied",value:apps.length,color:"#1F4E79",emoji:"📤"},
                     {label:"Response Rate",value:responseRate+"%",color:"#8B5CF6",emoji:"📬"},
                     {label:"Interview Rate",value:interviewRate+"%",color:"#3B82F6",emoji:"🗣️"},
+                    {label:"Reached Interview",value:everInterviewedCount,color:"#EC4899",emoji:"🎯"},
                     {label:"Offer Rate",value:offerRate+"%",color:"#10B981",emoji:"🎉"},
+                    {label:"Avg Days to Rejection",value:avgDaysToRejection===null?"—":`${avgDaysToRejection}d`,color:"#EF4444",emoji:"⏱️"},
                     {label:"Ghost Rate",value:ghostRate+"%",color:"#9CA3AF",emoji:"👻"},
                     {label:"Today",value:todaySummaryValue,color:todaySummaryColor,emoji:todaySummaryEmoji},
                   ].map(k=>(
@@ -1042,6 +1093,32 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                       </ResponsiveContainer>
                     )}
                   </div>
+                </div>
+
+                <div style={{ background:"#fff", borderRadius:14, padding:"18px 18px", marginBottom:14, boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1.5px solid #E5E7EB" }}>
+                  <h3 style={{ margin:"0 0 4px", color:"#1F4E79", fontSize:14, fontFamily:"Georgia,serif" }}>❌ Rejection by Stage</h3>
+                  <p style={{ margin:"0 0 14px", color:"#9CA3AF", fontSize:11 }}>Where rejections happen — spot stages where you tend to drop off.</p>
+                  {rejectedApps.length === 0 ? (
+                    <p style={{ margin:0, color:"#9CA3AF", fontSize:13 }}>No rejections logged yet.</p>
+                  ) : (
+                    ["No Interview", "1st Interview", "2nd Interview", "3rd Interview", "Home Assignment", "Final Interview"].map(stage => {
+                      const count = rejectionsByStage[stage] || 0;
+                      if (count === 0) return null;
+                      const pct = Math.round((count / rejectedApps.length) * 100);
+                      const color = stage === "No Interview" ? "#9CA3AF" : "#EF4444";
+                      return (
+                        <div key={stage} style={{ marginBottom:10 }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, fontWeight:600, marginBottom:4 }}>
+                            <span style={{ color:"#374151" }}>{stage}</span>
+                            <span style={{ color }}>{count} ({pct}%)</span>
+                          </div>
+                          <div style={{ background:"#F3F4F6", borderRadius:6, height:8, overflow:"hidden" }}>
+                            <div style={{ background:color, height:"100%", width:`${pct}%`, borderRadius:6, transition:"width 0.6s ease" }}/>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
 
                 <div style={{ background:"#fff", borderRadius:14, padding:"18px 18px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1.5px solid #E5E7EB" }}>
@@ -1154,8 +1231,8 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               <div style={{padding:"20px 26px 12px",borderBottom:"1px solid #F3F4F6"}}>
                 <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
                   <h2 style={{margin:0,fontSize:18,color:"#1F4E79",fontFamily:"Georgia,serif"}}>{a.company}</h2>
-                  <Badge status={a.status}/>
-                  {a.interviewStage&&<span style={{fontSize:11,color:"#8B5CF6",fontWeight:600,background:"#F5F3FF",padding:"2px 8px",borderRadius:10,border:"1px solid #DDD6FE"}}>{a.interviewStage}</span>}
+                  <Badge status={a.status} interviewStage={a.interviewStage}/>
+                  {a.interviewStage && !["Rejected","Withdrawn","Ghosted"].includes(a.status) && <span style={{fontSize:11,color:"#8B5CF6",fontWeight:600,background:"#F5F3FF",padding:"2px 8px",borderRadius:10,border:"1px solid #DDD6FE"}}>{a.interviewStage}</span>}
                 </div>
                 <p style={{margin:"4px 0 0",color:"#6B7280",fontSize:13}}>{a.role}{a.location?` · ${a.location}`:""}</p>
                 {dLeft!==null&&dLeft<=7&&dLeft>0&&<p style={{margin:"6px 0 0",fontSize:12,color:"#EA580C",fontWeight:600}}>⏳ Auto-ghosted in {dLeft} day{dLeft!==1?"s":""} if no update</p>}
