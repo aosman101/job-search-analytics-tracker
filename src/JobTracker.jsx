@@ -14,7 +14,7 @@ import {
 } from "./storage";
 import { applyStatusTransition, autoGhost, findNewlyGhosted, normalizeApplications } from "./utils/applicationLifecycle";
 import { buildTrackerMetrics, daysUntilGhost, reachedInterview } from "./utils/applicationMetrics";
-import { daysSince, isWeekend, todayISO } from "./utils/dates";
+import { addDays, daysSince, isWeekend, todayISO } from "./utils/dates";
 
 const InterviewPrep = lazy(() => import("./InterviewPrep"));
 const AnalyticsView = lazy(() => import("./features/analytics/AnalyticsView"));
@@ -325,6 +325,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
       return {
         ...a,
         followUpStatus,
+        followUpDate: ["messaged", "email_instead"].includes(followUpStatus) ? addDays(now, 7) : "",
         updatedAt: now,
         followUpHistory: [
           {
@@ -900,129 +901,9 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         )}
 
         {activeTab === "Analytics" && (
-          <>
-            {apps.length===0 ? (
-              <div style={{ background:"#fff", borderRadius:14, padding:"60px 24px", textAlign:"center", border:"1.5px dashed #E5E7EB" }}>
-                <p style={{ fontSize:40, margin:"0 0 10px" }}>📊</p>
-                <p style={{ color:"#9CA3AF", fontSize:14 }}>Add applications to see your analytics.</p>
-              </div>
-            ) : (
-              <>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))", gap:12, marginBottom:18 }}>
-                  {[
-                    {label:"Total Applied",value:apps.length,color:"#1F4E79",emoji:"📤"},
-                    {label:"Response Rate",value:responseRate+"%",color:"#8B5CF6",emoji:"📬"},
-                    {label:"Interview Rate",value:interviewRate+"%",color:"#3B82F6",emoji:"🗣️"},
-                    {label:"Reached Interview",value:everInterviewedCount,color:"#EC4899",emoji:"🎯"},
-                    {label:"Offer Rate",value:offerRate+"%",color:"#10B981",emoji:"🎉"},
-                    {label:"Avg Days to Rejection",value:avgDaysToRejection===null?"—":`${avgDaysToRejection}d`,color:"#EF4444",emoji:"⏱️"},
-                    {label:"Ghost Rate",value:ghostRate+"%",color:"#9CA3AF",emoji:"👻"},
-                    {label:"Today",value:todaySummaryValue,color:todaySummaryColor,emoji:todaySummaryEmoji},
-                  ].map(k=>(
-                    <div key={k.label} style={{ background:"#fff", borderRadius:13, padding:"16px 12px", textAlign:"center", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1.5px solid #E5E7EB" }}>
-                      <div style={{ fontSize:20 }}>{k.emoji}</div>
-                      <div style={{ fontSize:22, fontWeight:800, color:k.color, fontFamily:"Georgia,serif", margin:"4px 0 2px" }}>{k.value}</div>
-                      <div style={{ fontSize:9, fontWeight:700, color:"#9CA3AF", letterSpacing:"0.05em" }}>{k.label.toUpperCase()}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ background:"#fff", borderRadius:14, padding:"18px 18px", marginBottom:14, boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1.5px solid #E5E7EB" }}>
-                  <h3 style={{ margin:"0 0 12px", color:"#1F4E79", fontSize:14, fontFamily:"Georgia,serif" }}>📆 Daily Activity — Last 7 Days</h3>
-                  <ResponsiveContainer width="100%" height={150}>
-                    <BarChart data={last7} margin={{top:10,right:10,left:-20,bottom:0}}>
-                      <XAxis dataKey="day" tick={{fontSize:11}}/>
-                      <YAxis tick={{fontSize:11}} allowDecimals={false}/>
-                      <Tooltip/>
-                      <Bar dataKey="count" name="Applications logged" radius={[5,5,0,0]}>
-                        {last7.map((e,i)=><Cell key={i} fill={e.weekend ? "#D1D5DB" : e.count >= 3 ? "#10B981" : e.count > 0 ? "#3B82F6" : "#E5E7EB"}/>)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <p style={{ margin:"6px 0 0", fontSize:11, color:"#9CA3AF", textAlign:"center" }}>🟢 Higher activity · 🔵 Activity logged · ⬜ No applications · ▪️ Weekend</p>
-                </div>
-
-                <div style={{ background:"#fff", borderRadius:14, padding:"18px 18px", marginBottom:14, boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1.5px solid #E5E7EB" }}>
-                  <h3 style={{ margin:"0 0 12px", color:"#1F4E79", fontSize:15, fontFamily:"Georgia,serif" }}>🔽 Application Funnel</h3>
-                  <SankeyFunnel apps={apps}/>
-                  <p style={{ margin:"8px 0 0", fontSize:11, color:"#9CA3AF", textAlign:"center" }}>Set "Interview Stage" on each application to populate the funnel accurately.</p>
-                </div>
-
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:14, marginBottom:14 }}>
-                  <div style={{ background:"#fff", borderRadius:14, padding:"16px 14px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1.5px solid #E5E7EB" }}>
-                    <h3 style={{ margin:"0 0 10px", color:"#1F4E79", fontSize:13, fontFamily:"Georgia,serif" }}>🥧 Status Breakdown</h3>
-                    <ResponsiveContainer width="100%" height={190}>
-                      <PieChart>
-                        <Pie data={statusCounts} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} labelLine={false} label={({name,value})=>value>0?`${name} (${value})`:""}>
-                          {statusCounts.map((e,i)=><Cell key={i} fill={e.color}/>)}
-                        </Pie>
-                        <Tooltip/>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div style={{ background:"#fff", borderRadius:14, padding:"16px 14px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1.5px solid #E5E7EB" }}>
-                    <h3 style={{ margin:"0 0 10px", color:"#1F4E79", fontSize:13, fontFamily:"Georgia,serif" }}>📅 Applications by Month</h3>
-                    {monthData.length===0?<p style={{color:"#9CA3AF",fontSize:12,textAlign:"center",paddingTop:40}}>No date data yet.</p>:(
-                      <ResponsiveContainer width="100%" height={190}>
-                        <BarChart data={monthData} margin={{top:10,right:10,left:-20,bottom:0}}>
-                          <XAxis dataKey="month" tick={{fontSize:10}}/>
-                          <YAxis tick={{fontSize:10}} allowDecimals={false}/>
-                          <Tooltip/>
-                          <Bar dataKey="count" fill="#3B82F6" radius={[5,5,0,0]} name="Applications"/>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ background:"#fff", borderRadius:14, padding:"18px 18px", marginBottom:14, boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1.5px solid #E5E7EB" }}>
-                  <h3 style={{ margin:"0 0 4px", color:"#1F4E79", fontSize:14, fontFamily:"Georgia,serif" }}>❌ Rejection by Stage</h3>
-                  <p style={{ margin:"0 0 14px", color:"#9CA3AF", fontSize:11 }}>Where rejections happen — spot stages where you tend to drop off.</p>
-                  {rejectedApps.length === 0 ? (
-                    <p style={{ margin:0, color:"#9CA3AF", fontSize:13 }}>No rejections logged yet.</p>
-                  ) : (
-                    ["No Interview", "1st Interview", "2nd Interview", "3rd Interview", "Home Assignment", "Final Interview"].map(stage => {
-                      const count = rejectionsByStage[stage] || 0;
-                      if (count === 0) return null;
-                      const pct = Math.round((count / rejectedApps.length) * 100);
-                      const color = stage === "No Interview" ? "#9CA3AF" : "#EF4444";
-                      return (
-                        <div key={stage} style={{ marginBottom:10 }}>
-                          <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, fontWeight:600, marginBottom:4 }}>
-                            <span style={{ color:"#374151" }}>{stage}</span>
-                            <span style={{ color }}>{count} ({pct}%)</span>
-                          </div>
-                          <div style={{ background:"#F3F4F6", borderRadius:6, height:8, overflow:"hidden" }}>
-                            <div style={{ background:color, height:"100%", width:`${pct}%`, borderRadius:6, transition:"width 0.6s ease" }}/>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-                <div style={{ background:"#fff", borderRadius:14, padding:"18px 18px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1.5px solid #E5E7EB" }}>
-                  <h3 style={{ margin:"0 0 14px", color:"#1F4E79", fontSize:14, fontFamily:"Georgia,serif" }}>📊 Outcome Breakdown</h3>
-                  {Object.keys(STATUS_CONFIG).map(s=>{
-                    const count=apps.filter(a=>a.status===s).length;
-                    const pct=apps.length>0?(count/apps.length)*100:0;
-                    const cfg=STATUS_CONFIG[s];
-                    return (
-                      <div key={s} style={{marginBottom:10}}>
-                        <div style={{display:"flex",justifyContent:"space-between",fontSize:12,fontWeight:600,marginBottom:4}}>
-                          <span style={{color:"#374151"}}>{cfg.emoji} {s}</span>
-                          <span style={{color:cfg.color}}>{count} ({Math.round(pct)}%)</span>
-                        </div>
-                        <div style={{background:"#F3F4F6",borderRadius:6,height:8,overflow:"hidden"}}>
-                          <div style={{background:cfg.color,height:"100%",width:`${pct}%`,borderRadius:6,transition:"width 0.6s ease"}}/>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </>
+          <Suspense fallback={<div style={{ textAlign: "center", padding: 40, color: "#6B7280" }}>Loading analytics...</div>}>
+            <AnalyticsView apps={apps} />
+          </Suspense>
         )}
 
         {activeTab === "Interview Prep" && (
