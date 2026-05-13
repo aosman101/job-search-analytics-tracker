@@ -322,10 +322,12 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     const updated = apps.map(a => {
       if (a.id !== id) return a;
       const history = Array.isArray(a.followUpHistory) ? a.followUpHistory : [];
+      const nextFollowUpDate = ["messaged", "email_instead"].includes(followUpStatus) ? addDays(now, 7) : "";
       return {
         ...a,
-        followUpStatus,
-        followUpDate: ["messaged", "email_instead"].includes(followUpStatus) ? addDays(now, 7) : "",
+        followUpStatus: nextFollowUpDate ? "" : followUpStatus,
+        lastFollowUpStatus: followUpStatus,
+        followUpDate: nextFollowUpDate,
         updatedAt: now,
         followUpHistory: [
           {
