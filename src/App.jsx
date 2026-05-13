@@ -1,9 +1,7 @@
 import { Suspense, lazy, useState } from "react";
 import {
-  AUTH_SESSION_DATA_KEY,
   AUTH_SESSION_KEY,
-  AUTH_USERNAME,
-  readSessionApps,
+  readUnlockedSession,
   unlockSeed,
 } from "./auth";
 import changelog from "./data/changelog.json";
@@ -20,16 +18,15 @@ function formatChangelogDate(value) {
   return CHANGELOG_DATE_FORMATTER.format(parsed);
 }
 
-const sessionApps = readSessionApps();
 const JobTracker = lazy(() => import("./JobTracker"));
 
 export default function App() {
-  const [username, setUsername] = useState(AUTH_USERNAME);
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [apps, setApps] = useState(sessionApps ?? []);
-  const [authenticated, setAuthenticated] = useState(Boolean(sessionApps));
+  const [apps, setApps] = useState([]);
+  const [authenticated, setAuthenticated] = useState(readUnlockedSession);
 
   async function handleLogin(event) {
     event.preventDefault();
@@ -41,8 +38,6 @@ export default function App() {
       const nextApps = Array.isArray(payload?.apps) ? payload.apps : [];
 
       sessionStorage.setItem(AUTH_SESSION_KEY, "unlocked");
-      sessionStorage.setItem(AUTH_SESSION_DATA_KEY, JSON.stringify(nextApps));
-
       setApps(nextApps);
       setAuthenticated(true);
       setPassword("");
@@ -55,7 +50,6 @@ export default function App() {
 
   function handleLogout() {
     sessionStorage.removeItem(AUTH_SESSION_KEY);
-    sessionStorage.removeItem(AUTH_SESSION_DATA_KEY);
     setApps([]);
     setAuthenticated(false);
     setPassword("");
@@ -75,25 +69,40 @@ export default function App() {
       <section className="login-layout">
         <div className="login-panel">
           <p className="eyebrow">Private Dashboard</p>
-          <h1 className="login-title">Adil&apos;s Job Tracker</h1>
+          <h1 className="login-title">Job Search Command Centre</h1>
           <p className="login-copy">
-            Unlock the dashboard to decrypt the embedded seed data, load your
-            tracker, and continue working from browser storage.
+            A private local-first workspace for tracking applications, follow-ups,
+            interview stages, outcomes, and preparation material in one place.
           </p>
 
           <div className="info-grid">
             <article className="info-card">
-              <span className="info-label">Privacy First</span>
-              <strong>Your data never leaves this device</strong>
+              <span className="info-label">Storage Model</span>
+              <strong>Browser-first with exportable backups</strong>
             </article>
             <article className="info-card">
-              <span className="info-label">Offline Ready</span>
-              <strong>Works with zero server round-trips</strong>
+              <span className="info-label">Workflow</span>
+              <strong>Pipeline, follow-ups, prep, and analytics</strong>
             </article>
             <article className="info-card">
-              <span className="info-label">Hosting Target</span>
-              <strong>GitHub Pages ready</strong>
+              <span className="info-label">Access</span>
+              <strong>Username and password unlock required</strong>
             </article>
+          </div>
+
+          <div className="metric-strip" aria-label="Tracker capabilities">
+            <div>
+              <strong>Lifecycle Metrics</strong>
+              <span>Response, interview, offer, rejection timing</span>
+            </div>
+            <div>
+              <strong>Pipeline Risk</strong>
+              <span>Due follow-ups and ghost-risk detection</span>
+            </div>
+            <div>
+              <strong>Interview Practice</strong>
+              <span>Role-specific Q&amp;A and study guides</span>
+            </div>
           </div>
 
           <div className="preview-section">
@@ -102,29 +111,29 @@ export default function App() {
               <li>
                 <span className="preview-dot" aria-hidden="true" />
                 <div>
-                  <strong>Application pipeline</strong>
-                  <span>Statuses, follow-up nudges, and a ghosted-lead detector in one board.</span>
+                  <strong>Application operating view</strong>
+                  <span>Every role has a clear status, follow-up date, notes, contacts, and lifecycle history.</span>
                 </div>
               </li>
               <li>
                 <span className="preview-dot" aria-hidden="true" />
                 <div>
-                  <strong>Interview prep workspace</strong>
-                  <span>Tailored practice answers and recruiter research living next to each role.</span>
+                  <strong>Interview readiness</strong>
+                  <span>Prep material connects to active interviews so study time follows the live pipeline.</span>
                 </div>
               </li>
               <li>
                 <span className="preview-dot" aria-hidden="true" />
                 <div>
-                  <strong>Resilient local storage</strong>
-                  <span>Browser-first persistence with an encrypted export so your data travels with you.</span>
+                  <strong>Resilient storage</strong>
+                  <span>IndexedDB primary storage, local backup, import/export, and corrupt-data recovery.</span>
                 </div>
               </li>
               <li>
                 <span className="preview-dot" aria-hidden="true" />
                 <div>
-                  <strong>Hand-built single page</strong>
-                  <span>React and Vite, no backend, deployed straight from a GitHub repo.</span>
+                  <strong>Static private utility</strong>
+                  <span>No server database. The unlock gate decrypts starter data and protects casual access.</span>
                 </div>
               </li>
             </ul>
@@ -149,7 +158,11 @@ export default function App() {
         </div>
 
         <form className="login-card" onSubmit={handleLogin}>
-          <p className="card-kicker">App Access</p>
+          <p className="card-kicker">Secure Access</p>
+          <h2 className="auth-heading">Unlock your tracker</h2>
+          <p className="auth-intro">
+            Enter your credentials to decrypt the starter dataset and open the local dashboard.
+          </p>
           <label className="field-label" htmlFor="username">
             Username
           </label>
@@ -180,8 +193,8 @@ export default function App() {
           </button>
 
           <p className="auth-note">
-            This is still a static site. The login gate protects the encrypted
-            seed data client-side, but it is not equivalent to server-side auth.
+            This is a static personal app. The login protects encrypted seed data
+            client-side; ongoing tracker data remains in your browser storage.
           </p>
         </form>
       </section>

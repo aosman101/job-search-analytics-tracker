@@ -1,6 +1,7 @@
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { GHOST_DAYS, STATUS_CONFIG } from "../../constants";
 import { STAGE_DEPTH, buildTrackerMetrics } from "../../utils/applicationMetrics";
+import { daysSince } from "../../utils/dates";
 
 function SectionCard({ title, subtitle, actions = null, children, style = {} }) {
   return (
@@ -88,13 +89,6 @@ function rankBy(apps, key) {
 export default function AnalyticsView({ apps }) {
   const metrics = buildTrackerMetrics(apps);
   const stageOrder = ["No Interview", "1st Interview", "2nd Interview", "3rd Interview", "Home Assignment", "Final Interview"];
-  const agingBuckets = [
-    { label: "0-7d", count: apps.filter((app) => metrics.today && app.dateApplied && app.status !== "Rejected" && app.status !== "Withdrawn" && app.status !== "Ghosted" && app.status !== "Offer" && metrics.today >= app.dateApplied && app.dateApplied >= metrics.today).length },
-  ];
-  const activeAging = [
-    { label: "0-7 days", count: apps.filter((app) => !["Rejected", "Withdrawn", "Ghosted", "Offer"].includes(app.status) && app.dateApplied && app.dateApplied >= metrics.today.slice(0, 8)).length },
-    { label: "8-14 days", count: apps.filter((app) => !["Rejected", "Withdrawn", "Ghosted", "Offer"].includes(app.status) && app.dateApplied && app.dateApplied < metrics.today.slice(0, 8)).length },
-  ];
   const roleFocus = rankBy(apps, "role");
   const locationFocus = rankBy(apps, "location");
   const followUpHistory = apps.flatMap((app) => app.followUpHistory || []);
@@ -104,6 +98,13 @@ export default function AnalyticsView({ apps }) {
     acc[method] = (acc[method] || 0) + 1;
     return acc;
   }, {})).map(([method, count]) => ({ method, count }));
+  const openApps = apps.filter((app) => !["Rejected", "Withdrawn", "Ghosted", "Offer"].includes(app.status));
+  const agingBuckets = [
+    { label: "0-7 days", count: openApps.filter((app) => daysSince(app.dateApplied) <= 7).length, color: "#10B981" },
+    { label: "8-14 days", count: openApps.filter((app) => daysSince(app.dateApplied) > 7 && daysSince(app.dateApplied) <= 14).length, color: "#3B82F6" },
+    { label: "15-21 days", count: openApps.filter((app) => daysSince(app.dateApplied) > 14 && daysSince(app.dateApplied) <= 21).length, color: "#F59E0B" },
+    { label: "22+ days", count: openApps.filter((app) => daysSince(app.dateApplied) > 21).length, color: "#EF4444" },
+  ];
 
   if (apps.length === 0) {
     return (
@@ -220,6 +221,25 @@ export default function AnalyticsView({ apps }) {
           })}
         </SectionCard>
 
+        <SectionCard title="Active Application Age" subtitle="How long open items have been waiting.">
+          {agingBuckets.map((bucket) => {
+            const pct = openApps.length > 0 ? Math.round((bucket.count / openApps.length) * 100) : 0;
+            return (
+              <div key={bucket.label} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                  <span style={{ color: "#374151" }}>{bucket.label}</span>
+                  <span style={{ color: bucket.color }}>{bucket.count} ({pct}%)</span>
+                </div>
+                <div style={{ background: "#F3F4F6", borderRadius: 6, height: 8, overflow: "hidden" }}>
+                  <div style={{ background: bucket.color, height: "100%", width: `${pct}%`, borderRadius: 6 }} />
+                </div>
+              </div>
+            );
+          })}
+        </SectionCard>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 14 }}>
         <SectionCard title="Follow-Up Effectiveness" subtitle="Completed follow-ups by channel.">
           {followUpByMethod.length === 0 ? (
             <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>No follow-up history logged yet.</p>
@@ -234,9 +254,7 @@ export default function AnalyticsView({ apps }) {
             </ResponsiveContainer>
           )}
         </SectionCard>
-      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 14 }}>
         <SectionCard title="Role Concentration" subtitle="Where most applications are going.">
           {roleFocus.length > 0 ? roleFocus.map(([role, count]) => (
             <div key={role} style={{ display: "flex", justifyContent: "space-between", gap: 12, borderBottom: "1px solid #F1F5F9", padding: "9px 0", fontSize: 13 }}>

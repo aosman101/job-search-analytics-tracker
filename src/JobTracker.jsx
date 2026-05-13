@@ -13,7 +13,7 @@ import {
   storeCorruptPayload,
 } from "./storage";
 import { applyStatusTransition, autoGhost, findNewlyGhosted, normalizeApplications } from "./utils/applicationLifecycle";
-import { buildTrackerMetrics, daysUntilGhost, reachedInterview } from "./utils/applicationMetrics";
+import { buildTrackerMetrics, daysUntilGhost } from "./utils/applicationMetrics";
 import { addDays, daysSince, isWeekend, todayISO } from "./utils/dates";
 
 const InterviewPrep = lazy(() => import("./InterviewPrep"));
@@ -273,7 +273,11 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     const isEdit = editId !== null;
     const now = todayISO();
     const updated = isEdit
-      ? apps.map(a => a.id === editId ? normalizeApplications([{ ...a, ...form, id: a.id, autoGhosted: false, updatedAt: now }], now)[0] : a)
+      ? apps.map(a => {
+        if (a.id !== editId) return a;
+        const merged = normalizeApplications([{ ...a, ...form, id: a.id, autoGhosted: false, updatedAt: now }], now)[0];
+        return a.status !== form.status ? applyStatusTransition({ ...merged, status: a.status }, form.status, now) : merged;
+      })
       : [normalizeApplications([{ ...form, id: nextId(), autoGhosted: false, createdAt: form.dateApplied || now, updatedAt: now, statusUpdatedAt: now }], now)[0], ...apps];
     setApps(updated);
     setForm(EMPTY_FORM);
@@ -935,6 +939,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
             <Field label="Interview Stage" value={form.interviewStage} onChange={f("interviewStage")} as="select" options={INTERVIEW_STAGES}/>
             <Field label="Job URL" value={form.jobUrl} onChange={f("jobUrl")} placeholder="https://..."/>
             <Field label="Follow-Up Date" value={form.followUpDate} onChange={f("followUpDate")} type="date"/>
+            <Field label="Follow-Up Note" value={form.followUpNote} onChange={f("followUpNote")} placeholder="What should you mention next?"/>
 
             {/* Hiring Manager — inline availability dropdown */}
             <div style={{marginBottom:13}}>
@@ -1019,6 +1024,22 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                     ))}
                   </div>
                 </div>}
+                {Array.isArray(a.followUpHistory) && a.followUpHistory.length > 0 && (
+                  <div style={{gridColumn:"1/-1"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:"0.06em",marginBottom:6}}>FOLLOW-UP HISTORY</div>
+                    <div style={{display:"grid",gap:6}}>
+                      {a.followUpHistory.slice(0, 5).map((item) => (
+                        <div key={item.id || `${item.date}-${item.method}`} style={{background:"#F8FAFC",border:"1px solid #E2E8F0",borderRadius:8,padding:"8px 10px"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap",fontSize:12,fontWeight:700,color:"#334155"}}>
+                            <span>{item.method || "Follow-up"} · {item.outcome || "Recorded"}</span>
+                            <span style={{color:"#64748B"}}>{item.date}</span>
+                          </div>
+                          {item.note && <div style={{marginTop:4,fontSize:12,color:"#64748B",lineHeight:1.5}}>{item.note}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {a.notes&&<div style={{gridColumn:"1/-1"}}><div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:"0.06em",marginBottom:4}}>NOTES</div><div style={{fontSize:13,color:"#374151",lineHeight:1.6,background:"#F9FAFB",borderRadius:8,padding:"10px 12px"}}>{a.notes}</div></div>}
               </div>
               <div style={{padding:"8px 26px 20px",display:"flex",gap:10,justifyContent:"flex-end"}}>

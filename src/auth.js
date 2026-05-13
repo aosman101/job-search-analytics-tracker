@@ -2,7 +2,6 @@ import secureSeed from "./secureSeed.json";
 
 export const AUTH_USERNAME = "aosman1017";
 export const AUTH_SESSION_KEY = "adil-job-tracker-session";
-export const AUTH_SESSION_DATA_KEY = "adil-job-tracker-session-data";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -72,12 +71,10 @@ export function getSecureSeedCount() {
   return secureSeed.seedCount ?? 0;
 }
 
-export function readSessionApps() {
+export function readUnlockedSession() {
   try {
-    const raw = sessionStorage.getItem(AUTH_SESSION_DATA_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    return Array.isArray(parsed) ? parsed : null;
+    return sessionStorage.getItem(AUTH_SESSION_KEY) === "unlocked";
   } catch (_) {
-    return null;
+    return false;
   }
 }

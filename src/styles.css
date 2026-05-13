@@ -127,7 +127,7 @@ a:focus-visible {
   font-family: "Fraunces", Georgia, serif;
   font-size: clamp(2.3rem, 4vw, 4rem);
   line-height: 0.98;
-  max-width: 10ch;
+  max-width: 13ch;
 }
 
 .login-copy {
@@ -164,6 +164,37 @@ a:focus-visible {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.metric-strip {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.metric-strip div {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(31, 78, 121, 0.08);
+}
+
+.metric-strip strong,
+.metric-strip span {
+  display: block;
+}
+
+.metric-strip strong {
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.metric-strip span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
 }
 
 .preview-section {
@@ -273,6 +304,20 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.auth-heading {
+  margin: 0 0 6px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.8rem;
+  color: var(--ink);
+}
+
+.auth-intro {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.6;
 }
 
 .field-label {

@@ -448,6 +448,154 @@ const ROLE_PATTERNS = {
   AE: [/analytics\s*engineer/i, /dbt/i, /analytic.*engineer/i],
 };
 
+const PRACTICE_BANK = [
+  {
+    id: "recruiter-screen",
+    title: "Recruiter Screen",
+    emoji: "☎️",
+    color: "#1F4E79",
+    prompts: [
+      {
+        question: "Walk me through your background in two minutes.",
+        framework: "Present → proof → direction.",
+        keyPoints: ["First Class BSc", "Junior Data Engineer experience", "TfL production-pattern project", "What role you want next"],
+        strongAnswer: "Start with your current positioning as a London-based data engineer, then give one quantified work example, one portfolio example, and close with why the role direction fits.",
+        mistakes: ["Listing every project", "Going too deep technically", "Forgetting to say what you want next"],
+      },
+      {
+        question: "Why are you leaving / what are you looking for?",
+        framework: "Growth-focused, never negative.",
+        keyPoints: ["Larger production systems", "Clear data engineering ownership", "Mentorship plus delivery", "Long-term technical growth"],
+        strongAnswer: "Frame it as wanting a role where you can own reliable pipelines end to end, keep building with dbt/Airflow/cloud warehouses, and work with a team that values data quality.",
+        mistakes: ["Sounding apologetic", "Over-explaining", "Focusing only on tools rather than impact"],
+      },
+      {
+        question: "What salary range are you targeting?",
+        framework: "Range → flexibility → fit.",
+        keyPoints: ["Know your researched range", "Mention total package", "Keep the conversation open"],
+        strongAnswer: "Give a researched range for London data roles, then say you are flexible depending on scope, growth, and total package.",
+        mistakes: ["Giving no range at all", "Undervaluing yourself", "Sounding rigid before knowing the role"],
+      },
+    ],
+  },
+  {
+    id: "behavioral-star",
+    title: "Behavioral STAR",
+    emoji: "🤝",
+    color: "#EC4899",
+    prompts: [
+      {
+        question: "Tell me about a time you handled ambiguity.",
+        framework: "STAR with a decision log.",
+        keyPoints: ["Unclear requirement", "Questions you asked", "Assumptions documented", "Measured result"],
+        strongAnswer: "Use the TfL app or HQ dashboard work. Show how you converted a vague need into clear data requirements, then delivered a usable outcome.",
+        mistakes: ["Skipping the ambiguity", "Only describing the final solution", "No result metric"],
+      },
+      {
+        question: "Tell me about a time something failed.",
+        framework: "Failure → diagnosis → correction → prevention.",
+        keyPoints: ["What broke", "How you found root cause", "What changed afterward", "What you learned"],
+        strongAnswer: "Pick a pipeline/API/schema issue. The strongest version includes monitoring, tests, or documentation added afterward.",
+        mistakes: ["Blaming the tool", "Pretending nothing really failed", "No prevention step"],
+      },
+      {
+        question: "Describe a time you influenced someone without authority.",
+        framework: "Context → trust → evidence → outcome.",
+        keyPoints: ["Stakeholder need", "Evidence shown", "Trade-off explained", "Decision changed"],
+        strongAnswer: "Use mentorship or dashboard examples where you helped others adopt a better data practice by making the benefit clear.",
+        mistakes: ["Making it sound like an argument", "No stakeholder perspective", "No outcome"],
+      },
+    ],
+  },
+  {
+    id: "technical-sql-python",
+    title: "SQL & Python Drill",
+    emoji: "🧪",
+    color: "#3B82F6",
+    prompts: [
+      {
+        question: "Find the latest application status per company from an events table.",
+        framework: "Clarify grain → window function → filter row_number = 1.",
+        keyPoints: ["Partition by company", "Order by event timestamp desc", "Handle ties", "Return stable columns"],
+        strongAnswer: "Use ROW_NUMBER() OVER (PARTITION BY company ORDER BY event_ts DESC, event_id DESC) and filter to rn = 1.",
+        mistakes: ["Using MAX(status)", "Ignoring duplicate timestamps", "Not clarifying whether company or application is the grain"],
+      },
+      {
+        question: "Clean a CSV with inconsistent dates, duplicated IDs, and missing values in pandas.",
+        framework: "Profile → standardise → deduplicate → validate.",
+        keyPoints: ["pd.to_datetime(errors='coerce')", "drop_duplicates with subset/order", "missing value policy", "assertions"],
+        strongAnswer: "Describe a small pipeline with explicit parsing, duplicate rules, missing-value treatment, and validation checks before export.",
+        mistakes: ["Blind dropna", "No audit of rows removed", "No validation at the end"],
+      },
+      {
+        question: "How would you optimise a slow SQL query?",
+        framework: "Measure → inspect plan → reduce data → improve joins/indexes.",
+        keyPoints: ["EXPLAIN plan", "Filters before joins", "Partition pruning", "Indexes/clustering", "Avoid SELECT *"],
+        strongAnswer: "Start by reproducing and measuring, inspect the query plan, identify scans/shuffles, then choose indexing, partitioning, materialisation, or query rewrite based on evidence.",
+        mistakes: ["Guessing indexes first", "Not measuring", "Optimising readability away"],
+      },
+    ],
+  },
+  {
+    id: "system-design",
+    title: "System Design",
+    emoji: "🏗️",
+    color: "#F59E0B",
+    prompts: [
+      {
+        question: "Design a job application analytics pipeline for a recruitment platform.",
+        framework: "Sources → ingestion → storage → transformations → serving → quality.",
+        keyPoints: ["Events from app tracking", "Batch vs streaming", "Warehouse schema", "Funnel metrics", "PII handling", "Data quality checks"],
+        strongAnswer: "Clarify volume and latency first, then propose raw event capture, warehouse modelling, dbt marts for funnel analytics, and observability around freshness and schema drift.",
+        mistakes: ["Jumping straight to tools", "Ignoring PII", "No data quality or backfill story"],
+      },
+      {
+        question: "Design a CDC pipeline from Postgres to an analytics database.",
+        framework: "Capture → broker → consume → model → recover.",
+        keyPoints: ["WAL/Debezium", "Kafka/Redpanda", "Idempotent consumer", "SCD2", "Replay/backfill"],
+        strongAnswer: "Use your StreamShop example: Postgres WAL through Debezium, brokered events, consumer into ClickHouse, dbt models for current-state and history, plus schema contracts.",
+        mistakes: ["No ordering semantics", "No replay plan", "Treating deletes as an afterthought"],
+      },
+      {
+        question: "Design monitoring for a critical executive dashboard.",
+        framework: "Freshness → volume → distribution → lineage → alerting.",
+        keyPoints: ["SLA", "Source checks", "dbt tests", "Anomaly detection", "Ownership", "Incident runbook"],
+        strongAnswer: "Define what 'healthy' means first. Then layer checks at ingestion, transformation, and mart levels with clear alert ownership.",
+        mistakes: ["Only dashboard-level checks", "No owner", "No severity levels"],
+      },
+    ],
+  },
+  {
+    id: "take-home-final",
+    title: "Take-Home & Final Round",
+    emoji: "🏁",
+    color: "#10B981",
+    prompts: [
+      {
+        question: "Walk us through your take-home solution.",
+        framework: "Requirement → assumptions → architecture → trade-offs → next steps.",
+        keyPoints: ["Repeat the brief", "Call out assumptions", "Show tests", "Explain trade-offs", "Discuss improvements"],
+        strongAnswer: "Lead with how you interpreted the brief, then show the simplest working design, the checks you added, and what you would improve with more time.",
+        mistakes: ["Only demoing code", "No trade-offs", "No tests or validation"],
+      },
+      {
+        question: "What would you do in your first 90 days?",
+        framework: "Learn → contribute → own.",
+        keyPoints: ["First 30: understand systems", "60: deliver scoped improvements", "90: own a workflow", "Communicate clearly"],
+        strongAnswer: "Make the answer specific to data work: understand lineage, SLAs, stakeholders, pain points, then take ownership of a measurable improvement.",
+        mistakes: ["Generic enthusiasm", "No learning period", "Promising too much too soon"],
+      },
+      {
+        question: "Why should we hire you over another candidate?",
+        framework: "Evidence, not adjectives.",
+        keyPoints: ["Production-pattern projects", "Measured work impact", "Mentorship", "Communication", "Learning speed"],
+        strongAnswer: "Position yourself as someone who can build, explain, and operate data systems, using the quantified work and portfolio evidence you already have.",
+        mistakes: ["Sounding arrogant", "No proof", "Comparing yourself negatively to others"],
+      },
+    ],
+  },
+];
+
 function detectRoleType(roleTitle) {
   if (!roleTitle) return null;
   for (const [type, patterns] of Object.entries(ROLE_PATTERNS)) {
@@ -673,6 +821,52 @@ function StageCard({ stage, company, role }) {
   );
 }
 
+function PracticePromptCard({ prompt, index, color }) {
+  const [open, setOpen] = useState(index === 0);
+  return (
+    <div style={{ border: "1.5px solid #E5E7EB", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{ width: "100%", padding: "13px 16px", border: "none", background: open ? "#F8FAFC" : "#fff", cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", gap: 12 }}
+      >
+        <div>
+          <div style={{ fontSize: 11, color, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>Prompt {index + 1}</div>
+          <div style={{ marginTop: 4, fontSize: 14, color: "#111827", fontWeight: 800 }}>{prompt.question}</div>
+        </div>
+        <span style={{ color: "#94A3B8", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▼</span>
+      </button>
+      {open && (
+        <div style={{ padding: "0 16px 16px", display: "grid", gap: 10 }}>
+          <div style={{ background: `${color}10`, border: `1px solid ${color}33`, borderRadius: 10, padding: "10px 12px" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Answer Framework</div>
+            <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.6 }}>{prompt.framework}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Key Points to Hit</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {prompt.keyPoints.map((point) => (
+                <span key={point} style={{ padding: "5px 9px", borderRadius: 8, background: "#F1F5F9", border: "1px solid #E2E8F0", color: "#334155", fontSize: 12, fontWeight: 700 }}>{point}</span>
+              ))}
+            </div>
+          </div>
+          <div style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: 10, padding: "10px 12px" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#047857", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Strong Answer Shape</div>
+            <div style={{ fontSize: 13, color: "#065F46", lineHeight: 1.6 }}>{prompt.strongAnswer}</div>
+          </div>
+          <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "10px 12px" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#B91C1C", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Common Mistakes</div>
+            <div style={{ display: "grid", gap: 4 }}>
+              {prompt.mistakes.map((mistake) => (
+                <div key={mistake} style={{ fontSize: 12, color: "#991B1B", lineHeight: 1.5 }}>• {mistake}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main InterviewPrep component
 // ---------------------------------------------------------------------------
@@ -695,6 +889,7 @@ export default function InterviewPrep({ apps = [] }) {
 
   const sections = [
     { id: "dynamic", label: "Your Interviews", emoji: "🎯" },
+    { id: "practice", label: "Practice Bank", emoji: "🧪" },
     { id: "profile", label: "Your Profile", emoji: "👤" },
     { id: "answers", label: "Tailored Answers", emoji: "💬" },
     { id: "arsenal", label: "Project Arsenal", emoji: "🚀" },
@@ -812,6 +1007,37 @@ export default function InterviewPrep({ apps = [] }) {
               </div>
             </SectionCard>
           )}
+        </>
+      )}
+
+      {activeSection === "practice" && (
+        <>
+          <SectionCard
+            title="Practice Bank"
+            subtitle="Structured prompts for recruiter screens, behavioral rounds, technical interviews, system design, take-home debriefs, and final rounds."
+            style={{ marginBottom: 16, background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)" }}
+          >
+            <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.7 }}>
+              Practise out loud using the framework first, then check the key points and mistakes. The goal is a clear answer shape, not memorised wording.
+            </p>
+          </SectionCard>
+
+          <div style={{ display: "grid", gap: 16 }}>
+            {PRACTICE_BANK.map((category) => (
+              <SectionCard
+                key={category.id}
+                title={`${category.emoji} ${category.title}`}
+                subtitle={`${category.prompts.length} high-value prompts with answer structure and pitfalls.`}
+                style={{ borderColor: `${category.color}33` }}
+              >
+                <div style={{ display: "grid", gap: 10 }}>
+                  {category.prompts.map((prompt, index) => (
+                    <PracticePromptCard key={prompt.question} prompt={prompt} index={index} color={category.color} />
+                  ))}
+                </div>
+              </SectionCard>
+            ))}
+          </div>
         </>
       )}
 
