@@ -4,19 +4,6 @@ import {
   readUnlockedSession,
   unlockSeed,
 } from "./auth";
-import changelog from "./data/changelog.json";
-
-const CHANGELOG_DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
-
-function formatChangelogDate(value) {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return CHANGELOG_DATE_FORMATTER.format(parsed);
-}
 
 const JobTracker = lazy(() => import("./JobTracker"));
 
@@ -68,101 +55,102 @@ export default function App() {
     <main className="login-shell">
       <section className="login-layout">
         <div className="login-panel">
-          <p className="eyebrow">Private Dashboard</p>
-          <h1 className="login-title">Job Search Command Centre</h1>
+          <div className="login-status-row">
+            <p className="eyebrow">Personal Productivity Tool</p>
+            <span className="privacy-pill">Private Data Protected</span>
+          </div>
+          <h1 className="login-title">Job Search Analytics Tracker</h1>
           <p className="login-copy">
-            A private local-first workspace for tracking applications, follow-ups,
-            interview stages, outcomes, and preparation material in one place.
+            A local-first React dashboard built to manage a real job search: applications,
+            follow-ups, interview stages, outcomes, metrics, and role-specific preparation.
           </p>
+
+          <div className="visitor-brief" aria-label="About this tracker">
+            <div>
+              <span>What this is</span>
+              <strong>A focused operations dashboard for a personal job search workflow.</strong>
+            </div>
+            <div>
+              <span>What stays private</span>
+              <strong>Actual application records are protected behind the unlock screen.</strong>
+            </div>
+          </div>
 
           <div className="info-grid">
             <article className="info-card">
-              <span className="info-label">Storage Model</span>
-              <strong>Browser-first with exportable backups</strong>
+              <span className="info-label">Stack</span>
+              <strong>React, Vite, IndexedDB, local backup</strong>
             </article>
             <article className="info-card">
-              <span className="info-label">Workflow</span>
-              <strong>Pipeline, follow-ups, prep, and analytics</strong>
+              <span className="info-label">Workflow Coverage</span>
+              <strong>Pipeline, follow-ups, prep, metrics</strong>
             </article>
             <article className="info-card">
-              <span className="info-label">Access</span>
-              <strong>Username and password unlock required</strong>
+              <span className="info-label">Design Goal</span>
+              <strong>Practical, private, and exportable</strong>
             </article>
           </div>
 
           <div className="metric-strip" aria-label="Tracker capabilities">
             <div>
-              <strong>Lifecycle Metrics</strong>
-              <span>Response, interview, offer, rejection timing</span>
+              <span className="metric-value">01</span>
+              <strong>Track</strong>
+              <span>Applications, contacts, notes, links, and status changes</span>
             </div>
             <div>
-              <strong>Pipeline Risk</strong>
-              <span>Due follow-ups and ghost-risk detection</span>
+              <span className="metric-value">02</span>
+              <strong>Prioritise</strong>
+              <span>Follow-ups, active interviews, and ghost-risk applications</span>
             </div>
             <div>
-              <strong>Interview Practice</strong>
-              <span>Role-specific Q&amp;A and study guides</span>
+              <span className="metric-value">03</span>
+              <strong>Prepare</strong>
+              <span>Role-specific Q&amp;A, technical drills, and final-round prep</span>
             </div>
           </div>
 
-          <div className="preview-section">
-            <p className="preview-heading">A peek inside</p>
-            <ul className="preview-list">
-              <li>
-                <span className="preview-dot" aria-hidden="true" />
-                <div>
-                  <strong>Application operating view</strong>
-                  <span>Every role has a clear status, follow-up date, notes, contacts, and lifecycle history.</span>
-                </div>
-              </li>
-              <li>
-                <span className="preview-dot" aria-hidden="true" />
-                <div>
-                  <strong>Interview readiness</strong>
-                  <span>Prep material connects to active interviews so study time follows the live pipeline.</span>
-                </div>
-              </li>
-              <li>
-                <span className="preview-dot" aria-hidden="true" />
-                <div>
-                  <strong>Resilient storage</strong>
-                  <span>IndexedDB primary storage, local backup, import/export, and corrupt-data recovery.</span>
-                </div>
-              </li>
-              <li>
-                <span className="preview-dot" aria-hidden="true" />
-                <div>
-                  <strong>Static private utility</strong>
-                  <span>No server database. The unlock gate decrypts starter data and protects casual access.</span>
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          {changelog.length > 0 && (
-            <div className="changelog-section" aria-label="Recent updates">
-              <p className="preview-heading">What&apos;s new</p>
-              <ol className="changelog-list">
-                {changelog.slice(0, 3).map((entry) => (
-                  <li key={`${entry.date}-${entry.title}`} className="changelog-item">
-                    <time className="changelog-date" dateTime={entry.date}>
-                      {formatChangelogDate(entry.date)}
-                    </time>
-                    <strong className="changelog-title">{entry.title}</strong>
-                    <span className="changelog-note">{entry.note}</span>
-                  </li>
-                ))}
-              </ol>
+          <div className="operations-panel" aria-label="Dashboard overview">
+            <div className="operations-header">
+              <span>Workspace Overview</span>
+              <strong>Built for repeat job-search decisions, not one-off notes</strong>
             </div>
-          )}
+            <div className="operations-grid">
+              {[
+                ["Pipeline", "Live application board with follow-up state and lifecycle timestamps."],
+                ["Metrics", "Conversion rates, rejection timing, ghost risk, and search concentration."],
+                ["Prep", "Practice bank for recruiter screens, STAR answers, SQL, Python, and system design."],
+                ["Backup", "IndexedDB persistence with local fallback and JSON import/export."],
+              ].map(([title, text]) => (
+                <div className="operation-item" key={title}>
+                  <strong>{title}</strong>
+                  <span>{text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <form className="login-card" onSubmit={handleLogin}>
-          <p className="card-kicker">Secure Access</p>
+          <div className="auth-card-header">
+            <p className="card-kicker">Owner Access</p>
+            <span className="auth-lock" aria-hidden="true">⌁</span>
+          </div>
           <h2 className="auth-heading">Unlock your tracker</h2>
           <p className="auth-intro">
-            Enter your credentials to decrypt the starter dataset and open the local dashboard.
+            Credentials are required to decrypt the starter dataset and open the private dashboard.
           </p>
+
+          <div className="auth-summary">
+            <div>
+              <span>Session</span>
+              <strong>Private browser session</strong>
+            </div>
+            <div>
+              <span>Data</span>
+              <strong>Stored locally after unlock</strong>
+            </div>
+          </div>
+
           <label className="field-label" htmlFor="username">
             Username
           </label>
@@ -193,8 +181,8 @@ export default function App() {
           </button>
 
           <p className="auth-note">
-            This is a static personal app. The login protects encrypted seed data
-            client-side; ongoing tracker data remains in your browser storage.
+            Visitors can review what the tool does from this page. Private job-search data is only
+            available after unlock and remains in browser storage.
           </p>
         </form>
       </section>
