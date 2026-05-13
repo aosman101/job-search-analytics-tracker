@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
 import { Home as HomeIcon, Search as SearchIcon, Route as RouteIcon, BarChart3 as BarChartIcon, Target as TargetIcon } from "lucide-react";
+import { EMPTY_FORM, FOLLOWUP_METHODS, FOLLOWUP_STATUS, GHOST_DAYS, INTERVIEW_STAGES, STATUS_CONFIG } from "./constants";
 import {
   STORAGE_KEY,
   createSaveQueue,
@@ -12,20 +12,12 @@ import {
   storageSize,
   storeCorruptPayload,
 } from "./storage";
+import { applyStatusTransition, autoGhost, findNewlyGhosted, normalizeApplications } from "./utils/applicationLifecycle";
+import { buildTrackerMetrics, daysUntilGhost, reachedInterview } from "./utils/applicationMetrics";
+import { daysSince, isWeekend, todayISO } from "./utils/dates";
 
 const InterviewPrep = lazy(() => import("./InterviewPrep"));
-
-const GHOST_DAYS = 21;
-
-const STATUS_CONFIG = {
-  Applied:     { color: "#3B82F6", bg: "#EFF6FF", border: "#BFDBFE", emoji: "📤" },
-  "Follow-Up": { color: "#F59E0B", bg: "#FFFBEB", border: "#FDE68A", emoji: "🔔" },
-  Interview:   { color: "#8B5CF6", bg: "#F5F3FF", border: "#DDD6FE", emoji: "🗣️" },
-  Offer:       { color: "#10B981", bg: "#ECFDF5", border: "#A7F3D0", emoji: "🎉" },
-  Rejected:    { color: "#EF4444", bg: "#FEF2F2", border: "#FECACA", emoji: "❌" },
-  Ghosted:     { color: "#9CA3AF", bg: "#F9FAFB", border: "#E5E7EB", emoji: "👻" },
-  Withdrawn:   { color: "#6B7280", bg: "#F3F4F6", border: "#D1D5DB", emoji: "↩️" },
-};
+const AnalyticsView = lazy(() => import("./features/analytics/AnalyticsView"));
 
 const TABS = [
   { id: "Home", icon: HomeIcon, label: "Home", description: "Welcome, priorities, and search guidance" },
@@ -34,31 +26,9 @@ const TABS = [
   { id: "Analytics", icon: BarChartIcon, label: "Analytics", description: "Performance, outcomes, and momentum trends" },
   { id: "Interview Prep", icon: TargetIcon, label: "Interview Prep", description: "Role-specific prep, study guides, and stage-aware tips" },
 ];
-const INTERVIEW_STAGES = ["", "1st Interview", "2nd Interview", "3rd Interview", "Home Assignment", "Final Interview"];
-const EMPTY_FORM = { company: "", role: "", location: "", dateApplied: "", status: "Applied", jobUrl: "", hiringManager: "", hmLinkedIn: "", followUpDate: "", notes: "", interviewStage: "", followUpStatus: "", hmAvailable: true, hmLinkedInAvailable: true };
-
-const FOLLOWUP_STATUS = {
-  "":               { label: "Pending",          color: "#F59E0B", bg: "#FFFBEB", border: "#FDE68A", emoji: "🔔" },
-  "messaged":       { label: "Messaged ✓",        color: "#10B981", bg: "#ECFDF5", border: "#A7F3D0", emoji: "✅" },
-  "premium":        { label: "Premium Required",  color: "#8B5CF6", bg: "#F5F3FF", border: "#DDD6FE", emoji: "🔒" },
-  "no_linkedin":    { label: "No LinkedIn",       color: "#6B7280", bg: "#F3F4F6", border: "#D1D5DB", emoji: "🚫" },
-  "email_instead":  { label: "Emailed Instead",   color: "#3B82F6", bg: "#EFF6FF", border: "#BFDBFE", emoji: "📧" },
-};
-
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function daysSince(dateStr) {
-  if (!dateStr) return 0;
-  return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function isWeekend(date) {
-  const day = date.getDay();
-  return day === 0 || day === 6;
-}
 
 function isTodayWeekend() {
   return isWeekend(new Date());
@@ -73,20 +43,6 @@ function ensureIds(apps) {
   });
 }
 
-function autoGhost(apps) {
-  return apps.map(a =>
-    ["Applied", "Follow-Up"].includes(a.status) && daysSince(a.dateApplied) >= GHOST_DAYS
-      ? { ...a, status: "Ghosted", autoGhosted: true }
-      : a
-  );
-}
-
-function findNewlyGhosted(before, after) {
-  const beforeMap = new Map(before.map(a => [a.id, a.status]));
-  return after.filter(a => a.status === "Ghosted" && beforeMap.get(a.id) !== "Ghosted");
-}
-
-
 // ---------------------------------------------------------------------------
 // UI components
 // ---------------------------------------------------------------------------
@@ -100,22 +56,6 @@ function Badge({ status, interviewStage }) {
     </span>
   );
 }
-
-// True if the application ever reached an interview (current Interview/Offer status,
-// or a stage was recorded even if it ended in Rejected/Ghosted/Withdrawn).
-function reachedInterview(a) {
-  return ["Interview", "Offer"].includes(a.status) || (a.interviewStage && a.interviewStage !== "");
-}
-
-// Map a stage label to a numeric depth — used for "furthest stage reached" comparisons.
-const STAGE_DEPTH = {
-  "": 0,
-  "1st Interview": 1,
-  "2nd Interview": 2,
-  "3rd Interview": 3,
-  "Home Assignment": 4,
-  "Final Interview": 5,
-};
 
 function Modal({ open, onClose, children }) {
   if (!open) return null;
@@ -160,61 +100,6 @@ function SectionCard({ title, subtitle, actions = null, children, style = {} }) 
       )}
       {children}
     </section>
-  );
-}
-
-function SankeyFunnel({ apps }) {
-  // "Ever reached this stage or beyond" — independent of current status, so rejected-after-interview still counts.
-  const reachedAtLeast = (depth) => apps.filter(a => {
-    const ownDepth = STAGE_DEPTH[a.interviewStage] || 0;
-    if (ownDepth >= depth) return true;
-    // Offer implies they passed at least the final-round stage; Interview alone implies 1st.
-    if (a.status === "Offer" && depth <= 5) return true;
-    if (a.status === "Interview" && depth <= 1) return true;
-    return false;
-  }).length;
-  const stages = [
-    { label: "Applied", count: apps.length, color: "#3B82F6" },
-    { label: "1st Interview", count: reachedAtLeast(1), color: "#8B5CF6" },
-    { label: "2nd+ Interview", count: reachedAtLeast(2), color: "#EC4899" },
-    { label: "Final Round", count: reachedAtLeast(4), color: "#F59E0B" },
-    { label: "Offer", count: apps.filter(a => a.status === "Offer").length, color: "#10B981" },
-  ];
-  const maxCount = stages[0].count || 1;
-  const W = 600, H = 220, padX = 60, barW = 60, gap = (W - padX * 2 - barW * stages.length) / (stages.length - 1);
-  return (
-    <div style={{ overflowX: "auto" }}>
-      <svg viewBox={`0 0 ${W} ${H + 60}`} style={{ width: "100%", maxWidth: W, display: "block", margin: "0 auto" }}>
-        {stages.map((s, i) => {
-          const x = padX + i * (barW + gap);
-          const barH = Math.max(8, (s.count / maxCount) * (H - 40));
-          const y = (H - barH) / 2 + 10;
-          const next = stages[i + 1];
-          const conversion = next && s.count > 0 ? Math.round((next.count / s.count) * 100) : null;
-          return (
-            <g key={s.label}>
-              {next && (() => {
-                const nx = x + barW + gap;
-                const nextH = Math.max(8, (next.count / maxCount) * (H - 40));
-                const ny = (H - nextH) / 2 + 10;
-                const midX = (x + barW + nx) / 2;
-                return (
-                  <>
-                    <path d={`M ${x+barW} ${y} C ${midX} ${y}, ${midX} ${ny}, ${nx} ${ny} L ${nx} ${ny+nextH} C ${midX} ${ny+nextH}, ${midX} ${y+barH}, ${x+barW} ${y+barH} Z`} fill={s.color} fillOpacity={0.15} />
-                    {conversion !== null && (
-                      <text x={midX} y={(y + barH/2 + ny + nextH/2) / 2} textAnchor="middle" fontSize={10} fontWeight={700} fill="#475569">{conversion}%</text>
-                    )}
-                  </>
-                );
-              })()}
-              <rect x={x} y={y} width={barW} height={barH} rx={6} fill={s.color} />
-              <text x={x+barW/2} y={y-8} textAnchor="middle" fontSize={15} fontWeight={800} fill={s.color}>{s.count}</text>
-              <text x={x+barW/2} y={H+30} textAnchor="middle" fontSize={10} fill="#6B7280" fontWeight={600}>{s.label}</text>
-            </g>
-          );
-        })}
-      </svg>
-    </div>
   );
 }
 
@@ -288,7 +173,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     (async () => {
       try {
         await migrateToIDB();
-        const seededApps = autoGhost(ensureIds(initialApps));
+        const seededApps = autoGhost(normalizeApplications(ensureIds(initialApps)));
         const candidates = await safeStorageCandidates(STORAGE_KEY);
         const corruptCandidates = [];
         let resolved = null;
@@ -304,7 +189,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         }
 
         if (resolved) {
-          const withIds = ensureIds(resolved.decoded.apps);
+          const withIds = normalizeApplications(ensureIds(resolved.decoded.apps));
           const ghosted = autoGhost(withIds);
           const newlyGhosted = findNewlyGhosted(withIds, ghosted);
           setApps(ghosted);
@@ -386,9 +271,10 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     }
     setFormError("");
     const isEdit = editId !== null;
+    const now = todayISO();
     const updated = isEdit
-      ? apps.map(a => a.id === editId ? { ...form, id: a.id, autoGhosted: false } : a)
-      : [{ ...form, id: nextId(), autoGhosted: false }, ...apps];
+      ? apps.map(a => a.id === editId ? normalizeApplications([{ ...a, ...form, id: a.id, autoGhosted: false, updatedAt: now }], now)[0] : a)
+      : [normalizeApplications([{ ...form, id: nextId(), autoGhosted: false, createdAt: form.dateApplied || now, updatedAt: now, statusUpdatedAt: now }], now)[0], ...apps];
     setApps(updated);
     setForm(EMPTY_FORM);
     setModalOpen(false);
@@ -426,13 +312,33 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     persistToStorage(updated);
   };
   const handleStatusChange = (id, status) => {
-    const updated = apps.map(a => a.id === id ? { ...a, status, autoGhosted: false } : a);
+    const updated = apps.map(a => a.id === id ? applyStatusTransition(a, status, todayISO()) : a);
     setApps(updated);
     showToast(`Moved to ${status}`);
     persistToStorage(updated);
   };
   const handleFollowUpStatus = (id, followUpStatus) => {
-    const updated = apps.map(a => a.id === id ? { ...a, followUpStatus } : a);
+    const now = todayISO();
+    const updated = apps.map(a => {
+      if (a.id !== id) return a;
+      const history = Array.isArray(a.followUpHistory) ? a.followUpHistory : [];
+      return {
+        ...a,
+        followUpStatus,
+        updatedAt: now,
+        followUpHistory: [
+          {
+            id: nextId(),
+            date: now,
+            dueDate: a.followUpDate || "",
+            method: FOLLOWUP_METHODS[followUpStatus] || FOLLOWUP_STATUS[followUpStatus]?.label || "Follow-up",
+            outcome: FOLLOWUP_STATUS[followUpStatus]?.label || "Recorded",
+            note: a.followUpNote || "",
+          },
+          ...history,
+        ],
+      };
+    });
     setApps(updated);
     showToast(FOLLOWUP_STATUS[followUpStatus]?.label + " recorded!");
     persistToStorage(updated);
@@ -465,7 +371,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
           showToast("Invalid file — could not parse applications.", "error");
           return;
         }
-        const withIds = autoGhost(ensureIds(imported.apps));
+        const withIds = autoGhost(normalizeApplications(ensureIds(imported.apps)));
         // Merge: keep existing apps, add imported ones that don't already exist (by id)
         const existingIds = new Set(apps.map(a => a.id));
         const newApps = withIds.filter(a => !existingIds.has(a.id));
@@ -496,9 +402,9 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     input.click();
   };
 
-  const today = new Date().toISOString().split("T")[0];
-  const dueFollowUps = apps.filter(a => a.followUpDate && a.followUpDate <= today && !["Rejected","Withdrawn","Offer","Ghosted"].includes(a.status) && !a.followUpStatus);
-  const daysUntilGhost = (app) => { if (!["Applied","Follow-Up"].includes(app.status)) return null; const r = GHOST_DAYS - daysSince(app.dateApplied); return r > 0 ? r : 0; };
+  const metrics = buildTrackerMetrics(apps);
+  const today = metrics.today;
+  const dueFollowUps = metrics.dueFollowUps;
 
   const sorted = [...apps].sort((a, b) => {
     if (sortBy === "date") return (b.dateApplied || "").localeCompare(a.dateApplied || "");
@@ -509,39 +415,13 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
 
   const filtered = sorted.filter(a => (filterStatus === "All" || a.status === filterStatus) && (!search || a.company.toLowerCase().includes(search.toLowerCase()) || a.role.toLowerCase().includes(search.toLowerCase())));
 
-  const statusCounts = Object.keys(STATUS_CONFIG).map(s => ({ name: s, value: apps.filter(a => a.status === s).length, color: STATUS_CONFIG[s].color })).filter(d => d.value > 0);
-  const byMonth = apps.reduce((acc, a) => { const m = a.dateApplied?.slice(0,7) || "Unknown"; acc[m] = (acc[m]||0)+1; return acc; }, {});
-  const monthData = Object.entries(byMonth).sort().map(([m,c]) => ({ month: m.slice(5)+"/"+m.slice(2,4), count: c }));
-  const last7 = Array.from({length:7},(_,i) => { const d=new Date(); d.setDate(d.getDate()-(6-i)); const ds=d.toISOString().split("T")[0]; const wknd=isWeekend(d); return { day: d.toLocaleDateString("en-GB",{weekday:"short"}), count: apps.filter(a=>a.dateApplied===ds).length, weekend: wknd }; });
-  const todayCount = apps.filter(a => a.dateApplied === today).length;
+  const todayCount = metrics.todayCount;
   const todayIsWeekend = isTodayWeekend();
-  const responseRate = apps.length > 0 ? Math.round((apps.filter(a=>!["Applied","Ghosted"].includes(a.status)).length/apps.length)*100) : 0;
-  // Counts every app that ever reached an interview, even if it ended in Rejected/Ghosted/Withdrawn.
-  const interviewRate = apps.length > 0 ? Math.round((apps.filter(reachedInterview).length/apps.length)*100) : 0;
-  const offerRate = apps.length > 0 ? Math.round((apps.filter(a=>a.status==="Offer").length/apps.length)*100) : 0;
-  const ghostRate = apps.length > 0 ? Math.round((apps.filter(a=>a.status==="Ghosted").length/apps.length)*100) : 0;
-  const activeApplications = apps.filter(a => !["Rejected","Ghosted","Withdrawn"].includes(a.status)).length;
-  const recentApps = sorted.slice(0, 5);
-  // Queue is for active conversations only — exclude closed-out outcomes even if a stage was recorded.
-  const interviewQueue = sorted.filter(a => !["Rejected","Withdrawn","Ghosted"].includes(a.status) && (a.status === "Interview" || a.status === "Offer" || a.interviewStage)).slice(0, 6);
-
-  // Outcomes after reaching an interview — used for "Rejection by Stage" and time-to-rejection.
-  const rejectedApps = apps.filter(a => a.status === "Rejected");
-  const rejectionsByStage = rejectedApps.reduce((acc, a) => {
-    const key = a.interviewStage && a.interviewStage !== "" ? a.interviewStage : "No Interview";
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {});
-  const everInterviewedCount = apps.filter(reachedInterview).length;
-  const rejectionsWithDates = rejectedApps.filter(a => a.dateApplied);
-  const avgDaysToRejection = rejectionsWithDates.length > 0
-    ? Math.round(rejectionsWithDates.reduce((sum, a) => sum + daysSince(a.dateApplied), 0) / rejectionsWithDates.length)
-    : null;
-  const atRiskApps = sorted.filter(a => {
-    const remaining = daysUntilGhost(a);
-    return remaining !== null && remaining > 0 && remaining <= 7;
-  }).slice(0, 6);
-  const freshThisWeek = apps.filter(a => daysSince(a.dateApplied) <= 7).length;
+  const responseRate = metrics.responseRate;
+  const activeApplications = metrics.activeApplications;
+  const interviewQueue = metrics.interviewQueue;
+  const atRiskApps = metrics.atRiskApps;
+  const freshThisWeek = metrics.freshThisWeek;
   const appliedToday = apps.filter(a => a.dateApplied === today).length;
   const activeTabMeta = TABS.find(tab => tab.id === activeTab) || TABS[0];
   const roleFocus = Object.entries(apps.reduce((acc, app) => {
