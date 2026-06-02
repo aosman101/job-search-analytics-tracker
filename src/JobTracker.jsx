@@ -656,6 +656,39 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               ))}
             </div>
 
+            <SectionCard
+              title="Priority Queue"
+              subtitle="Automatically generated workflow actions from your tracker data."
+              actions={<button onClick={() => setActiveTab("Analytics")} style={{ padding:"8px 14px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:9, cursor:"pointer", fontSize:12, fontWeight:700 }}>Open Analytics</button>}
+              style={{ marginBottom: 16 }}
+            >
+              {metrics.nextActions.length > 0 ? (
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:10 }}>
+                  {metrics.nextActions.slice(0, 4).map((action) => {
+                    const tone = {
+                      warning: { bg:"#FFFBEB", border:"#FDE68A", color:"#92400E" },
+                      interview: { bg:"#F5F3FF", border:"#DDD6FE", color:"#6D28D9" },
+                      followup: { bg:"#EFF6FF", border:"#BFDBFE", color:"#1D4ED8" },
+                      risk: { bg:"#FFF7ED", border:"#FED7AA", color:"#C2410C" },
+                      neutral: { bg:"#F8FAFC", border:"#E2E8F0", color:"#475569" },
+                    }[action.tone] || { bg:"#F8FAFC", border:"#E2E8F0", color:"#475569" };
+                    return (
+                      <button
+                        key={action.label}
+                        onClick={() => setActiveTab(action.tone === "interview" ? "Interview Prep" : action.tone === "risk" || action.tone === "warning" ? "Pipeline" : "Job Search")}
+                        style={{ textAlign:"left", padding:"12px 14px", borderRadius:12, border:`1.5px solid ${tone.border}`, background:tone.bg, cursor:"pointer" }}
+                      >
+                        <div style={{ color:tone.color, fontWeight:800, fontSize:13 }}>{action.label}</div>
+                        <div style={{ marginTop:4, color:"#64748B", fontSize:12, lineHeight:1.5 }}>{action.detail}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p style={{ margin:0, color:"#64748B", fontSize:13 }}>No urgent actions. Keep adding applications, updating outcomes, and logging follow-ups.</p>
+              )}
+            </SectionCard>
+
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:14, marginBottom:16 }}>
               <SectionCard
                 title="Welcome Back"
