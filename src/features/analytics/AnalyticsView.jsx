@@ -126,6 +126,8 @@ export default function AnalyticsView({ apps }) {
           { label: "Reached Interview", value: metrics.everInterviewedCount, color: "#EC4899", emoji: "🎯" },
           { label: "Offer Rate", value: `${metrics.offerRate}%`, color: "#10B981", emoji: "🎉" },
           { label: "Avg Rejection Time", value: metrics.avgDaysToRejection === null ? "—" : `${metrics.avgDaysToRejection}d`, color: "#EF4444", emoji: "⏱️" },
+          { label: "Avg To Interview", value: metrics.avgDaysToInterview === null ? "—" : `${metrics.avgDaysToInterview}d`, color: "#0F766E", emoji: "⚡" },
+          { label: "Avg Open Age", value: metrics.avgOpenAge === null ? "—" : `${metrics.avgOpenAge}d`, color: "#64748B", emoji: "📌" },
           { label: "Ghost Risk", value: metrics.atRiskApps.length, color: "#EA580C", emoji: "⏳" },
           { label: "Ghost Rate", value: `${metrics.ghostRate}%`, color: "#9CA3AF", emoji: "👻" },
           { label: "Follow-Ups Logged", value: followUpCompleted, color: "#F59E0B", emoji: "🔔" },
@@ -155,6 +157,49 @@ export default function AnalyticsView({ apps }) {
         </div>
       </SectionCard>
 
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 0.72fr) minmax(300px, 1.28fr)", gap: 14, marginBottom: 14 }}>
+        <SectionCard title="Search Control Score" subtitle="A practical health score based on freshness, follow-ups, interviews, and ghost risk.">
+          <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+              <div style={{ fontSize: 42, fontFamily: "Georgia,serif", fontWeight: 800, color: metrics.pipelineScore >= 75 ? "#0F766E" : metrics.pipelineScore >= 55 ? "#B45309" : "#DC2626" }}>
+                {metrics.pipelineScore}
+              </div>
+              <div style={{ color: "#64748B", fontSize: 13, fontWeight: 800 }}>/ 100</div>
+            </div>
+            <div style={{ height: 10, background: "#E5E7EB", borderRadius: 999, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${metrics.pipelineScore}%`, background: metrics.pipelineScore >= 75 ? "#0F766E" : metrics.pipelineScore >= 55 ? "#F59E0B" : "#EF4444" }} />
+            </div>
+            <p style={{ margin: 0, color: "#64748B", fontSize: 12, lineHeight: 1.6 }}>
+              Higher scores mean recent applications, fewer overdue follow-ups, lower ghost risk, and an active interview queue.
+            </p>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Priority Action Queue" subtitle="The next operational moves the tracker recommends.">
+          {metrics.nextActions.length > 0 ? (
+            <div style={{ display: "grid", gap: 8 }}>
+              {metrics.nextActions.map((action) => {
+                const tone = {
+                  warning: { bg: "#FFFBEB", border: "#FDE68A", color: "#92400E" },
+                  interview: { bg: "#F5F3FF", border: "#DDD6FE", color: "#6D28D9" },
+                  followup: { bg: "#EFF6FF", border: "#BFDBFE", color: "#1D4ED8" },
+                  risk: { bg: "#FFF7ED", border: "#FED7AA", color: "#C2410C" },
+                  neutral: { bg: "#F8FAFC", border: "#E2E8F0", color: "#475569" },
+                }[action.tone] || { bg: "#F8FAFC", border: "#E2E8F0", color: "#475569" };
+                return (
+                  <div key={action.label} style={{ background: tone.bg, border: `1px solid ${tone.border}`, borderRadius: 10, padding: "10px 12px" }}>
+                    <div style={{ color: tone.color, fontWeight: 800, fontSize: 13 }}>{action.label}</div>
+                    <div style={{ color: "#64748B", fontSize: 12, lineHeight: 1.5, marginTop: 3 }}>{action.detail}</div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p style={{ margin: 0, color: "#64748B", fontSize: 13 }}>No urgent workflow issues. Keep applications and interview stages current.</p>
+          )}
+        </SectionCard>
+      </div>
+
       <SectionCard title="Daily Activity - Last 7 Days" style={{ marginBottom: 14 }}>
         <ResponsiveContainer width="100%" height={150}>
           <BarChart data={metrics.last7} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -164,6 +209,18 @@ export default function AnalyticsView({ apps }) {
             <Bar dataKey="count" name="Applications logged" radius={[5, 5, 0, 0]}>
               {metrics.last7.map((entry, index) => <Cell key={index} fill={entry.weekend ? "#D1D5DB" : entry.count >= 3 ? "#10B981" : entry.count > 0 ? "#3B82F6" : "#E5E7EB"} />)}
             </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </SectionCard>
+
+      <SectionCard title="Momentum - Last 4 Weeks" subtitle="Applications logged against status responses recorded in each week." style={{ marginBottom: 14 }}>
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={metrics.last28} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <XAxis dataKey="week" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="applied" fill="#3B82F6" radius={[5, 5, 0, 0]} name="Applications" />
+            <Bar dataKey="responses" fill="#0F766E" radius={[5, 5, 0, 0]} name="Responses" />
           </BarChart>
         </ResponsiveContainer>
       </SectionCard>
@@ -240,6 +297,60 @@ export default function AnalyticsView({ apps }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 14 }}>
+        <SectionCard title="Role Outcome Quality" subtitle="Which role families are generating interviews, not just volume.">
+          {metrics.roleOutcomes.length > 0 ? metrics.roleOutcomes.map((item) => (
+            <div key={item.label} style={{ borderBottom: "1px solid #F1F5F9", padding: "9px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13, fontWeight: 800 }}>
+                <span style={{ color: "#334155" }}>{item.label}</span>
+                <span style={{ color: "#1F4E79" }}>{item.total}</span>
+              </div>
+              <div style={{ marginTop: 5, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, fontSize: 11, color: "#64748B" }}>
+                <span>{item.responseRate}% response</span>
+                <span>{item.interviewRate}% interview</span>
+                <span>{item.active} active</span>
+              </div>
+            </div>
+          )) : <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>No role outcome data yet.</p>}
+        </SectionCard>
+
+        <SectionCard title="Location Outcome Quality" subtitle="Where the search is producing signal.">
+          {metrics.locationOutcomes.length > 0 ? metrics.locationOutcomes.map((item) => (
+            <div key={item.label} style={{ borderBottom: "1px solid #F1F5F9", padding: "9px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13, fontWeight: 800 }}>
+                <span style={{ color: "#334155" }}>{item.label}</span>
+                <span style={{ color: "#1F4E79" }}>{item.total}</span>
+              </div>
+              <div style={{ marginTop: 5, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, fontSize: 11, color: "#64748B" }}>
+                <span>{item.responseRate}% response</span>
+                <span>{item.interviewRate}% interview</span>
+                <span>{item.active} active</span>
+              </div>
+            </div>
+          )) : <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>No location outcome data yet.</p>}
+        </SectionCard>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 14 }}>
+        <SectionCard title="Workflow Gaps" subtitle="Open records that need housekeeping.">
+          {[
+            { label: "No follow-up date", count: metrics.unscheduledFollowUps.length, color: "#3B82F6", items: metrics.unscheduledFollowUps },
+            { label: "Stale records", count: metrics.staleApps.length, color: "#64748B", items: metrics.staleApps },
+            { label: "Stalled interviews", count: metrics.stalledInterviews.length, color: "#8B5CF6", items: metrics.stalledInterviews },
+          ].map((group) => (
+            <div key={group.label} style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 800, color: group.color, marginBottom: 6 }}>
+                <span>{group.label}</span>
+                <span>{group.count}</span>
+              </div>
+              {group.items.slice(0, 3).map((app) => (
+                <div key={app.id} style={{ fontSize: 12, color: "#475569", padding: "5px 0", borderTop: "1px solid #F1F5F9" }}>
+                  <strong>{app.company}</strong> · {app.role}
+                </div>
+              ))}
+            </div>
+          ))}
+        </SectionCard>
+
         <SectionCard title="Follow-Up Effectiveness" subtitle="Completed follow-ups by channel.">
           {followUpByMethod.length === 0 ? (
             <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>No follow-up history logged yet.</p>
