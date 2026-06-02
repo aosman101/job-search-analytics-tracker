@@ -1,5 +1,18 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
-import { Home as HomeIcon, Search as SearchIcon, Route as RouteIcon, BarChart3 as BarChartIcon, Target as TargetIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Database,
+  Download,
+  Home as HomeIcon,
+  LogOut,
+  Plus,
+  Route as RouteIcon,
+  Search as SearchIcon,
+  Target as TargetIcon,
+  Upload,
+  BarChart3 as BarChartIcon,
+} from "lucide-react";
 import { EMPTY_FORM, FOLLOWUP_METHODS, FOLLOWUP_STATUS, GHOST_DAYS, INTERVIEW_STAGES, STATUS_CONFIG } from "./constants";
 import {
   STORAGE_KEY,
@@ -88,12 +101,12 @@ function Field({ label, value, onChange, type = "text", placeholder, required, a
 
 function SectionCard({ title, subtitle, actions = null, children, style = {} }) {
   return (
-    <section style={{ background: "#fff", borderRadius: 16, padding: "18px 18px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", border: "1.5px solid #E5E7EB", ...style }}>
+    <section className="section-card" style={style}>
       {(title || subtitle || actions) && (
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+        <div className="section-card__header">
           <div>
-            {title && <h3 style={{ margin: 0, color: "#1F4E79", fontSize: 15, fontFamily: "Georgia,serif" }}>{title}</h3>}
-            {subtitle && <p style={{ margin: title ? "4px 0 0" : 0, color: "#6B7280", fontSize: 12, lineHeight: 1.5 }}>{subtitle}</p>}
+            {title && <h3 className="section-card__title">{title}</h3>}
+            {subtitle && <p className="section-card__subtitle">{subtitle}</p>}
           </div>
           {actions}
         </div>
@@ -474,65 +487,51 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
 
   if (loading) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F0F4F8"}}><p style={{color:"#6B7280",fontSize:15,fontFamily:"Georgia,serif"}}>Loading your tracker…</p></div>;
 
-  return (
-    <div style={{ minHeight: "100vh", background: "#F0F4F8", fontFamily: "'Segoe UI', Georgia, sans-serif" }}>
+  const StorageIcon = storageHealth === "error" ? AlertTriangle : storageHealth === "warn" ? Database : CheckCircle2;
 
-      <div style={{ background: "linear-gradient(135deg, #1F4E79 0%, #1a3a5c 100%)", padding: "22px 28px 0", boxShadow: "0 4px 24px rgba(31,78,121,0.4)" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, paddingBottom: 18 }}>
+  return (
+    <div className="tracker-shell">
+
+      <div className="tracker-header">
+        <div className="tracker-header__inner">
+          <div className="tracker-header__top">
             <div>
-              <h1 style={{ margin: 0, color: "#fff", fontSize: 24, fontFamily: "Georgia, serif", fontWeight: 700 }}>📋 Adil's Job Tracker</h1>
-              <p style={{ margin: "4px 0 0", color: "#93C5FD", fontSize: 12 }}>{apps.length} total · {todayCount} today · {dueFollowUps.length} follow-up{dueFollowUps.length!==1?"s":""} due</p>
+              <p className="tracker-kicker">Job Search Operating System</p>
+              <h1 className="tracker-title">Adil's Job Tracker</h1>
+              <p className="tracker-subtitle">{apps.length} total · {todayCount} today · {dueFollowUps.length} follow-up{dueFollowUps.length!==1?"s":""} due</p>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <div className="tracker-actions">
               {onLogout && (
                 <button
                   onClick={onLogout}
-                  style={{
-                    background: "rgba(255,255,255,0.12)",
-                    color: "#fff",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    borderRadius: 999,
-                    padding: "8px 14px",
-                    cursor: "pointer",
-                    fontSize: 12,
-                    fontWeight: 700,
-                  }}
+                  className="app-button app-button--ghost"
                   title="End your current session"
                 >
-                  Lock App
+                  <LogOut size={15} aria-hidden="true" />
+                  Lock
                 </button>
               )}
               <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  background: storageHealth === "error"
-                    ? "rgba(239,68,68,0.25)"
-                    : storageHealth === "warn"
-                      ? "rgba(245,158,11,0.25)"
-                      : "rgba(16,185,129,0.2)",
-                  borderRadius: 20,
-                  padding: "5px 12px",
-                  cursor: "pointer",
-                }}
+                className={`storage-pill storage-pill--${storageHealth}`}
                 onClick={handleExport}
                 title={`${storageBackend} · ${storageMessage}. Click to export backup.`}
               >
-                <span style={{ fontSize: 13 }}>{storageHealth === "error" ? "⚠️" : storageHealth === "warn" ? "💾" : "🟢"}</span>
-                <span style={{ color: "#fff", fontWeight: 700, fontSize: 11 }}>
+                <StorageIcon size={15} aria-hidden="true" />
+                <span>
                   {storageBackend} · {storageMessage}
                 </span>
               </div>
-              <div style={{ display: "flex", gap: 4 }}>
-                <button onClick={handleExport} title="Export backup" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontSize: 13 }}>📥</button>
-                <button onClick={handleImport} title="Import backup" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontSize: 13 }}>📤</button>
+              <div className="icon-button-group">
+                <button className="icon-button" onClick={handleExport} title="Export backup" aria-label="Export backup"><Download size={16} aria-hidden="true" /></button>
+                <button className="icon-button" onClick={handleImport} title="Import backup" aria-label="Import backup"><Upload size={16} aria-hidden="true" /></button>
               </div>
-              <button onClick={openNewApplication} style={{ background: "#3B82F6", color: "#fff", border: "none", borderRadius: 10, padding: "10px 22px", fontWeight: 700, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 14px rgba(59,130,246,0.45)" }}>+ New Application</button>
+              <button onClick={openNewApplication} className="app-button app-button--primary">
+                <Plus size={16} aria-hidden="true" />
+                New Application
+              </button>
             </div>
           </div>
-          <div role="tablist" aria-label="Job tracker sections" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div role="tablist" aria-label="Job tracker sections" className="tracker-tabs">
             {TABS.map(tab => {
               const TabIcon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -548,19 +547,6 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                   tabIndex={isActive ? 0 : -1}
                   onClick={() => setActiveTab(tab.id)}
                   className="tracker-tab"
-                  style={{
-                    padding: "10px 16px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    background: isActive ? "#fff" : "rgba(255,255,255,0.08)",
-                    color: isActive ? "#1F4E79" : "rgba(255,255,255,0.78)",
-                    border: "none",
-                    borderRadius: "12px 12px 0 0",
-                    fontWeight: 700,
-                    fontSize: 13,
-                    cursor: "pointer",
-                  }}
                   title={tab.description}
                 >
                   <TabIcon size={16} strokeWidth={2.4} aria-hidden="true" />
@@ -577,7 +563,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         id={`tabpanel-${activeTab.replace(/\s+/g, "-").toLowerCase()}`}
         aria-labelledby={`tab-${activeTab.replace(/\s+/g, "-").toLowerCase()}`}
         tabIndex={0}
-        style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px" }}
+        className="tracker-main"
       >
 
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(260px, 0.8fr)", gap: 14, marginBottom: 16 }}>

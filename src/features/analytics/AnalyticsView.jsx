@@ -5,12 +5,12 @@ import { daysSince } from "../../utils/dates";
 
 function SectionCard({ title, subtitle, actions = null, children, style = {} }) {
   return (
-    <section style={{ background: "#fff", borderRadius: 16, padding: "18px 18px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", border: "1.5px solid #E5E7EB", ...style }}>
+    <section className="section-card" style={style}>
       {(title || subtitle || actions) && (
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+        <div className="section-card__header">
           <div>
-            {title && <h3 style={{ margin: 0, color: "#1F4E79", fontSize: 15, fontFamily: "Georgia,serif" }}>{title}</h3>}
-            {subtitle && <p style={{ margin: title ? "4px 0 0" : 0, color: "#6B7280", fontSize: 12, lineHeight: 1.5 }}>{subtitle}</p>}
+            {title && <h3 className="section-card__title">{title}</h3>}
+            {subtitle && <p className="section-card__subtitle">{subtitle}</p>}
           </div>
           {actions}
         </div>
