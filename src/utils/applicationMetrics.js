@@ -175,6 +175,7 @@ export function buildTrackerMetrics(apps, options = {}) {
     stalledInterviews,
     roleOutcomes: rankWithOutcomes(apps, "role"),
     locationOutcomes: rankWithOutcomes(apps, "location"),
+    sourceOutcomes: rankWithOutcomes(apps, "source"),
     freshThisWeek,
     pipelineScore,
     nextActions: [

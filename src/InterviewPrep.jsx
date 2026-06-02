@@ -970,6 +970,51 @@ function PracticePromptCard({ prompt, index, color }) {
   );
 }
 
+function QAAnswerCard({ item, index }) {
+  const [open, setOpen] = useState(index < 2);
+  const roleLabel = item.role === "ALL" ? "All roles" : ROLE_TYPES[item.role]?.label || item.role;
+  return (
+    <div style={{ border: "1.5px solid #E5E7EB", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{ width: "100%", padding: "14px 16px", border: "none", background: open ? "#F8FAFC" : "#fff", cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", gap: 12 }}
+      >
+        <div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+            <span style={{ padding: "2px 8px", borderRadius: 8, background: "#EFF6FF", border: "1px solid #BFDBFE", color: "#1D4ED8", fontSize: 10, fontWeight: 800 }}>{item.category}</span>
+            <span style={{ padding: "2px 8px", borderRadius: 8, background: "#F8FAFC", border: "1px solid #E2E8F0", color: "#64748B", fontSize: 10, fontWeight: 800 }}>{roleLabel}</span>
+            <span style={{ padding: "2px 8px", borderRadius: 8, background: item.difficulty === "High" ? "#FEF2F2" : "#FFFBEB", border: item.difficulty === "High" ? "1px solid #FECACA" : "1px solid #FDE68A", color: item.difficulty === "High" ? "#B91C1C" : "#92400E", fontSize: 10, fontWeight: 800 }}>{item.difficulty}</span>
+          </div>
+          <div style={{ fontSize: 14, color: "#111827", fontWeight: 800, lineHeight: 1.45 }}>{item.question}</div>
+        </div>
+        <span style={{ color: "#94A3B8", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▼</span>
+      </button>
+      {open && (
+        <div style={{ padding: "0 16px 16px", display: "grid", gap: 10 }}>
+          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10, padding: "12px 14px" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#64748B", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 5 }}>Answer</div>
+            <div style={{ color: "#334155", fontSize: 13, lineHeight: 1.7 }}>{item.answer}</div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
+            <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 12px" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#1D4ED8", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Answer Structure</div>
+              <div style={{ display: "grid", gap: 4 }}>
+                {item.structure.map((point) => (
+                  <div key={point} style={{ fontSize: 12, color: "#1E3A8A", lineHeight: 1.45 }}>• {point}</div>
+                ))}
+              </div>
+            </div>
+            <div style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: 10, padding: "10px 12px" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#047857", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Use Your Evidence</div>
+              <div style={{ fontSize: 12, color: "#065F46", lineHeight: 1.55 }}>{item.projectTieIn}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main InterviewPrep component
 // ---------------------------------------------------------------------------
@@ -978,6 +1023,7 @@ export default function InterviewPrep({ apps = [] }) {
   const [activeSection, setActiveSection] = useState("dynamic");
   const [selectedGuide, setSelectedGuide] = useState(null);
   const [roleFilter, setRoleFilter] = useState("all");
+  const [qaFilter, setQaFilter] = useState("all");
 
   const activeInterviews = useMemo(() => getActiveInterviews(apps), [apps]);
   const detectedRoles = useMemo(() => {
@@ -989,10 +1035,14 @@ export default function InterviewPrep({ apps = [] }) {
   const filteredGuides = roleFilter === "all"
     ? STUDY_GUIDE
     : STUDY_GUIDE.filter(g => g.roles.includes(roleFilter));
+  const filteredQA = qaFilter === "all"
+    ? QA_LIBRARY
+    : QA_LIBRARY.filter((item) => item.role === qaFilter || item.role === "ALL");
 
   const sections = [
     { id: "dynamic", label: "Your Interviews", emoji: "🎯" },
     { id: "practice", label: "Practice Bank", emoji: "🧪" },
+    { id: "qa", label: "Q&A Library", emoji: "💡" },
     { id: "profile", label: "Your Profile", emoji: "👤" },
     { id: "answers", label: "Tailored Answers", emoji: "💬" },
     { id: "arsenal", label: "Project Arsenal", emoji: "🚀" },
@@ -1139,6 +1189,36 @@ export default function InterviewPrep({ apps = [] }) {
                   ))}
                 </div>
               </SectionCard>
+            ))}
+          </div>
+        </>
+      )}
+
+      {activeSection === "qa" && (
+        <>
+          <SectionCard
+            title="Question & Answer Library"
+            subtitle="High-signal interview questions with concise answer shapes and project evidence to reference."
+            style={{ marginBottom: 16, background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)" }}
+          >
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+              <button onClick={() => setQaFilter("all")} style={{ padding: "7px 14px", borderRadius: 10, border: `2px solid ${qaFilter === "all" ? "#1F4E79" : "#E5E7EB"}`, background: qaFilter === "all" ? "#1F4E79" : "#fff", color: qaFilter === "all" ? "#fff" : "#374151", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
+                All Questions
+              </button>
+              {Object.entries(ROLE_TYPES).map(([key, config]) => (
+                <button key={key} onClick={() => setQaFilter(key)} style={{ padding: "7px 14px", borderRadius: 10, border: `2px solid ${qaFilter === key ? config.color : "#E5E7EB"}`, background: qaFilter === key ? config.color : "#fff", color: qaFilter === key ? "#fff" : "#374151", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
+                  {config.emoji} {config.label}
+                </button>
+              ))}
+            </div>
+            <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.7 }}>
+              Use this as an active rehearsal workflow: answer first without looking, open the card, then repeat using the structure and project tie-in.
+            </p>
+          </SectionCard>
+
+          <div style={{ display: "grid", gap: 10 }}>
+            {filteredQA.map((item, index) => (
+              <QAAnswerCard key={item.id} item={item} index={index} />
             ))}
           </div>
         </>

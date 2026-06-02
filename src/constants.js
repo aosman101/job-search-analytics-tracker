@@ -12,10 +12,24 @@ export const STATUS_CONFIG = {
 
 export const INTERVIEW_STAGES = ["", "1st Interview", "2nd Interview", "3rd Interview", "Home Assignment", "Final Interview"];
 
+export const APPLICATION_SOURCES = [
+  "",
+  "LinkedIn",
+  "Company Website",
+  "Recruiter",
+  "Referral",
+  "Indeed",
+  "Otta",
+  "Glassdoor",
+  "Wellfound",
+  "Other",
+];
+
 export const EMPTY_FORM = {
   company: "",
   role: "",
   location: "",
+  source: "",
   dateApplied: "",
   status: "Applied",
   jobUrl: "",

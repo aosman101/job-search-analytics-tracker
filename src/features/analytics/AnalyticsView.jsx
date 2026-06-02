@@ -328,6 +328,22 @@ export default function AnalyticsView({ apps }) {
             </div>
           )) : <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>No location outcome data yet.</p>}
         </SectionCard>
+
+        <SectionCard title="Source Outcome Quality" subtitle="Which application channels are worth doubling down on.">
+          {metrics.sourceOutcomes.length > 0 ? metrics.sourceOutcomes.map((item) => (
+            <div key={item.label} style={{ borderBottom: "1px solid #F1F5F9", padding: "9px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13, fontWeight: 800 }}>
+                <span style={{ color: "#334155" }}>{item.label}</span>
+                <span style={{ color: "#1F4E79" }}>{item.total}</span>
+              </div>
+              <div style={{ marginTop: 5, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, fontSize: 11, color: "#64748B" }}>
+                <span>{item.responseRate}% response</span>
+                <span>{item.interviewRate}% interview</span>
+                <span>{item.active} active</span>
+              </div>
+            </div>
+          )) : <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>Add sources on applications to compare channels.</p>}
+        </SectionCard>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 14 }}>

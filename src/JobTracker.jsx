@@ -13,7 +13,7 @@ import {
   Upload,
   BarChart3 as BarChartIcon,
 } from "lucide-react";
-import { EMPTY_FORM, FOLLOWUP_METHODS, FOLLOWUP_STATUS, GHOST_DAYS, INTERVIEW_STAGES, STATUS_CONFIG } from "./constants";
+import { APPLICATION_SOURCES, EMPTY_FORM, FOLLOWUP_METHODS, FOLLOWUP_STATUS, GHOST_DAYS, INTERVIEW_STAGES, STATUS_CONFIG } from "./constants";
 import {
   STORAGE_KEY,
   createSaveQueue,
@@ -433,7 +433,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     return 0;
   });
 
-  const filtered = sorted.filter(a => (filterStatus === "All" || a.status === filterStatus) && (!search || a.company.toLowerCase().includes(search.toLowerCase()) || a.role.toLowerCase().includes(search.toLowerCase())));
+  const filtered = sorted.filter(a => (filterStatus === "All" || a.status === filterStatus) && (!search || a.company.toLowerCase().includes(search.toLowerCase()) || a.role.toLowerCase().includes(search.toLowerCase()) || (a.source || "").toLowerCase().includes(search.toLowerCase())));
 
   const todayCount = metrics.todayCount;
   const todayIsWeekend = isTodayWeekend();
@@ -823,7 +823,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                         {warningSoon&&<span style={{ fontSize:10, color:"#EA580C", fontWeight:700 }}>⏳ {dLeft}d to ghost</span>}
                         {app.autoGhosted&&<span style={{ fontSize:10, color:"#9CA3AF", fontWeight:600 }}>auto-ghosted</span>}
                       </div>
-                      <p style={{ margin:"3px 0 0", fontSize:12, color:"#6B7280" }}>{app.role}{app.location?` · ${app.location}`:""} · Applied {app.dateApplied}{app.hiringManager?` · ${app.hiringManager}`:""}</p>
+                      <p style={{ margin:"3px 0 0", fontSize:12, color:"#6B7280" }}>{app.role}{app.location?` · ${app.location}`:""}{app.source?` · ${app.source}`:""} · Applied {app.dateApplied}{app.hiringManager?` · ${app.hiringManager}`:""}</p>
                     </div>
                     <div style={{ display:"flex", gap:6 }} onClick={e=>e.stopPropagation()}>
                       <select value={app.status} onChange={e=>handleStatusChange(app.id,e.target.value)} style={{ padding:"5px 8px", border:"1.5px solid #E5E7EB", borderRadius:7, fontSize:11, cursor:"pointer", fontFamily:"inherit", background:"#F9FAFB" }}>
@@ -953,6 +953,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
             <Field label="Company" value={form.company} onChange={f("company")} placeholder="e.g. Google" required/>
             <Field label="Role" value={form.role} onChange={f("role")} placeholder="e.g. Data Engineer" required/>
             <Field label="Location" value={form.location} onChange={f("location")} placeholder="London / Remote"/>
+            <Field label="Source" value={form.source} onChange={f("source")} as="select" options={APPLICATION_SOURCES}/>
             <Field label="Date Applied" value={form.dateApplied} onChange={f("dateApplied")} type="date" required/>
             <Field label="Status" value={form.status} onChange={f("status")} as="select" options={Object.keys(STATUS_CONFIG)}/>
             <Field label="Interview Stage" value={form.interviewStage} onChange={f("interviewStage")} as="select" options={INTERVIEW_STAGES}/>
@@ -1025,7 +1026,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 {dLeft!==null&&dLeft<=7&&dLeft>0&&<p style={{margin:"6px 0 0",fontSize:12,color:"#EA580C",fontWeight:600}}>⏳ Auto-ghosted in {dLeft} day{dLeft!==1?"s":""} if no update</p>}
               </div>
               <div style={{padding:"16px 26px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 24px"}}>
-                {[["Date Applied",a.dateApplied],["Follow-Up",a.followUpDate||"—"],["Hiring Manager",a.hiringManager||"—"],["Days Since Applied",daysSince(a.dateApplied)+" days"]].map(([l,v])=>(
+                {[["Date Applied",a.dateApplied],["Source",a.source||"—"],["Follow-Up",a.followUpDate||"—"],["Hiring Manager",a.hiringManager||"—"],["Days Since Applied",daysSince(a.dateApplied)+" days"]].map(([l,v])=>(
                   <div key={l}>
                     <div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:"0.06em",marginBottom:2}}>{l.toUpperCase()}</div>
                     <div style={{fontSize:13,color:"#111827",fontWeight:600}}>{v}</div>
