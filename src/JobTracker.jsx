@@ -922,27 +922,70 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               </div>
             </SectionCard>
 
-            <div style={{ display:"flex", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-              <input placeholder="🔍 Search company or role…" value={search} onChange={e=>setSearch(e.target.value)} style={{ flex:1, minWidth:180, padding:"9px 14px", border:"1.5px solid #E5E7EB", borderRadius:9, fontSize:13, background:"#fff", outline:"none", fontFamily:"inherit" }}/>
-              <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{ padding:"9px 12px", border:"1.5px solid #E5E7EB", borderRadius:9, fontSize:13, background:"#fff", outline:"none", fontFamily:"inherit", cursor:"pointer" }}>
+            <div style={{ display:"flex", gap:10, marginBottom:10, flexWrap:"wrap" }}>
+              <input
+                ref={searchInputRef}
+                type="search"
+                aria-label="Search applications by company, role, location or source"
+                placeholder="🔍 Search company, role, location or source…  (press /)"
+                value={search}
+                onChange={e=>setSearch(e.target.value)}
+                style={{ flex:1, minWidth:180, padding:"9px 14px", border:"1.5px solid #E5E7EB", borderRadius:9, fontSize:13, background:"#fff", outline:"none", fontFamily:"inherit" }}
+              />
+              <select aria-label="Filter by source" value={filterSource} onChange={e=>setFilterSource(e.target.value)} style={{ padding:"9px 12px", border:"1.5px solid #E5E7EB", borderRadius:9, fontSize:13, background:"#fff", outline:"none", fontFamily:"inherit", cursor:"pointer" }}>
+                <option value="All">Source: All</option>
+                {availableSources.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <select aria-label="Sort applications" value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{ padding:"9px 12px", border:"1.5px solid #E5E7EB", borderRadius:9, fontSize:13, background:"#fff", outline:"none", fontFamily:"inherit", cursor:"pointer" }}>
                 <option value="date">Sort: Date</option>
                 <option value="company">Sort: Company</option>
                 <option value="status">Sort: Status</option>
               </select>
             </div>
 
+            <div style={{ display:"flex", gap:10, marginBottom:14, flexWrap:"wrap", alignItems:"center" }}>
+              <button
+                type="button"
+                aria-pressed={onlyNeedsAttention}
+                onClick={()=>setOnlyNeedsAttention(v=>!v)}
+                style={{ padding:"7px 13px", borderRadius:999, fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.15s",
+                  background:onlyNeedsAttention?"#F59E0B":"#FFFBEB", color:onlyNeedsAttention?"#fff":"#92400E", border:"1.5px solid #FDE68A" }}
+              >
+                ⚡ Needs attention {attentionCount > 0 && `· ${attentionCount}`}
+              </button>
+              <span style={{ color:"#64748B", fontSize:12 }}>
+                Showing <strong style={{ color:"#0F172A" }}>{filtered.length}</strong> of {apps.length}
+              </span>
+              {filtersActive && (
+                <button type="button" onClick={clearFilters} style={{ padding:"7px 13px", borderRadius:999, fontSize:12, fontWeight:700, cursor:"pointer", background:"#F8FAFC", color:"#475569", border:"1.5px solid #E2E8F0" }}>
+                  ✕ Clear filters <span style={{ color:"#94A3B8", fontWeight:600 }}>(Esc)</span>
+                </button>
+              )}
+            </div>
+
             {filtered.length===0 ? (
               <div style={{ background:"#fff", borderRadius:14, padding:"48px 24px", textAlign:"center", border:"1.5px dashed #E5E7EB" }}>
                 <p style={{ fontSize:36, margin:"0 0 8px" }}>📭</p>
-                <p style={{ color:"#9CA3AF", fontSize:14, margin:0 }}>{apps.length===0?"No applications yet — add your first one!":"No results match your filter."}</p>
+                <p style={{ color:"#9CA3AF", fontSize:14, margin:"0 0 14px" }}>{apps.length===0?"No applications yet — add your first one!":"No results match your filter."}</p>
+                {apps.length===0 ? (
+                  <button type="button" onClick={openNewApplication} style={{ padding:"9px 18px", background:"#1F4E79", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13 }}>+ Add your first application</button>
+                ) : filtersActive && (
+                  <button type="button" onClick={clearFilters} style={{ padding:"9px 18px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13 }}>Clear filters</button>
+                )}
               </div>
             ) : filtered.map(app => {
               const isOverdue = app.followUpDate && app.followUpDate<=today && !["Rejected","Withdrawn","Offer","Ghosted"].includes(app.status);
               const dLeft = daysUntilGhost(app);
               const warningSoon = dLeft!==null && dLeft<=5 && dLeft>0;
               return (
-                <div key={app.id} onClick={()=>setDetailId(app.id)} style={{ background:"#fff", borderRadius:13, padding:"14px 18px", marginBottom:9, border:`1.5px solid ${isOverdue?"#FDE68A":warningSoon?"#FED7AA":"#E5E7EB"}`, boxShadow:"0 1px 4px rgba(0,0,0,0.05)", cursor:"pointer", transition:"box-shadow 0.15s" }}
-                  onMouseOver={e=>e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.1)"} onMouseOut={e=>e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,0.05)"}>
+                <div key={app.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open details for ${app.company} — ${app.role}`}
+                  onClick={()=>setDetailId(app.id)}
+                  onKeyDown={e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); setDetailId(app.id); } }}
+                  className="application-card"
+                  style={{ background:"#fff", borderRadius:13, padding:"14px 18px", marginBottom:9, border:`1.5px solid ${isOverdue?"#FDE68A":warningSoon?"#FED7AA":"#E5E7EB"}`, boxShadow:"0 1px 4px rgba(0,0,0,0.05)", cursor:"pointer", transition:"box-shadow 0.15s ease, transform 0.15s ease" }}>
                   <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
                     <div style={{ flex:1 }}>
                       <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
