@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -26,6 +26,7 @@ import {
   storeCorruptPayload,
 } from "./storage";
 import { applyStatusTransition, autoGhost, findNewlyGhosted, normalizeApplications } from "./utils/applicationLifecycle";
+import { filterApplications, needsAttention, sortApplications } from "./utils/applicationFilters";
 import { buildTrackerMetrics, daysUntilGhost } from "./utils/applicationMetrics";
 import { addDays, daysSince, isWeekend, todayISO } from "./utils/dates";
 
@@ -70,11 +71,64 @@ function Badge({ status, interviewStage }) {
   );
 }
 
-function Modal({ open, onClose, children }) {
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function Modal({ open, onClose, label, children }) {
+  const panelRef = useRef(null);
+  const restoreFocusRef = useRef(null);
+
+  // Remember what was focused before opening so we can hand focus back on close.
+  useEffect(() => {
+    if (!open) return undefined;
+    restoreFocusRef.current = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const first = panelRef.current?.querySelector(FOCUSABLE);
+    (first || panelRef.current)?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (restoreFocusRef.current instanceof HTMLElement) restoreFocusRef.current.focus();
+    };
+  }, [open]);
+
+  // Escape closes; Tab cycles within the dialog instead of escaping to the page.
+  const handleKeyDown = (event) => {
+    if (event.key === "Escape") {
+      event.stopPropagation();
+      onClose();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const nodes = Array.from(panelRef.current?.querySelectorAll(FOCUSABLE) || []);
+    if (nodes.length === 0) return;
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
   if (!open) return null;
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.65)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(6px)" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 660, maxHeight: "92vh", overflowY: "auto", boxShadow: "0 30px 70px rgba(0,0,0,0.25)" }}>{children}</div>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.65)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(6px)", animation: "modalFade 0.16s ease" }}>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        onClick={e => e.stopPropagation()}
+        style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 660, maxHeight: "92vh", overflowY: "auto", boxShadow: "0 30px 70px rgba(0,0,0,0.25)", outline: "none", animation: "modalRise 0.18s cubic-bezier(0.2, 0.8, 0.3, 1)" }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -129,8 +183,13 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [filterStatus, setFilterStatus] = useState("All");
+  const [filterSource, setFilterSource] = useState("All");
+  const [onlyNeedsAttention, setOnlyNeedsAttention] = useState(false);
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const searchInputRef = useRef(null);
+  const toastTimerRef = useRef(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [sortBy, setSortBy] = useState("date");
   const [ghostedBanner, setGhostedBanner] = useState([]);
@@ -139,7 +198,14 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const [storageBackend, setStorageBackend] = useState("IndexedDB");
   const [storageMessage, setStorageMessage] = useState("Ready");
 
-  const showToast = (msg, type = "success") => { setToast({ msg, type }); setTimeout(() => setToast(null), 4000); };
+  // `action` renders an inline button in the toast (used for undoing a delete).
+  const showToast = useCallback((msg, type = "success", action = null) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ msg, type, action });
+    toastTimerRef.current = setTimeout(() => setToast(null), action ? 8000 : 4000);
+  }, []);
+
+  useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current); }, []);
 
   // Serialized save queue — only the latest state wins, no races
   const saveQueueRef = useRef(null);
@@ -320,13 +386,24 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   };
 
   const handleDelete = (id) => {
+    const removed = appById(id);
+    const removedIndex = apps.findIndex(a => a.id === id);
     const updated = apps.filter(a => a.id !== id);
     setApps(updated);
     setDeleteConfirmId(null);
     if (detailId === id) setDetailId(null);
     if (editId === id) setEditId(null);
-    showToast("Application removed.");
     persistToStorage(updated);
+
+    // Restore at its original position so the list order survives an undo.
+    const undo = () => {
+      const restored = [...updated];
+      restored.splice(Math.max(0, removedIndex), 0, removed);
+      setApps(restored);
+      persistToStorage(restored);
+      showToast(`Restored ${removed.company}`);
+    };
+    showToast(`Removed ${removed?.company || "application"}.`, "success", removed ? { label: "Undo", run: undo } : null);
   };
   const handleStatusChange = (id, status) => {
     const updated = apps.map(a => a.id === id ? applyStatusTransition(a, status, todayISO()) : a);
