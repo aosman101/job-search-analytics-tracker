@@ -655,6 +655,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               <div className="icon-button-group">
                 <button className="icon-button" onClick={handleExport} title="Export backup" aria-label="Export backup"><Download size={16} aria-hidden="true" /></button>
                 <button className="icon-button" onClick={handleImport} title="Import backup" aria-label="Import backup"><Upload size={16} aria-hidden="true" /></button>
+                <button className="icon-button" onClick={()=>setShortcutsOpen(true)} title="Keyboard shortcuts (press ?)" aria-label="Show keyboard shortcuts"><Keyboard size={16} aria-hidden="true" /></button>
               </div>
               <button onClick={openNewApplication} className="app-button app-button--primary">
                 <Plus size={16} aria-hidden="true" />
@@ -1256,8 +1257,59 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         </div>
       </Modal>
 
-      {toast&&<div style={{position:"fixed",bottom:24,right:24,zIndex:100,background:toast.type==="error"?"#EF4444":"#1F4E79",color:"#fff",padding:"12px 20px",borderRadius:10,fontSize:13,fontWeight:600,boxShadow:"0 8px 24px rgba(0,0,0,0.2)",animation:"fadeIn 0.2s ease"}}>{toast.type==="error"?"⚠️ ":"✅ "}{toast.msg}</div>}
-      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      {/* Live region stays mounted so screen readers reliably announce updates. */}
+      <div role="status" aria-live="polite" aria-atomic="true" style={{position:"fixed",bottom:24,right:24,zIndex:100}}>
+        {toast && (
+          <div style={{display:"flex",alignItems:"center",gap:14,background:toast.type==="error"?"#EF4444":"#1F4E79",color:"#fff",padding:"12px 20px",borderRadius:10,fontSize:13,fontWeight:600,boxShadow:"0 8px 24px rgba(0,0,0,0.2)",animation:"fadeIn 0.2s ease"}}>
+            <span>{toast.type==="error"?"⚠️ ":"✅ "}{toast.msg}</span>
+            {toast.action && (
+              <button
+                type="button"
+                onClick={()=>{ toast.action.run(); }}
+                style={{background:"rgba(255,255,255,0.16)",color:"#fff",border:"1px solid rgba(255,255,255,0.35)",borderRadius:7,padding:"4px 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}
+              >
+                {toast.action.label}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      <Modal label="Keyboard shortcuts" open={shortcutsOpen} onClose={()=>setShortcutsOpen(false)}>
+        <div style={{padding:"22px 26px 12px",borderBottom:"1px solid #F3F4F6"}}>
+          <h2 style={{margin:0,fontSize:18,color:"#1F4E79",fontFamily:"Georgia,serif"}}>⌨️ Keyboard Shortcuts</h2>
+        </div>
+        <div style={{padding:"16px 26px",display:"grid",gap:8}}>
+          {[
+            ["/", "Jump to search"],
+            ["N", "New application"],
+            ["1 – 5", "Switch between tabs"],
+            ["← →", "Move across tabs when one is focused"],
+            ["Esc", "Close a dialog, or clear active filters"],
+            ["?", "Show this list"],
+          ].map(([keys, description]) => (
+            <div key={keys} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,padding:"9px 12px",background:"#F8FAFC",borderRadius:9}}>
+              <span style={{fontSize:13,color:"#475569"}}>{description}</span>
+              <kbd style={{fontFamily:"ui-monospace, SFMono-Regular, Menlo, monospace",fontSize:12,fontWeight:700,color:"#0F172A",background:"#fff",border:"1.5px solid #E2E8F0",borderBottomWidth:3,borderRadius:6,padding:"3px 9px",whiteSpace:"nowrap"}}>{keys}</kbd>
+            </div>
+          ))}
+        </div>
+        <div style={{padding:"4px 26px 20px",display:"flex",justifyContent:"flex-end"}}>
+          <button type="button" onClick={()=>setShortcutsOpen(false)} style={{padding:"9px 20px",background:"#1F4E79",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>Close</button>
+        </div>
+      </Modal>
+
+      <style>{`
+        @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes modalFade{from{opacity:0}to{opacity:1}}
+        @keyframes modalRise{from{opacity:0;transform:translateY(12px) scale(0.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+        .application-card:hover{box-shadow:0 6px 20px rgba(0,0,0,0.1) !important;transform:translateY(-1px)}
+        .application-card:focus-visible{outline:2px solid #1F4E79;outline-offset:2px}
+        @media (prefers-reduced-motion: reduce){
+          .application-card,[role="dialog"]{transition:none !important;animation:none !important}
+          .application-card:hover{transform:none}
+        }
+      `}</style>
     </div>
   );
 }
