@@ -6,6 +6,7 @@ import {
   Download,
   Home as HomeIcon,
   LogOut,
+  Keyboard,
   Plus,
   Route as RouteIcon,
   Search as SearchIcon,
