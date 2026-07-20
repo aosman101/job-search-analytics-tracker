@@ -499,18 +499,76 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     input.click();
   };
 
-  const metrics = buildTrackerMetrics(apps);
+  const metrics = useMemo(() => buildTrackerMetrics(apps), [apps]);
   const today = metrics.today;
   const dueFollowUps = metrics.dueFollowUps;
 
-  const sorted = [...apps].sort((a, b) => {
-    if (sortBy === "date") return (b.dateApplied || "").localeCompare(a.dateApplied || "");
-    if (sortBy === "company") return a.company.localeCompare(b.company);
-    if (sortBy === "status") return a.status.localeCompare(b.status);
-    return 0;
-  });
+  const sorted = useMemo(() => sortApplications(apps, sortBy), [apps, sortBy]);
 
-  const filtered = sorted.filter(a => (filterStatus === "All" || a.status === filterStatus) && (!search || a.company.toLowerCase().includes(search.toLowerCase()) || a.role.toLowerCase().includes(search.toLowerCase()) || (a.source || "").toLowerCase().includes(search.toLowerCase())));
+  const filtered = useMemo(
+    () => filterApplications(sorted, { status: filterStatus, source: filterSource, search, needsAttention: onlyNeedsAttention }, today),
+    [sorted, filterStatus, filterSource, search, onlyNeedsAttention, today],
+  );
+
+  const attentionCount = useMemo(() => apps.filter(a => needsAttention(a, today)).length, [apps, today]);
+
+  const availableSources = useMemo(
+    () => Array.from(new Set(apps.map(a => a.source).filter(Boolean))).sort(),
+    [apps],
+  );
+
+  const filtersActive = filterStatus !== "All" || filterSource !== "All" || onlyNeedsAttention || search.trim() !== "";
+  const clearFilters = () => { setFilterStatus("All"); setFilterSource("All"); setOnlyNeedsAttention(false); setSearch(""); };
+
+  const anyModalOpen = modalOpen || detailId !== null || deleteConfirmId !== null || shortcutsOpen;
+
+  // Global shortcuts. Suppressed while typing or while a dialog owns the keyboard.
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const target = event.target;
+      const typing = target instanceof HTMLElement
+        && (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable);
+
+      if (event.key === "Escape" && !anyModalOpen && filtersActive) {
+        clearFilters();
+        return;
+      }
+      if (typing || anyModalOpen || event.metaKey || event.ctrlKey || event.altKey) return;
+
+      if (event.key === "/") {
+        event.preventDefault();
+        setActiveTab("Job Search");
+        // Wait for the Job Search panel to mount before reaching for its input.
+        requestAnimationFrame(() => searchInputRef.current?.focus());
+      } else if (event.key === "n" || event.key === "N") {
+        event.preventDefault();
+        openNewApplication();
+      } else if (event.key === "?") {
+        event.preventDefault();
+        setShortcutsOpen(true);
+      } else if (event.key >= "1" && event.key <= String(TABS.length)) {
+        event.preventDefault();
+        setActiveTab(TABS[Number(event.key) - 1].id);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [anyModalOpen, filtersActive]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Roving focus across the tablist, as the tab role contract implies.
+  const handleTabKeyDown = (event) => {
+    const keys = { ArrowRight: 1, ArrowLeft: -1 };
+    let nextIndex = null;
+    const current = TABS.findIndex(t => t.id === activeTab);
+    if (event.key in keys) nextIndex = (current + keys[event.key] + TABS.length) % TABS.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = TABS.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const next = TABS[nextIndex];
+    setActiveTab(next.id);
+    document.getElementById(`tab-${next.id.replace(/\s+/g, "-").toLowerCase()}`)?.focus();
+  };
 
   const todayCount = metrics.todayCount;
   const todayIsWeekend = isTodayWeekend();
@@ -521,18 +579,14 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const freshThisWeek = metrics.freshThisWeek;
   const appliedToday = apps.filter(a => a.dateApplied === today).length;
   const activeTabMeta = TABS.find(tab => tab.id === activeTab) || TABS[0];
-  const roleFocus = Object.entries(apps.reduce((acc, app) => {
-    const role = app.role?.trim();
-    if (!role) return acc;
-    acc[role] = (acc[role] || 0) + 1;
+  const countTopValues = (key) => Object.entries(apps.reduce((acc, app) => {
+    const value = app[key]?.trim();
+    if (!value) return acc;
+    acc[value] = (acc[value] || 0) + 1;
     return acc;
   }, {})).sort((a, b) => b[1] - a[1]).slice(0, 4);
-  const locationFocus = Object.entries(apps.reduce((acc, app) => {
-    const location = app.location?.trim();
-    if (!location) return acc;
-    acc[location] = (acc[location] || 0) + 1;
-    return acc;
-  }, {})).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const roleFocus = useMemo(() => countTopValues("role"), [apps]); // eslint-disable-line react-hooks/exhaustive-deps
+  const locationFocus = useMemo(() => countTopValues("location"), [apps]); // eslint-disable-line react-hooks/exhaustive-deps
   const latestApplications = sorted.filter(a => a.dateApplied).slice(0, 3);
   const homeInsight = dueFollowUps.length > 0
     ? `You have ${dueFollowUps.length} follow-up${dueFollowUps.length !== 1 ? "s" : ""} due. The fastest win is to clear those first.`
@@ -608,7 +662,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               </button>
             </div>
           </div>
-          <div role="tablist" aria-label="Job tracker sections" className="tracker-tabs">
+          <div role="tablist" aria-label="Job tracker sections" className="tracker-tabs" onKeyDown={handleTabKeyDown}>
             {TABS.map(tab => {
               const TabIcon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -1021,7 +1075,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         </div>
       </div>
 
-      <Modal open={modalOpen} onClose={()=>{setModalOpen(false);setEditId(null);setForm(EMPTY_FORM);setFormError("");}}>
+      <Modal label={editId!==null?"Edit application":"New application"} open={modalOpen} onClose={()=>{setModalOpen(false);setEditId(null);setForm(EMPTY_FORM);setFormError("");}}>
         <div style={{padding:"22px 26px 12px",borderBottom:"1px solid #F3F4F6"}}>
           <h2 style={{margin:0,fontSize:18,color:"#1F4E79",fontFamily:"Georgia,serif"}}>{editId!==null?"✏️ Edit Application":"📤 New Application"}</h2>
         </div>
@@ -1087,7 +1141,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         </div>
       </Modal>
 
-      <Modal open={detailApp!==null} onClose={()=>setDetailId(null)}>
+      <Modal label={detailApp ? `${detailApp.company} application details` : "Application details"} open={detailApp!==null} onClose={()=>setDetailId(null)}>
         {detailApp&&(()=>{
           const a=detailApp;
           const dLeft=daysUntilGhost(a);
@@ -1148,7 +1202,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         })()}
       </Modal>
 
-      <Modal open={deleteApp!==null} onClose={()=>setDeleteConfirmId(null)}>
+      <Modal label="Confirm removal" open={deleteApp!==null} onClose={()=>setDeleteConfirmId(null)}>
         <div style={{padding:26}}>
           <h3 style={{margin:"0 0 10px",fontFamily:"Georgia,serif",color:"#111827"}}>Remove Application?</h3>
           <p style={{margin:"0 0 20px",color:"#6B7280",fontSize:14}}>Permanently delete <strong>{deleteApp?.company}</strong>? This cannot be undone.</p>
