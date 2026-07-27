@@ -39,7 +39,7 @@ const TABS = [
   { id: "Job Search", icon: SearchIcon, label: "Job Search", description: "Track applications and manage search activity" },
   { id: "Pipeline", icon: RouteIcon, label: "Pipeline", description: "Follow-ups, interviews, and ghost-risk items" },
   { id: "Analytics", icon: BarChartIcon, label: "Analytics", description: "Performance, outcomes, and momentum trends" },
-  { id: "Interview Prep", icon: TargetIcon, label: "Interview Prep", description: "Role-specific prep, study guides, and stage-aware tips" },
+  { id: "Interview Prep", icon: TargetIcon, label: "Interview Prep", description: "Stage-aware tips, rehearsed answers, and your evidence" },
 ];
 // ---------------------------------------------------------------------------
 // Helpers
@@ -451,7 +451,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     a.download = `job-tracker-backup-${new Date().toISOString().split("T")[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast(`Exported ${apps.length} applications`);
+    showToast(`Exported ${apps.length} application${apps.length !== 1 ? "s" : ""}`);
   };
 
   // Import data from JSON file
@@ -481,7 +481,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
           if (!confirmed) return;
           setApps(withIds);
           persistToStorage(withIds);
-          showToast(`Restored ${withIds.length} applications from backup`);
+          showToast(`Restored ${withIds.length} application${withIds.length !== 1 ? "s" : ""} from backup`);
         } else {
           const merged = [...newApps, ...apps];
           setApps(merged);
@@ -607,7 +607,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
       ? `You've logged ${todayCount} application${todayCount !== 1 ? "s" : ""} today.`
       : "No applications logged today yet. Use the tracker when you're ready.");
   const todayBannerHelper = dueFollowUps.length > 0
-    ? `${dueFollowUps.length} follow-up${dueFollowUps.length !== 1 ? "s" : ""} still need attention.`
+    ? `${dueFollowUps.length} follow-up${dueFollowUps.length !== 1 ? "s still need" : " still needs"} attention.`
     : "A quick update here keeps your pipeline accurate.";
   const todaySummaryValue = todayIsWeekend
     ? (todayCount > 0 ? `${todayCount} logged` : "Weekend")
@@ -752,7 +752,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         }}>
           <div>
             <p style={{ margin:0, fontWeight:700, color:todayBannerTone.text, fontSize:13 }}>
-              {todayIsWeekend ? "🛋️ " : "📆 "}{todayBannerMessage}
+              <span style={{ marginRight: 8 }} aria-hidden="true">{todayIsWeekend ? "🛋️" : "📆"}</span>{todayBannerMessage}
             </p>
             <p style={{ margin:"4px 0 0", color:"#64748B", fontSize:12 }}>
               {todayBannerHelper}
@@ -831,7 +831,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 <div style={{ display:"grid", gap:10 }}>
                   {[
                     dueFollowUps.length > 0 ? `Clear ${dueFollowUps.length} overdue follow-up${dueFollowUps.length !== 1 ? "s" : ""} to keep momentum.` : "No overdue follow-ups right now.",
-                    atRiskApps.length > 0 ? `${atRiskApps.length} application${atRiskApps.length !== 1 ? "s" : ""} are close to ghosting. Consider nudging the strongest ones.` : "No immediate ghost-risk applications this week.",
+                    atRiskApps.length > 0 ? `${atRiskApps.length} application${atRiskApps.length !== 1 ? "s are" : " is"} close to ghosting. Consider nudging the strongest ones.` : "No immediate ghost-risk applications this week.",
                     responseRate > 0 ? `Your current response rate is ${responseRate}%. Keep targeting similar roles and companies.` : "You are still early in the cycle. Keep the tracker current and focus on the roles that fit best.",
                   ].map((item) => (
                     <div key={item} style={{ background:"#F8FAFC", borderRadius:12, padding:"10px 12px", color:"#475569", fontSize:13, lineHeight:1.6 }}>

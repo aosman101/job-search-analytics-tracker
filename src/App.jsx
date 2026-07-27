@@ -105,7 +105,7 @@ export default function App() {
             <div>
               <span className="metric-value">03</span>
               <strong>Prepare</strong>
-              <span>Role-specific Q&amp;A, technical drills, and final-round prep</span>
+              <span>Stage-aware tips, rehearsed answers, and portfolio evidence</span>
             </div>
           </div>
 
@@ -118,7 +118,7 @@ export default function App() {
               {[
                 ["Pipeline", "Live application board with follow-up state and lifecycle timestamps."],
                 ["Metrics", "Conversion rates, rejection timing, ghost risk, and search concentration."],
-                ["Prep", "Practice bank for recruiter screens, STAR answers, SQL, Python, and system design."],
+                ["Prep", "Stage-by-stage tips and rehearsed answers grounded in real project evidence."],
                 ["Backup", "IndexedDB persistence with local fallback and JSON import/export."],
               ].map(([title, text]) => (
                 <div className="operation-item" key={title}>
