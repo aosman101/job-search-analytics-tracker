@@ -129,7 +129,10 @@ function StagePlaybookCard({ stage, onOpenQuestion }) {
   return (
     <div className={`prep-stage prep-stage--${stage.accent}`}>
       <div className="prep-stage__head">
-        <h4 className="prep-stage__title">{stage.emoji} {stage.stage}</h4>
+        <h4 className="prep-stage__title">
+          <span className="prep-stage__emoji" aria-hidden="true">{stage.emoji}</span>
+          {stage.stage}
+        </h4>
         <span className="prep-stage__focus">{stage.focus}</span>
       </div>
       <ul className="prep-stage__tips">

@@ -1106,6 +1106,13 @@ a:focus-visible {
   font-size: 16px;
 }
 
+.prep-stage__emoji {
+  display: inline-block;
+  margin-right: 9px;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 15px;
+}
+
 .prep-stage__focus {
   color: var(--muted);
   font-size: 12px;
