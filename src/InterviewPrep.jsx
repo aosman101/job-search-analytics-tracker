@@ -1,446 +1,21 @@
-import { useState, useMemo } from "react";
-import interviewPrepData from "./data/interview-prep.json";
+import { useCallback, useMemo, useRef, useState } from "react";
+import prepData from "./data/interview-prep.json";
 
 // ---------------------------------------------------------------------------
-// Personal profile, projects, and tailored answers — sourced from
-// src/data/interview-prep.json so content edits don't require code changes.
+// All prep content lives in src/data/interview-prep.json so answers can be
+// edited without touching component code.
 // ---------------------------------------------------------------------------
 
-const MY_PROFILE = interviewPrepData.profile;
-const MY_PROJECTS = interviewPrepData.projects;
-const TAILORED_ANSWERS = interviewPrepData.tailoredAnswers;
+const { profile: PROFILE, keyNumbers: KEY_NUMBERS, coreTips: CORE_TIPS, stagePlaybook: STAGE_PLAYBOOK, questions: QUESTIONS, projects: PROJECTS } = prepData;
 
-
-// ---------------------------------------------------------------------------
-// Study guide content — structured by domain and topic
-// ---------------------------------------------------------------------------
+const QUESTIONS_BY_ID = new Map(QUESTIONS.map(q => [q.id, q]));
+const CATEGORIES = [...new Set(QUESTIONS.map(q => q.category))];
 
 const ROLE_TYPES = {
-  DE: { label: "Data Engineering", color: "#3B82F6", bg: "#EFF6FF", border: "#BFDBFE", emoji: "🔧" },
-  DA: { label: "Data Analysis", color: "#10B981", bg: "#ECFDF5", border: "#A7F3D0", emoji: "📈" },
-  AE: { label: "Analytics Engineering", color: "#8B5CF6", bg: "#F5F3FF", border: "#DDD6FE", emoji: "🔬" },
+  DE: { label: "Data Engineering", short: "DE" },
+  DA: { label: "Data Analysis", short: "DA" },
+  AE: { label: "Analytics Engineering", short: "AE" },
 };
-
-const STAGE_GUIDANCE = {
-  "1st Interview": {
-    label: "1st Interview",
-    emoji: "👋",
-    color: "#3B82F6",
-    focus: "Introduction & Screening",
-    tips: [
-      "Prepare a concise 2-minute walkthrough of your career narrative — focus on transitions and why each move made sense.",
-      "Research the company's data stack and recent engineering blog posts. Mentioning specifics shows genuine interest.",
-      "Have 3-4 thoughtful questions ready about team structure, data challenges, and tech stack evolution.",
-      "Expect high-level technical screening: SQL fundamentals, basic Python, and 'tell me about a project' style questions.",
-      "Be ready to explain your understanding of the role and why it excites you — interviewers filter for enthusiasm here.",
-    ],
-  },
-  "2nd Interview": {
-    label: "2nd Interview",
-    emoji: "🔍",
-    color: "#8B5CF6",
-    focus: "Deep Technical Assessment",
-    tips: [
-      "Expect live coding or whiteboard problems. Practice thinking out loud — narrate your approach before writing code.",
-      "For SQL: window functions, self-joins, CTEs, and query optimization will almost certainly come up.",
-      "For Python: be fluent with pandas operations, dictionary comprehensions, and basic algorithm patterns.",
-      "Prepare to discuss trade-offs in past technical decisions — 'why did you choose X over Y' is a favourite.",
-      "If asked about system design, clarify requirements and constraints before jumping into architecture.",
-    ],
-  },
-  "3rd Interview": {
-    label: "3rd Interview",
-    emoji: "🧪",
-    color: "#EC4899",
-    focus: "Advanced Technical & Cross-functional",
-    tips: [
-      "This round often tests breadth — expect questions that cross domains (e.g., data quality + stakeholder communication).",
-      "Be ready for scenario-based questions: 'How would you handle a pipeline that breaks at 2am before a board meeting?'",
-      "Demonstrate ownership mentality — talk about times you went beyond your defined role to solve problems.",
-      "If meeting senior engineers or architects, focus on system-level thinking and long-term maintainability.",
-      "Prepare examples of cross-team collaboration and how you resolved technical disagreements.",
-    ],
-  },
-  "Home Assignment": {
-    label: "Home Assignment",
-    emoji: "🏠",
-    color: "#F59E0B",
-    focus: "Take-Home Project Execution",
-    tips: [
-      "Read the brief twice. Underline every requirement. Missing a stated requirement is the #1 reason candidates fail take-homes.",
-      "Structure your submission: README with approach, assumptions, and how to run it. Clean code > clever code.",
-      "Time-box yourself. If the brief says 3-4 hours, spend 3-4 hours. Over-engineering signals poor prioritisation.",
-      "Include tests for critical logic — even a few well-chosen tests show engineering maturity.",
-      "Add a brief 'What I would do next' section to show you can think beyond the immediate ask.",
-      "For data tasks: document your data quality assumptions and how you handled edge cases (nulls, duplicates, malformed rows).",
-    ],
-  },
-  "Final Interview": {
-    label: "Final Interview",
-    emoji: "🏆",
-    color: "#10B981",
-    focus: "Culture Fit & Leadership Alignment",
-    tips: [
-      "This is often with a hiring manager or director. Shift from 'I can do the work' to 'I'm the right person for this team'.",
-      "Prepare questions about team vision, growth plans, and how success is measured in the first 6 months.",
-      "Have a clear, honest answer for compensation expectations — research market rates beforehand.",
-      "Revisit your notes from earlier rounds. Reference specific conversations to show continuity and attention.",
-      "Ask about the decision timeline so you can plan your follow-up appropriately.",
-      "Be yourself — at this stage they've validated your skills. This round is about fit and mutual enthusiasm.",
-    ],
-  },
-};
-
-const STUDY_GUIDE = [
-  {
-    id: "sql",
-    title: "SQL",
-    emoji: "🗄️",
-    color: "#3B82F6",
-    roles: ["DE", "DA", "AE"],
-    description: "The universal language of data — tested in almost every data interview.",
-    topics: [
-      {
-        name: "Window Functions",
-        importance: "high",
-        concepts: ["ROW_NUMBER, RANK, DENSE_RANK", "LAG/LEAD for row comparisons", "Running totals with SUM() OVER", "PARTITION BY vs GROUP BY", "Frame clauses: ROWS BETWEEN"],
-        exampleQuestions: [
-          "Find the second highest salary in each department.",
-          "Calculate a 7-day rolling average of daily revenue.",
-          "Identify consecutive login streaks per user.",
-        ],
-        tips: "Window functions are the #1 most tested SQL concept. Practice until they feel natural. Always clarify the partition and ordering before writing. Your F1 RaceOps project uses window functions for ranking drivers and pit stop performance — reference it.",
-      },
-      {
-        name: "CTEs & Subqueries",
-        importance: "high",
-        concepts: ["WITH clause for readability", "Recursive CTEs for hierarchical data", "Correlated vs non-correlated subqueries", "When to use CTEs vs temp tables vs subqueries"],
-        exampleQuestions: [
-          "Build an org chart query using recursive CTE.",
-          "Find customers whose first purchase was above average.",
-          "Chain multiple CTEs to build a funnel analysis.",
-        ],
-        tips: "CTEs make your thinking visible to the interviewer. Use them liberally — they show you write maintainable SQL. Your dbt models (F1 RaceOps, Premier League) are essentially CTEs made permanent — mention this to show you think in layers.",
-      },
-      {
-        name: "Query Optimisation",
-        importance: "medium",
-        concepts: ["Reading EXPLAIN plans", "Indexing strategies (B-tree, hash, composite)", "Avoiding SELECT * and unnecessary joins", "Partition pruning in large tables", "Understanding query execution order"],
-        exampleQuestions: [
-          "This query runs in 45 seconds. How would you diagnose and improve it?",
-          "When would you choose a composite index over separate indexes?",
-          "Explain the difference between a hash join and a nested loop join.",
-        ],
-        tips: "You won't always be asked to optimise, but understanding why a query is slow signals senior-level thinking. Reference your BigQuery cost optimisation experience from the Premier League warehouse.",
-      },
-      {
-        name: "Data Modeling",
-        importance: "high",
-        concepts: ["Star schema vs snowflake schema", "Fact vs dimension tables", "Slowly changing dimensions (SCD Types 1, 2, 3)", "Normalisation forms (1NF through 3NF)", "Surrogate keys vs natural keys"],
-        exampleQuestions: [
-          "Design a schema for an e-commerce order system.",
-          "How would you handle a customer who changes their address over time?",
-          "When is denormalisation the right choice?",
-        ],
-        tips: "Data modeling questions test how you think about data relationships. Start with entities and relationships before jumping to tables. Your F1 RaceOps star schema (9 dims + facts) and StreamShop SCD2 implementation are strong examples to reference.",
-      },
-      {
-        name: "Joins & Set Operations",
-        importance: "medium",
-        concepts: ["INNER, LEFT, RIGHT, FULL OUTER, CROSS", "Self-joins for comparing rows in the same table", "Anti-joins (LEFT JOIN WHERE NULL)", "UNION vs UNION ALL vs INTERSECT vs EXCEPT"],
-        exampleQuestions: [
-          "Find customers who placed orders but never made a return.",
-          "Compare each employee's salary to their manager's salary.",
-          "Combine data from two tables with different schemas.",
-        ],
-        tips: "Draw the Venn diagram in your head (or on paper). Clarify expected behaviour for NULLs in join keys.",
-      },
-    ],
-  },
-  {
-    id: "python",
-    title: "Python",
-    emoji: "🐍",
-    color: "#10B981",
-    roles: ["DE", "DA", "AE"],
-    description: "The Swiss army knife for data work — from scripting to full pipeline orchestration.",
-    topics: [
-      {
-        name: "Pandas & Data Manipulation",
-        importance: "high",
-        concepts: ["GroupBy, agg, transform, apply", "Merge/join strategies and indicator flags", "Pivot tables and melt/unpivot", "Handling missing data (fillna, dropna, interpolate)", "Method chaining for readable pipelines"],
-        exampleQuestions: [
-          "Given a DataFrame of sales, find the top 3 products per region by revenue.",
-          "Clean and reshape a messy CSV with inconsistent date formats and missing values.",
-          "Calculate month-over-month growth rates from a time series DataFrame.",
-        ],
-        tips: "Pandas is tested practically. Speed matters less than correctness and clean code. Use .pipe() for readable chains. Your Deep Stock Insights project uses heavy pandas for 18+ technical indicators — great example of real-world data manipulation.",
-      },
-      {
-        name: "Data Structures & Algorithms",
-        importance: "medium",
-        concepts: ["Dictionaries and defaultdict for aggregation", "Sets for fast lookups and deduplication", "List comprehensions and generator expressions", "Sorting with key functions and lambda", "Collections module (Counter, deque, OrderedDict)"],
-        exampleQuestions: [
-          "Find the most frequently occurring element in a list.",
-          "Deduplicate a list of records while preserving order.",
-          "Implement a simple LRU cache.",
-        ],
-        tips: "Data roles rarely get LeetCode hard problems. Focus on hash maps, sorting, and string manipulation — they cover 80% of what you'll see.",
-      },
-      {
-        name: "File I/O & APIs",
-        importance: "medium",
-        concepts: ["Reading CSV, JSON, Parquet files", "Working with APIs using requests", "Pagination handling and rate limiting", "Context managers for safe file handling", "Error handling and retry patterns"],
-        exampleQuestions: [
-          "Write a script to pull paginated data from a REST API and save to Parquet.",
-          "How would you handle a flaky API that occasionally returns 500 errors?",
-          "Parse a nested JSON response into a flat DataFrame.",
-        ],
-        tips: "Real-world data ingestion is messy. Showing you handle edge cases (timeouts, malformed data, encoding issues) is a strong signal. Your TfL and London Air Quality projects both pull from live APIs with error handling — reference these.",
-      },
-      {
-        name: "Testing & Code Quality",
-        importance: "low",
-        concepts: ["pytest basics and fixture patterns", "Assertion strategies for DataFrames", "Mocking external dependencies", "Type hints for function signatures", "Linting and formatting (black, ruff)"],
-        exampleQuestions: [
-          "How would you test a data transformation function?",
-          "What's your approach to testing a pipeline that depends on an external API?",
-        ],
-        tips: "Testing rarely dominates an interview, but mentioning it proactively shows maturity. 'I'd write a test for this' is always a good reflex.",
-      },
-    ],
-  },
-  {
-    id: "system-design",
-    title: "System Design",
-    emoji: "🏗️",
-    color: "#F59E0B",
-    roles: ["DE", "AE"],
-    description: "Designing scalable data systems — pipelines, warehouses, and real-time architectures.",
-    topics: [
-      {
-        name: "Pipeline Architecture",
-        importance: "high",
-        concepts: ["ETL vs ELT and when to use each", "Batch vs streaming vs micro-batch", "Idempotency and exactly-once processing", "Orchestration (Airflow, Dagster, Prefect)", "Data lake vs data warehouse vs lakehouse"],
-        exampleQuestions: [
-          "Design a pipeline to ingest clickstream data from a web app into a data warehouse.",
-          "How would you handle late-arriving data in a daily batch pipeline?",
-          "Compare Airflow and Dagster — when would you choose one over the other?",
-        ],
-        tips: "Always start with: What's the source? What's the destination? What's the SLA? What's the volume? These four questions frame everything. You've built both batch (TfL, London Air Quality) and streaming (StreamShop CDC) pipelines — use them as contrasting examples.",
-      },
-      {
-        name: "Data Warehousing",
-        importance: "high",
-        concepts: ["Kimball vs Inmon methodology", "Partitioning and clustering strategies", "Materialised views and incremental models", "Cost optimisation in cloud warehouses", "Data freshness vs compute cost trade-offs"],
-        exampleQuestions: [
-          "Design a warehouse schema for a SaaS product with subscriptions, usage, and billing.",
-          "How would you optimise a Snowflake/BigQuery warehouse that's costing too much?",
-          "Explain how you'd implement incremental loading for a fact table.",
-        ],
-        tips: "Warehouse design questions are really about trade-offs. There's no single right answer — show your reasoning process. Reference your Premier League BigQuery warehouse for cloud and F1 RaceOps PostgreSQL warehouse for local — you've done both.",
-      },
-      {
-        name: "Streaming & Real-Time",
-        importance: "medium",
-        concepts: ["Kafka fundamentals (topics, partitions, consumer groups)", "Event-driven architecture patterns", "Stream processing (Flink, Spark Streaming)", "Exactly-once vs at-least-once semantics", "Windowing strategies (tumbling, sliding, session)"],
-        exampleQuestions: [
-          "Design a real-time fraud detection system.",
-          "How would you handle out-of-order events in a streaming pipeline?",
-          "When is streaming overkill and batch is the right answer?",
-        ],
-        tips: "Most companies don't need real-time everything. Showing you can identify when streaming is warranted (and when it's not) is a strong signal. Your StreamShop CDC project (Debezium → Redpanda → ClickHouse) is your go-to streaming example.",
-      },
-      {
-        name: "Data Quality & Observability",
-        importance: "medium",
-        concepts: ["Data contracts and schema evolution", "Freshness, volume, and distribution checks", "Great Expectations / dbt tests / Soda", "Alerting and incident response for data pipelines", "Lineage tracking and impact analysis"],
-        exampleQuestions: [
-          "How would you detect and handle a schema change from an upstream API?",
-          "Design a data quality monitoring system for a critical dashboard.",
-          "Walk me through how you'd investigate a data discrepancy reported by a stakeholder.",
-        ],
-        tips: "Data quality is increasingly a first-class interview topic. Having concrete examples of quality issues you caught and fixed is very valuable. You use Great Expectations in TfL + London Air Quality, dbt tests across all projects, Avro schema validation in StreamShop, and OpenLineage for lineage.",
-      },
-    ],
-  },
-  {
-    id: "behavioral",
-    title: "Behavioral",
-    emoji: "🤝",
-    color: "#EC4899",
-    roles: ["DE", "DA", "AE"],
-    description: "How you work with people, handle ambiguity, and grow through challenges.",
-    topics: [
-      {
-        name: "STAR Method",
-        importance: "high",
-        concepts: ["Situation — set the scene concisely", "Task — what was your specific responsibility", "Action — what YOU did (not the team)", "Result — quantify the outcome where possible", "Keep it under 2 minutes per answer"],
-        exampleQuestions: [
-          "Tell me about a time you had to deal with ambiguous requirements.",
-          "Describe a situation where you disagreed with a teammate's technical approach.",
-          "Give an example of a project where you had to learn something new quickly.",
-        ],
-        tips: "Prepare 5-6 strong stories that can be adapted to different questions. Each story should have a clear conflict and resolution. Your stories: StreamShop (technical complexity), TfL (learning new tools), AI Trading Agent (learning fast), Premier League (cost trade-offs), F1 (data modelling decisions).",
-      },
-      {
-        name: "Stakeholder Communication",
-        importance: "high",
-        concepts: ["Translating technical concepts for non-technical audiences", "Managing expectations and saying no constructively", "Presenting data findings and recommendations", "Handling conflicting priorities from different teams", "Written communication (docs, Slack, emails)"],
-        exampleQuestions: [
-          "How do you explain a complex data issue to a non-technical stakeholder?",
-          "Tell me about a time a stakeholder asked for something you knew was wrong. What did you do?",
-          "How do you prioritise when multiple teams need your help?",
-        ],
-        tips: "Data roles are cross-functional by nature. Interviewers want to know you can bridge the gap between technical work and business impact.",
-      },
-      {
-        name: "Problem-Solving & Ownership",
-        importance: "medium",
-        concepts: ["Root cause analysis mindset", "Taking initiative beyond your job description", "Learning from failures and post-mortems", "Working under pressure with tight deadlines", "Making decisions with incomplete information"],
-        exampleQuestions: [
-          "Tell me about a time you identified a problem nobody else noticed.",
-          "Describe a project that failed. What did you learn?",
-          "How do you handle a situation where you're blocked and your manager is unavailable?",
-        ],
-        tips: "Ownership stories are gold. 'I noticed X was broken, I fixed it, here's the impact' is the formula interviewers love.",
-      },
-    ],
-  },
-  {
-    id: "de-specific",
-    title: "Data Engineering",
-    emoji: "🔧",
-    color: "#3B82F6",
-    roles: ["DE"],
-    description: "Deep-dive topics specific to data engineering roles.",
-    topics: [
-      {
-        name: "Spark & Distributed Computing",
-        importance: "high",
-        concepts: ["RDDs vs DataFrames vs Datasets", "Partitioning and shuffles", "Broadcast joins for small tables", "Catalyst optimiser and execution plans", "Memory management and spill-to-disk"],
-        exampleQuestions: [
-          "Your Spark job is running out of memory. How do you diagnose and fix it?",
-          "When would you use a broadcast join vs a sort-merge join?",
-          "Explain the difference between narrow and wide transformations.",
-        ],
-        tips: "You don't need to memorise Spark internals, but understanding partitioning, shuffles, and joins at a conceptual level is expected for DE roles.",
-      },
-      {
-        name: "Orchestration & Infrastructure",
-        importance: "high",
-        concepts: ["Airflow DAGs, operators, and sensors", "Idempotent task design", "Infrastructure as code (Terraform, CloudFormation)", "Containerisation (Docker) for reproducible environments", "CI/CD for data pipelines"],
-        exampleQuestions: [
-          "How do you handle a failed Airflow task at 3am?",
-          "Design a CI/CD pipeline for a dbt project.",
-          "When would you choose Kubernetes over a managed service?",
-        ],
-        tips: "Orchestration is the backbone of DE work. Show you understand not just how to build pipelines, but how to operate them reliably. You've built Airflow DAGs in TfL Lakehouse and London Air Quality, plus CI/CD with GitHub Actions across multiple projects — reference these.",
-      },
-      {
-        name: "Cloud Platforms",
-        importance: "medium",
-        concepts: ["AWS (S3, Glue, Redshift, EMR, Lambda)", "GCP (GCS, BigQuery, Dataflow, Composer)", "Azure (ADLS, Synapse, Data Factory)", "Serverless vs managed vs self-hosted trade-offs", "Cost management and resource right-sizing"],
-        exampleQuestions: [
-          "Compare Redshift vs BigQuery for a mid-size analytics workload.",
-          "How would you design a cost-efficient data lake on AWS?",
-          "When does serverless make sense for data processing?",
-        ],
-        tips: "Know one cloud well and have awareness of the others. Most interviewers care more about your reasoning than platform-specific knowledge.",
-      },
-    ],
-  },
-  {
-    id: "da-specific",
-    title: "Data Analysis",
-    emoji: "📈",
-    color: "#10B981",
-    roles: ["DA"],
-    description: "Deep-dive topics specific to data analysis roles.",
-    topics: [
-      {
-        name: "Statistics & A/B Testing",
-        importance: "high",
-        concepts: ["Hypothesis testing (p-values, significance levels)", "Confidence intervals and sample size calculation", "Common pitfalls (peeking, multiple comparisons, Simpson's paradox)", "Bayesian vs frequentist approaches", "Practical significance vs statistical significance"],
-        exampleQuestions: [
-          "You run an A/B test and the p-value is 0.06. What do you do?",
-          "How would you calculate the required sample size for a pricing experiment?",
-          "A metric improved in every segment but declined overall. How is that possible?",
-        ],
-        tips: "Interviewers test whether you understand statistics conceptually, not just formulaically. Be ready to explain trade-offs in plain language.",
-      },
-      {
-        name: "Dashboarding & Visualisation",
-        importance: "medium",
-        concepts: ["Choosing the right chart type for the data", "Dashboard design principles (hierarchy, context, actionability)", "Tools: Tableau, Looker, Power BI, Metabase", "Avoiding misleading visualisations", "Self-serve analytics and metric definitions"],
-        exampleQuestions: [
-          "A stakeholder asks for a dashboard. Walk me through your process from request to delivery.",
-          "How do you decide what belongs on a dashboard vs what's better as an ad-hoc analysis?",
-          "Show me a dashboard you've built and explain your design choices.",
-        ],
-        tips: "Great dashboards answer one question clearly. Mentioning that you start with the business question (not the data) sets you apart.",
-      },
-      {
-        name: "Business Acumen & Metrics",
-        importance: "high",
-        concepts: ["Defining and decomposing KPIs", "Funnel analysis and conversion metrics", "Cohort analysis and retention curves", "Revenue metrics (ARR, MRR, LTV, CAC)", "Root cause analysis frameworks"],
-        exampleQuestions: [
-          "Revenue dropped 15% this month. Walk me through how you'd investigate.",
-          "Define the key metrics you'd track for a subscription product.",
-          "How would you measure the success of a new feature launch?",
-        ],
-        tips: "Analysis roles are about impact, not just SQL. Frame every answer around: what's the business question, what did I find, what did we do about it.",
-      },
-    ],
-  },
-  {
-    id: "ae-specific",
-    title: "Analytics Engineering",
-    emoji: "🔬",
-    color: "#8B5CF6",
-    roles: ["AE"],
-    description: "Deep-dive topics specific to analytics engineering roles.",
-    topics: [
-      {
-        name: "dbt & Transformation Layer",
-        importance: "high",
-        concepts: ["Models: staging, intermediate, marts", "Materialisation strategies (view, table, incremental, ephemeral)", "Jinja templating and macros", "Sources, refs, and the DAG", "Packages and reusable logic"],
-        exampleQuestions: [
-          "Walk me through how you'd structure a dbt project from scratch.",
-          "When would you choose incremental over full-refresh materialisation?",
-          "How do you handle a complex business rule that appears in multiple models?",
-        ],
-        tips: "dbt is the defining tool of analytics engineering. If the role mentions dbt, expect deep questions. Practice building a small project end-to-end.",
-      },
-      {
-        name: "Data Modeling for Analytics",
-        importance: "high",
-        concepts: ["Wide (OBT) vs normalised models for BI", "Metric definitions and the metrics layer", "Slowly changing dimensions in practice", "Naming conventions and self-documenting models", "Bridging raw data and analyst-friendly marts"],
-        exampleQuestions: [
-          "Design a data model for a multi-product SaaS company's analytics layer.",
-          "How do you decide what goes in a staging model vs a mart?",
-          "What's your approach to defining metrics consistently across an organisation?",
-        ],
-        tips: "AE is about making data accessible and trustworthy. Show that you think about the analyst's experience, not just technical correctness.",
-      },
-      {
-        name: "Testing & Data Quality",
-        importance: "high",
-        concepts: ["dbt tests (unique, not_null, accepted_values, relationships)", "Custom schema tests and generic tests", "Data freshness monitoring", "Documentation and cataloguing (dbt docs, data dictionaries)", "CI/CD for dbt (slim CI, state comparison)"],
-        exampleQuestions: [
-          "How do you test a dbt model that implements complex business logic?",
-          "Design a data quality strategy for a team of 5 analysts consuming your models.",
-          "What's your approach to dbt CI — what do you test on every PR?",
-        ],
-        tips: "Testing is core to AE, not an afterthought. Interviewers want to hear that quality is built into your workflow, not bolted on.",
-      },
-    ],
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Role detection from application role titles
-// ---------------------------------------------------------------------------
 
 const ROLE_PATTERNS = {
   DE: [/data\s*engineer/i, /etl/i, /pipeline/i, /platform\s*engineer/i, /infra.*data/i, /big\s*data/i, /backend.*data/i],
@@ -448,255 +23,10 @@ const ROLE_PATTERNS = {
   AE: [/analytics\s*engineer/i, /dbt/i, /analytic.*engineer/i],
 };
 
-const PRACTICE_BANK = [
-  {
-    id: "recruiter-screen",
-    title: "Recruiter Screen",
-    emoji: "☎️",
-    color: "#1F4E79",
-    prompts: [
-      {
-        question: "Walk me through your background in two minutes.",
-        framework: "Present → proof → direction.",
-        keyPoints: ["First Class BSc", "Junior Data Engineer experience", "TfL production-pattern project", "What role you want next"],
-        strongAnswer: "Start with your current positioning as a London-based data engineer, then give one quantified work example, one portfolio example, and close with why the role direction fits.",
-        mistakes: ["Listing every project", "Going too deep technically", "Forgetting to say what you want next"],
-      },
-      {
-        question: "Why are you leaving / what are you looking for?",
-        framework: "Growth-focused, never negative.",
-        keyPoints: ["Larger production systems", "Clear data engineering ownership", "Mentorship plus delivery", "Long-term technical growth"],
-        strongAnswer: "Frame it as wanting a role where you can own reliable pipelines end to end, keep building with dbt/Airflow/cloud warehouses, and work with a team that values data quality.",
-        mistakes: ["Sounding apologetic", "Over-explaining", "Focusing only on tools rather than impact"],
-      },
-      {
-        question: "What salary range are you targeting?",
-        framework: "Range → flexibility → fit.",
-        keyPoints: ["Know your researched range", "Mention total package", "Keep the conversation open"],
-        strongAnswer: "Give a researched range for London data roles, then say you are flexible depending on scope, growth, and total package.",
-        mistakes: ["Giving no range at all", "Undervaluing yourself", "Sounding rigid before knowing the role"],
-      },
-    ],
-  },
-  {
-    id: "behavioral-star",
-    title: "Behavioral STAR",
-    emoji: "🤝",
-    color: "#EC4899",
-    prompts: [
-      {
-        question: "Tell me about a time you handled ambiguity.",
-        framework: "STAR with a decision log.",
-        keyPoints: ["Unclear requirement", "Questions you asked", "Assumptions documented", "Measured result"],
-        strongAnswer: "Use the TfL app or HQ dashboard work. Show how you converted a vague need into clear data requirements, then delivered a usable outcome.",
-        mistakes: ["Skipping the ambiguity", "Only describing the final solution", "No result metric"],
-      },
-      {
-        question: "Tell me about a time something failed.",
-        framework: "Failure → diagnosis → correction → prevention.",
-        keyPoints: ["What broke", "How you found root cause", "What changed afterward", "What you learned"],
-        strongAnswer: "Pick a pipeline/API/schema issue. The strongest version includes monitoring, tests, or documentation added afterward.",
-        mistakes: ["Blaming the tool", "Pretending nothing really failed", "No prevention step"],
-      },
-      {
-        question: "Describe a time you influenced someone without authority.",
-        framework: "Context → trust → evidence → outcome.",
-        keyPoints: ["Stakeholder need", "Evidence shown", "Trade-off explained", "Decision changed"],
-        strongAnswer: "Use mentorship or dashboard examples where you helped others adopt a better data practice by making the benefit clear.",
-        mistakes: ["Making it sound like an argument", "No stakeholder perspective", "No outcome"],
-      },
-    ],
-  },
-  {
-    id: "technical-sql-python",
-    title: "SQL & Python Drill",
-    emoji: "🧪",
-    color: "#3B82F6",
-    prompts: [
-      {
-        question: "Find the latest application status per company from an events table.",
-        framework: "Clarify grain → window function → filter row_number = 1.",
-        keyPoints: ["Partition by company", "Order by event timestamp desc", "Handle ties", "Return stable columns"],
-        strongAnswer: "Use ROW_NUMBER() OVER (PARTITION BY company ORDER BY event_ts DESC, event_id DESC) and filter to rn = 1.",
-        mistakes: ["Using MAX(status)", "Ignoring duplicate timestamps", "Not clarifying whether company or application is the grain"],
-      },
-      {
-        question: "Clean a CSV with inconsistent dates, duplicated IDs, and missing values in pandas.",
-        framework: "Profile → standardise → deduplicate → validate.",
-        keyPoints: ["pd.to_datetime(errors='coerce')", "drop_duplicates with subset/order", "missing value policy", "assertions"],
-        strongAnswer: "Describe a small pipeline with explicit parsing, duplicate rules, missing-value treatment, and validation checks before export.",
-        mistakes: ["Blind dropna", "No audit of rows removed", "No validation at the end"],
-      },
-      {
-        question: "How would you optimise a slow SQL query?",
-        framework: "Measure → inspect plan → reduce data → improve joins/indexes.",
-        keyPoints: ["EXPLAIN plan", "Filters before joins", "Partition pruning", "Indexes/clustering", "Avoid SELECT *"],
-        strongAnswer: "Start by reproducing and measuring, inspect the query plan, identify scans/shuffles, then choose indexing, partitioning, materialisation, or query rewrite based on evidence.",
-        mistakes: ["Guessing indexes first", "Not measuring", "Optimising readability away"],
-      },
-    ],
-  },
-  {
-    id: "system-design",
-    title: "System Design",
-    emoji: "🏗️",
-    color: "#F59E0B",
-    prompts: [
-      {
-        question: "Design a job application analytics pipeline for a recruitment platform.",
-        framework: "Sources → ingestion → storage → transformations → serving → quality.",
-        keyPoints: ["Events from app tracking", "Batch vs streaming", "Warehouse schema", "Funnel metrics", "PII handling", "Data quality checks"],
-        strongAnswer: "Clarify volume and latency first, then propose raw event capture, warehouse modelling, dbt marts for funnel analytics, and observability around freshness and schema drift.",
-        mistakes: ["Jumping straight to tools", "Ignoring PII", "No data quality or backfill story"],
-      },
-      {
-        question: "Design a CDC pipeline from Postgres to an analytics database.",
-        framework: "Capture → broker → consume → model → recover.",
-        keyPoints: ["WAL/Debezium", "Kafka/Redpanda", "Idempotent consumer", "SCD2", "Replay/backfill"],
-        strongAnswer: "Use your StreamShop example: Postgres WAL through Debezium, brokered events, consumer into ClickHouse, dbt models for current-state and history, plus schema contracts.",
-        mistakes: ["No ordering semantics", "No replay plan", "Treating deletes as an afterthought"],
-      },
-      {
-        question: "Design monitoring for a critical executive dashboard.",
-        framework: "Freshness → volume → distribution → lineage → alerting.",
-        keyPoints: ["SLA", "Source checks", "dbt tests", "Anomaly detection", "Ownership", "Incident runbook"],
-        strongAnswer: "Define what 'healthy' means first. Then layer checks at ingestion, transformation, and mart levels with clear alert ownership.",
-        mistakes: ["Only dashboard-level checks", "No owner", "No severity levels"],
-      },
-    ],
-  },
-  {
-    id: "take-home-final",
-    title: "Take-Home & Final Round",
-    emoji: "🏁",
-    color: "#10B981",
-    prompts: [
-      {
-        question: "Walk us through your take-home solution.",
-        framework: "Requirement → assumptions → architecture → trade-offs → next steps.",
-        keyPoints: ["Repeat the brief", "Call out assumptions", "Show tests", "Explain trade-offs", "Discuss improvements"],
-        strongAnswer: "Lead with how you interpreted the brief, then show the simplest working design, the checks you added, and what you would improve with more time.",
-        mistakes: ["Only demoing code", "No trade-offs", "No tests or validation"],
-      },
-      {
-        question: "What would you do in your first 90 days?",
-        framework: "Learn → contribute → own.",
-        keyPoints: ["First 30: understand systems", "60: deliver scoped improvements", "90: own a workflow", "Communicate clearly"],
-        strongAnswer: "Make the answer specific to data work: understand lineage, SLAs, stakeholders, pain points, then take ownership of a measurable improvement.",
-        mistakes: ["Generic enthusiasm", "No learning period", "Promising too much too soon"],
-      },
-      {
-        question: "Why should we hire you over another candidate?",
-        framework: "Evidence, not adjectives.",
-        keyPoints: ["Production-pattern projects", "Measured work impact", "Mentorship", "Communication", "Learning speed"],
-        strongAnswer: "Position yourself as someone who can build, explain, and operate data systems, using the quantified work and portfolio evidence you already have.",
-        mistakes: ["Sounding arrogant", "No proof", "Comparing yourself negatively to others"],
-      },
-    ],
-  },
-];
-
-const QA_LIBRARY = [
-  {
-    id: "sql-window-functions",
-    role: "DE",
-    category: "SQL",
-    difficulty: "High",
-    question: "Explain window functions and give an example of when you would use one.",
-    answer: "Window functions calculate across related rows without collapsing the result set. I use them when I need row-level output plus context, such as ranking, deduplication, running totals, or comparing each row to the previous row. For example, to find the latest status per application I would use ROW_NUMBER() OVER (PARTITION BY application_id ORDER BY updated_at DESC) and filter to row_number = 1.",
-    structure: ["Define the concept", "Explain why it is different from GROUP BY", "Give a practical example", "Mention edge cases like tie-breaking"],
-    projectTieIn: "Use your job tracker or F1 RaceOps examples: latest event per entity, driver ranking, or pit-stop performance comparisons.",
-  },
-  {
-    id: "sql-query-optimization",
-    role: "AE",
-    category: "SQL",
-    difficulty: "High",
-    question: "A dashboard query is slow. How would you investigate and improve it?",
-    answer: "I would first reproduce the issue and inspect the query plan rather than guessing. I would check scan volume, joins, filters, aggregations, and whether partition or clustering pruning is happening. Then I would reduce unnecessary columns, push filters earlier, review join keys, add or adjust indexes/clustering where appropriate, and consider materialising repeated transformations if the dashboard runs often.",
-    structure: ["Measure first", "Read the plan", "Reduce data scanned", "Fix joins/indexing", "Materialise if repeated"],
-    projectTieIn: "Reference Premier League BigQuery cost optimisation or dbt marts where model materialisation choices affect performance.",
-  },
-  {
-    id: "python-data-cleaning",
-    role: "DA",
-    category: "Python",
-    difficulty: "Medium",
-    question: "How would you clean a messy CSV with duplicated records, inconsistent dates, and missing values?",
-    answer: "I would profile the file first so I know the scale of the problem. Then I would parse dates with explicit error handling, standardise categorical fields, define a deduplication rule based on stable keys and timestamps, and apply a missing-value policy that fits the business context. I would finish with validation checks and a short summary of rows changed or removed.",
-    structure: ["Profile", "Standardise", "Deduplicate", "Handle nulls", "Validate and report"],
-    projectTieIn: "Use TfL or London Air Quality ingestion work where API and source data quality assumptions had to be documented.",
-  },
-  {
-    id: "pipeline-late-data",
-    role: "DE",
-    category: "System Design",
-    difficulty: "High",
-    question: "How would you handle late-arriving data in a daily data pipeline?",
-    answer: "I would design the pipeline to be idempotent and able to reprocess a bounded window of recent data. Instead of assuming yesterday's partition is final, I would define a lookback window, merge by stable keys, track ingestion timestamps, and separate event time from processing time. I would also add freshness and volume checks so late data does not silently distort downstream metrics.",
-    structure: ["Clarify lateness pattern", "Separate event time and processing time", "Use lookback/backfill", "Merge idempotently", "Monitor impact"],
-    projectTieIn: "Reference batch pipelines from TfL/London Air Quality and explain how you would backfill affected partitions.",
-  },
-  {
-    id: "dbt-model-structure",
-    role: "AE",
-    category: "dbt",
-    difficulty: "High",
-    question: "How would you structure a dbt project from raw data to analytics-ready models?",
-    answer: "I would split the project into staging, intermediate, and marts. Staging models clean and rename source fields with minimal business logic. Intermediate models handle reusable transformations and joins. Mart models represent business-facing entities and metrics. I would add tests at each layer, document key models, and use incremental materialisations only where volume and freshness requirements justify the complexity.",
-    structure: ["Staging", "Intermediate", "Marts", "Tests/docs", "Materialisation strategy"],
-    projectTieIn: "Reference F1 RaceOps, Premier League, or StreamShop dbt models and explain how you separated raw, staging, and mart layers.",
-  },
-  {
-    id: "stakeholder-metric-change",
-    role: "DA",
-    category: "Stakeholder",
-    difficulty: "Medium",
-    question: "A stakeholder says a key metric looks wrong. What do you do?",
-    answer: "I would start by clarifying what changed from their perspective: date range, segment, dashboard tile, and expected value. Then I would trace the metric definition from dashboard to model to source, checking freshness, filters, joins, and recent schema or business-rule changes. I would communicate early with a clear status, then document the root cause and prevention step once resolved.",
-    structure: ["Clarify symptom", "Trace lineage", "Check freshness/filters", "Communicate status", "Document prevention"],
-    projectTieIn: "Use dashboard work or data quality checks from your lakehouse projects.",
-  },
-  {
-    id: "cdc-design",
-    role: "DE",
-    category: "Streaming",
-    difficulty: "High",
-    question: "Design a CDC pipeline from Postgres into an analytics database.",
-    answer: "I would capture changes from the Postgres WAL using Debezium, publish them to Kafka or Redpanda topics, and consume them into the analytics store with idempotent upserts. I would preserve ordering per key, handle deletes explicitly, track schema changes, and maintain replay/backfill paths. Downstream, I would model both current-state tables and history tables depending on the analytics need.",
-    structure: ["Capture", "Broker", "Consume", "Handle ordering/deletes", "Model current and history", "Replay/backfill"],
-    projectTieIn: "Use StreamShop CDC: Debezium to Redpanda to ClickHouse with dbt models.",
-  },
-  {
-    id: "ab-test-practical",
-    role: "DA",
-    category: "Statistics",
-    difficulty: "Medium",
-    question: "An A/B test has a p-value of 0.06. What would you recommend?",
-    answer: "I would not treat 0.06 as a simple pass or fail without context. I would check sample size, power, confidence interval, practical effect size, guardrail metrics, and whether the test was analysed as planned. If the effect is meaningful but underpowered, I may recommend running longer. If the effect is small or guardrails are negative, I would avoid shipping just because it is close to significance.",
-    structure: ["Avoid binary thinking", "Check power and effect size", "Review guardrails", "Recommend next step"],
-    projectTieIn: "Tie this to business-impact framing from analytics dashboards rather than only statistical mechanics.",
-  },
-  {
-    id: "ownership-failure",
-    role: "ALL",
-    category: "Behavioral",
-    difficulty: "High",
-    question: "Tell me about a time something failed and what you learned.",
-    answer: "I would choose a technical issue where the fix improved the system, not just the immediate problem. The answer should show what failed, how I diagnosed it, what I changed, and what prevention I added afterwards, such as a test, monitoring check, clearer documentation, or a better handoff process.",
-    structure: ["Failure", "Diagnosis", "Correction", "Prevention", "Learning"],
-    projectTieIn: "Use a pipeline/API/schema issue from TfL, London Air Quality, or StreamShop.",
-  },
-  {
-    id: "first-90-days",
-    role: "ALL",
-    category: "Final Round",
-    difficulty: "Medium",
-    question: "What would you do in your first 90 days?",
-    answer: "In the first 30 days I would understand the data landscape, stakeholders, SLAs, current pain points, and team conventions. By 60 days I would deliver scoped improvements and become useful on existing workflows. By 90 days I would aim to own a measurable area, such as improving pipeline reliability, data quality checks, or a key analytics model.",
-    structure: ["30 days: learn", "60 days: contribute", "90 days: own"],
-    projectTieIn: "Connect this to your production-pattern project approach: understand lineage first, then improve reliability and usefulness.",
-  },
+const SECTIONS = [
+  { id: "interviews", label: "Your Interviews", hint: "Stage tips & core principles" },
+  { id: "qa", label: "Q&A", hint: `${QUESTIONS.length} answers, in your words` },
+  { id: "evidence", label: "Your Evidence", hint: "Numbers, roles & projects" },
 ];
 
 function detectRoleType(roleTitle) {
@@ -709,15 +39,12 @@ function detectRoleType(roleTitle) {
 
 function getActiveInterviews(apps) {
   return apps
-    .filter(a => a.status === "Interview" || (a.interviewStage && a.interviewStage !== "" && !["Rejected", "Withdrawn", "Ghosted"].includes(a.status)))
-    .map(a => ({
-      ...a,
-      detectedRole: detectRoleType(a.role),
-    }));
+    .filter(a => a.status === "Interview" || (a.interviewStage && !["Rejected", "Withdrawn", "Ghosted"].includes(a.status)))
+    .map(a => ({ ...a, detectedRole: detectRoleType(a.role) }));
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components
+// Shared pieces
 // ---------------------------------------------------------------------------
 
 function SectionCard({ title, subtitle, actions = null, children, style = {} }) {
@@ -737,802 +64,389 @@ function SectionCard({ title, subtitle, actions = null, children, style = {} }) 
   );
 }
 
-function ImportanceBadge({ level }) {
-  const config = {
-    high: { label: "HIGH PRIORITY", color: "#DC2626", bg: "#FEF2F2", border: "#FECACA" },
-    medium: { label: "MEDIUM", color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
-    low: { label: "GOOD TO KNOW", color: "#6B7280", bg: "#F9FAFB", border: "#E5E7EB" },
-  };
-  const c = config[level] || config.medium;
-  return (
-    <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 10, fontSize: 9, fontWeight: 800, letterSpacing: "0.06em", color: c.color, background: c.bg, border: `1px solid ${c.border}` }}>
-      {c.label}
-    </span>
-  );
-}
+function QuestionCard({ item, open, onToggle, cardRef }) {
+  const [copied, setCopied] = useState(false);
 
-function TopicCard({ topic, defaultOpen = false }) {
-  const [open, setOpen] = useState(defaultOpen);
+  async function copyAnswer() {
+    try {
+      await navigator.clipboard.writeText(`${item.question}\n\n${item.answer}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (_) {
+      // Clipboard access can be blocked; failing silently is fine here.
+    }
+  }
+
   return (
-    <div style={{ border: "1.5px solid #E5E7EB", borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          width: "100%", padding: "12px 16px", background: open ? "#F8FAFC" : "#fff",
-          border: "none", cursor: "pointer", textAlign: "left",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <span style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{topic.name}</span>
-          <ImportanceBadge level={topic.importance} />
-        </div>
-        <span style={{ fontSize: 16, color: "#9CA3AF", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▼</span>
+    <article className="prep-qa" data-open={open} ref={cardRef}>
+      <button className="prep-qa__toggle" onClick={onToggle} aria-expanded={open}>
+        <span>
+          <span className="prep-qa__question">{item.question}</span>
+          <span className="prep-qa__meta">
+            <span className="prep-tag prep-tag--accent">{item.category}</span>
+            {item.roles.length < 3 && item.roles.map(r => (
+              <span key={r} className="prep-tag">{ROLE_TYPES[r]?.short || r}</span>
+            ))}
+          </span>
+        </span>
+        <span className="prep-qa__caret" aria-hidden="true">▼</span>
       </button>
+
       {open && (
-        <div style={{ padding: "0 16px 16px", background: "#FAFBFC" }}>
-          {topic.tips && (
-            <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 14px", marginBottom: 14, marginTop: 4 }}>
-              <p style={{ margin: 0, fontSize: 12, color: "#1E40AF", lineHeight: 1.6, fontWeight: 600 }}>💡 {topic.tips}</p>
-            </div>
-          )}
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Key Concepts</div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {topic.concepts.map(c => (
-                <span key={c} style={{ display: "inline-block", padding: "5px 10px", borderRadius: 8, background: "#F1F5F9", border: "1px solid #E2E8F0", fontSize: 12, color: "#334155", fontWeight: 600 }}>{c}</span>
-              ))}
-            </div>
-          </div>
-          {topic.exampleQuestions && (
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Example Interview Questions</div>
-              {topic.exampleQuestions.map((q, i) => (
-                <div key={i} style={{ padding: "8px 12px", background: "#fff", border: "1px solid #E5E7EB", borderRadius: 8, marginBottom: 6, fontSize: 13, color: "#374151", lineHeight: 1.5 }}>
-                  <span style={{ color: "#9CA3AF", fontWeight: 700, marginRight: 6 }}>Q{i + 1}.</span> {q}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+        <div className="prep-qa__body">
+          <p className="prep-qa__answer">{item.answer}</p>
 
-function TailoredAnswerCard({ item, index }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div style={{ border: "1.5px solid #E5E7EB", borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          width: "100%", padding: "14px 16px", background: open ? "#F8FAFC" : "#fff",
-          border: "none", cursor: "pointer", textAlign: "left",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", flex: 1 }}>
-          <span style={{ color: "#9CA3AF", fontWeight: 800, fontSize: 13 }}>Q{index + 1}.</span>
-          <span style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{item.question}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-          {item.tags.map(tag => (
-            <span key={tag} style={{ display: "inline-block", padding: "2px 8px", borderRadius: 8, fontSize: 9, fontWeight: 700, color: "#6B7280", background: "#F3F4F6", border: "1px solid #E5E7EB", whiteSpace: "nowrap" }}>{tag}</span>
-          ))}
-          <span style={{ fontSize: 16, color: "#9CA3AF", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", marginLeft: 4 }}>▼</span>
-        </div>
-      </button>
-      {open && (
-        <div style={{ padding: "4px 16px 16px", background: "#FAFBFC" }}>
-          <div style={{ background: "#fff", border: "1.5px solid #E5E7EB", borderRadius: 10, padding: "14px 16px", lineHeight: 1.8, fontSize: 13, color: "#374151" }}>
-            {item.answer}
-          </div>
-          <div style={{ marginTop: 10, padding: "8px 12px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 8 }}>
-            <p style={{ margin: 0, fontSize: 11, color: "#92400E", fontWeight: 600 }}>💡 Key points to hit: mention specific project names, tech choices, and quantifiable outcomes. Adapt the ending to the company you're interviewing at.</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ProjectArsenalCard({ project }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div style={{ border: "1.5px solid #E5E7EB", borderRadius: 14, overflow: "hidden", background: "#fff" }}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          width: "100%", padding: "14px 18px", background: open ? "#F8FAFC" : "#fff", border: "none",
-          cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 22 }}>{project.emoji}</span>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 15, color: "#111827" }}>{project.name}</div>
-            <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{project.category}</div>
-          </div>
-        </div>
-        <span style={{ fontSize: 16, color: "#9CA3AF", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▼</span>
-      </button>
-      {open && (
-        <div style={{ padding: "4px 18px 18px" }}>
-          <p style={{ margin: "0 0 12px", fontSize: 13, color: "#374151", lineHeight: 1.7 }}>{project.summary}</p>
-
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Tech Stack</div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {project.stack.map(tech => (
-                <span key={tech} style={{ display: "inline-block", padding: "4px 10px", borderRadius: 8, background: "#F1F5F9", border: "1px solid #E2E8F0", fontSize: 12, color: "#334155", fontWeight: 600 }}>{tech}</span>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Interview Talking Points</div>
-            {project.interviewUse.map((point, i) => (
-              <div key={i} style={{ padding: "8px 12px", background: i % 2 === 0 ? "#EFF6FF" : "#fff", border: "1px solid #BFDBFE", borderRadius: 8, marginBottom: 6, fontSize: 13, color: "#1E3A5F", lineHeight: 1.5 }}>
-                <span style={{ color: "#3B82F6", fontWeight: 800, marginRight: 6 }}>•</span> {point}
-              </div>
+          <div className="prep-steps" style={{ marginTop: 16 }}>
+            {item.structure.map((step, i) => (
+              <span key={step} className="prep-step">
+                <span className="prep-step__index">{i + 1}</span>
+                {step}
+              </span>
             ))}
           </div>
 
-          <a href={project.github} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, background: "#F6F8FA", border: "1.5px solid #D1D5DB", color: "#24292E", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
+          <div className="prep-qa__grid">
+            <div className="prep-panel prep-panel--evidence">
+              <div className="prep-panel__label">Your evidence</div>
+              <p className="prep-panel__text">{item.evidence}</p>
+            </div>
+            <div className="prep-panel prep-panel--watch">
+              <div className="prep-panel__label">Watch out</div>
+              <p className="prep-panel__text">{item.watchOut}</p>
+            </div>
+          </div>
+
+          <button className="prep-copy" onClick={copyAnswer}>
+            {copied ? "Copied ✓" : "Copy answer"}
+          </button>
+        </div>
+      )}
+    </article>
+  );
+}
+
+function StagePlaybookCard({ stage, onOpenQuestion }) {
+  return (
+    <div className={`prep-stage prep-stage--${stage.accent}`}>
+      <div className="prep-stage__head">
+        <h4 className="prep-stage__title">{stage.emoji} {stage.stage}</h4>
+        <span className="prep-stage__focus">{stage.focus}</span>
+      </div>
+      <ul className="prep-stage__tips">
+        {stage.tips.map(tip => <li key={tip}>{tip}</li>)}
+      </ul>
+      <div className="prep-panel__label">Rehearse these</div>
+      <div className="prep-steps" style={{ marginTop: 8 }}>
+        {stage.questions.map(id => {
+          const q = QUESTIONS_BY_ID.get(id);
+          if (!q) return null;
+          return (
+            <button key={id} className="prep-chip" onClick={() => onOpenQuestion(id)}>
+              {q.question}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ProjectCard({ project }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <article className="prep-project">
+      <button className="prep-project__toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 22 }} aria-hidden="true">{project.emoji}</span>
+          <span>
+            <span className="prep-project__name">{project.name}</span>
+            <span className="prep-project__category" style={{ display: "block" }}>{project.category}</span>
+          </span>
+        </span>
+        <span className="prep-qa__caret" aria-hidden="true" style={{ transform: open ? "rotate(180deg)" : "none" }}>▼</span>
+      </button>
+      {open && (
+        <div className="prep-project__body">
+          <p className="prep-project__summary">{project.summary}</p>
+          <div className="prep-panel__label">Talking points</div>
+          <ul className="prep-points" style={{ marginTop: 8 }}>
+            {project.interviewUse.map(point => <li key={point}>{point}</li>)}
+          </ul>
+          <div className="prep-panel__label">Stack</div>
+          <div className="prep-steps" style={{ marginTop: 8, marginBottom: 14 }}>
+            {project.stack.map(tech => <span key={tech} className="prep-step">{tech}</span>)}
+          </div>
+          <a className="prep-link" href={project.github} target="_blank" rel="noopener noreferrer">
             View on GitHub ↗
           </a>
         </div>
       )}
-    </div>
-  );
-}
-
-function StageCard({ stage, company, role }) {
-  const [open, setOpen] = useState(true);
-  const config = STAGE_GUIDANCE[stage];
-  if (!config) return null;
-  return (
-    <div style={{ border: `2px solid ${config.color}22`, borderRadius: 14, marginBottom: 12, overflow: "hidden", background: "#fff" }}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          width: "100%", padding: "14px 18px", background: `${config.color}08`, border: "none",
-          cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-        }}
-      >
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 18 }}>{config.emoji}</span>
-            <span style={{ fontWeight: 800, fontSize: 15, color: "#111827" }}>{config.label}</span>
-            <span style={{ fontSize: 12, color: config.color, fontWeight: 700, background: `${config.color}15`, padding: "2px 10px", borderRadius: 10 }}>{config.focus}</span>
-          </div>
-          {company && <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6B7280" }}>Preparing for <strong>{company}</strong>{role ? ` — ${role}` : ""}</p>}
-        </div>
-        <span style={{ fontSize: 16, color: "#9CA3AF", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▼</span>
-      </button>
-      {open && (
-        <div style={{ padding: "4px 18px 16px" }}>
-          {config.tips.map((tip, i) => (
-            <div key={i} style={{ padding: "10px 14px", background: i % 2 === 0 ? "#F8FAFC" : "#fff", borderRadius: 10, marginTop: 8, fontSize: 13, color: "#374151", lineHeight: 1.7 }}>
-              <span style={{ color: config.color, fontWeight: 800, marginRight: 6 }}>{i + 1}.</span> {tip}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PracticePromptCard({ prompt, index, color }) {
-  const [open, setOpen] = useState(index === 0);
-  return (
-    <div style={{ border: "1.5px solid #E5E7EB", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={{ width: "100%", padding: "13px 16px", border: "none", background: open ? "#F8FAFC" : "#fff", cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", gap: 12 }}
-      >
-        <div>
-          <div style={{ fontSize: 11, color, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>Prompt {index + 1}</div>
-          <div style={{ marginTop: 4, fontSize: 14, color: "#111827", fontWeight: 800 }}>{prompt.question}</div>
-        </div>
-        <span style={{ color: "#94A3B8", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▼</span>
-      </button>
-      {open && (
-        <div style={{ padding: "0 16px 16px", display: "grid", gap: 10 }}>
-          <div style={{ background: `${color}10`, border: `1px solid ${color}33`, borderRadius: 10, padding: "10px 12px" }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Answer Framework</div>
-            <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.6 }}>{prompt.framework}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Key Points to Hit</div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {prompt.keyPoints.map((point) => (
-                <span key={point} style={{ padding: "5px 9px", borderRadius: 8, background: "#F1F5F9", border: "1px solid #E2E8F0", color: "#334155", fontSize: 12, fontWeight: 700 }}>{point}</span>
-              ))}
-            </div>
-          </div>
-          <div style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: 10, padding: "10px 12px" }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#047857", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Strong Answer Shape</div>
-            <div style={{ fontSize: 13, color: "#065F46", lineHeight: 1.6 }}>{prompt.strongAnswer}</div>
-          </div>
-          <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "10px 12px" }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#B91C1C", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Common Mistakes</div>
-            <div style={{ display: "grid", gap: 4 }}>
-              {prompt.mistakes.map((mistake) => (
-                <div key={mistake} style={{ fontSize: 12, color: "#991B1B", lineHeight: 1.5 }}>• {mistake}</div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function QAAnswerCard({ item, index }) {
-  const [open, setOpen] = useState(index < 2);
-  const roleLabel = item.role === "ALL" ? "All roles" : ROLE_TYPES[item.role]?.label || item.role;
-  return (
-    <div style={{ border: "1.5px solid #E5E7EB", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={{ width: "100%", padding: "14px 16px", border: "none", background: open ? "#F8FAFC" : "#fff", cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", gap: 12 }}
-      >
-        <div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
-            <span style={{ padding: "2px 8px", borderRadius: 8, background: "#EFF6FF", border: "1px solid #BFDBFE", color: "#1D4ED8", fontSize: 10, fontWeight: 800 }}>{item.category}</span>
-            <span style={{ padding: "2px 8px", borderRadius: 8, background: "#F8FAFC", border: "1px solid #E2E8F0", color: "#64748B", fontSize: 10, fontWeight: 800 }}>{roleLabel}</span>
-            <span style={{ padding: "2px 8px", borderRadius: 8, background: item.difficulty === "High" ? "#FEF2F2" : "#FFFBEB", border: item.difficulty === "High" ? "1px solid #FECACA" : "1px solid #FDE68A", color: item.difficulty === "High" ? "#B91C1C" : "#92400E", fontSize: 10, fontWeight: 800 }}>{item.difficulty}</span>
-          </div>
-          <div style={{ fontSize: 14, color: "#111827", fontWeight: 800, lineHeight: 1.45 }}>{item.question}</div>
-        </div>
-        <span style={{ color: "#94A3B8", transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▼</span>
-      </button>
-      {open && (
-        <div style={{ padding: "0 16px 16px", display: "grid", gap: 10 }}>
-          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10, padding: "12px 14px" }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#64748B", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 5 }}>Answer</div>
-            <div style={{ color: "#334155", fontSize: 13, lineHeight: 1.7 }}>{item.answer}</div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
-            <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 12px" }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#1D4ED8", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Answer Structure</div>
-              <div style={{ display: "grid", gap: 4 }}>
-                {item.structure.map((point) => (
-                  <div key={point} style={{ fontSize: 12, color: "#1E3A8A", lineHeight: 1.45 }}>• {point}</div>
-                ))}
-              </div>
-            </div>
-            <div style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: 10, padding: "10px 12px" }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#047857", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Use Your Evidence</div>
-              <div style={{ fontSize: 12, color: "#065F46", lineHeight: 1.55 }}>{item.projectTieIn}</div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </article>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Main InterviewPrep component
+// Main component
 // ---------------------------------------------------------------------------
 
 export default function InterviewPrep({ apps = [] }) {
-  const [activeSection, setActiveSection] = useState("dynamic");
-  const [selectedGuide, setSelectedGuide] = useState(null);
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [qaFilter, setQaFilter] = useState("all");
+  const [section, setSection] = useState("interviews");
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+  const [openIds, setOpenIds] = useState(() => new Set());
+  const pendingFocus = useRef(null);
 
   const activeInterviews = useMemo(() => getActiveInterviews(apps), [apps]);
-  const detectedRoles = useMemo(() => {
-    const roles = new Set();
-    activeInterviews.forEach(a => { if (a.detectedRole) roles.add(a.detectedRole); });
-    return [...roles];
+
+  const filteredQuestions = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return QUESTIONS.filter(q => {
+      if (category !== "all" && q.category !== category) return false;
+      if (!term) return true;
+      return (
+        q.question.toLowerCase().includes(term) ||
+        q.answer.toLowerCase().includes(term) ||
+        q.evidence.toLowerCase().includes(term) ||
+        q.category.toLowerCase().includes(term)
+      );
+    });
+  }, [search, category]);
+
+  const toggleQuestion = useCallback(id => {
+    setOpenIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Jumping from a stage playbook shortcut into the Q&A tab: clear any filters
+  // that would hide the target, open it, then scroll it into view once mounted.
+  const openQuestion = useCallback(id => {
+    setSection("qa");
+    setSearch("");
+    setCategory("all");
+    setOpenIds(prev => new Set(prev).add(id));
+    pendingFocus.current = id;
+  }, []);
+
+  const registerCard = useCallback(id => node => {
+    if (node && pendingFocus.current === id) {
+      pendingFocus.current = null;
+      node.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, []);
+
+  const stagesInPlay = useMemo(() => {
+    const stages = new Set(activeInterviews.map(a => a.interviewStage).filter(Boolean));
+    return STAGE_PLAYBOOK.filter(s => stages.has(s.stage));
   }, [activeInterviews]);
 
-  const filteredGuides = roleFilter === "all"
-    ? STUDY_GUIDE
-    : STUDY_GUIDE.filter(g => g.roles.includes(roleFilter));
-  const filteredQA = qaFilter === "all"
-    ? QA_LIBRARY
-    : QA_LIBRARY.filter((item) => item.role === qaFilter || item.role === "ALL");
-
-  const sections = [
-    { id: "dynamic", label: "Your Interviews", emoji: "🎯" },
-    { id: "practice", label: "Practice Bank", emoji: "🧪" },
-    { id: "qa", label: "Q&A Library", emoji: "💡" },
-    { id: "profile", label: "Your Profile", emoji: "👤" },
-    { id: "answers", label: "Tailored Answers", emoji: "💬" },
-    { id: "arsenal", label: "Project Arsenal", emoji: "🚀" },
-    { id: "guide", label: "Study Guide", emoji: "📖" },
-    { id: "quick-ref", label: "Quick Reference", emoji: "⚡" },
-  ];
+  const headlineProjects = PROJECTS.filter(p => p.tier === "headline");
+  const supportingProjects = PROJECTS.filter(p => p.tier !== "headline");
 
   return (
     <>
-      {/* Section Navigation */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-        {sections.map(s => (
+      <div className="prep-nav" role="tablist" aria-label="Interview prep sections">
+        {SECTIONS.map(s => (
           <button
             key={s.id}
-            onClick={() => setActiveSection(s.id)}
-            style={{
-              padding: "10px 18px", borderRadius: 12, border: `2px solid ${activeSection === s.id ? "#1F4E79" : "#E5E7EB"}`,
-              background: activeSection === s.id ? "#1F4E79" : "#fff", color: activeSection === s.id ? "#fff" : "#374151",
-              cursor: "pointer", fontWeight: 700, fontSize: 13,
-            }}
+            role="tab"
+            aria-selected={section === s.id}
+            className="prep-nav__item"
+            onClick={() => setSection(s.id)}
           >
-            {s.emoji} {s.label}
+            {s.label}
+            <span className="prep-nav__count">{s.hint}</span>
           </button>
         ))}
       </div>
 
-      {/* Dynamic Section — Pipeline-connected */}
-      {activeSection === "dynamic" && (
+      {/* ------------------------------------------------ Your Interviews -- */}
+      {section === "interviews" && (
         <>
           {activeInterviews.length > 0 ? (
             <>
-              <SectionCard
-                title="Active Interview Prep"
-                subtitle={`${activeInterviews.length} application${activeInterviews.length !== 1 ? "s" : ""} with interview activity detected in your pipeline.`}
-                style={{ marginBottom: 16, background: "linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%)" }}
-              >
-                <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.7 }}>
-                  Below are personalised prep cards based on your current interviews. Each card is tailored to the role type and interview stage detected from your applications.
-                </p>
-              </SectionCard>
-
+              <p className="prep-lede">
+                {activeInterviews.length} application{activeInterviews.length !== 1 ? "s" : ""} in your pipeline
+                {activeInterviews.length !== 1 ? " have" : " has"} interview activity. Prep below is matched to the stage each one has reached.
+              </p>
               {activeInterviews.map(app => {
-                const roleConfig = app.detectedRole ? ROLE_TYPES[app.detectedRole] : null;
-                const relevantGuides = app.detectedRole
-                  ? STUDY_GUIDE.filter(g => g.roles.includes(app.detectedRole))
-                  : STUDY_GUIDE.filter(g => g.roles.length === 4 || g.roles.includes("DE")); // default to universal + DE
-
+                const stage = STAGE_PLAYBOOK.find(s => s.stage === app.interviewStage);
+                const roleLabel = app.detectedRole ? ROLE_TYPES[app.detectedRole].label : "General prep";
                 return (
-                  <div key={app.id} style={{ marginBottom: 20 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-                      <h3 style={{ margin: 0, fontFamily: "Georgia,serif", color: "#1F4E79", fontSize: 17 }}>{app.company}</h3>
-                      <span style={{ fontSize: 13, color: "#6B7280" }}>{app.role}</span>
-                      {roleConfig && (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 10, fontSize: 11, fontWeight: 700, color: roleConfig.color, background: roleConfig.bg, border: `1px solid ${roleConfig.border}` }}>
-                          {roleConfig.emoji} {roleConfig.label}
-                        </span>
-                      )}
-                      {!roleConfig && (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 10, fontSize: 11, fontWeight: 700, color: "#6B7280", background: "#F3F4F6", border: "1px solid #E5E7EB" }}>
-                          General Prep
-                        </span>
-                      )}
+                  <div className="prep-interview" key={app.id}>
+                    <div className="prep-interview__head">
+                      <h3 className="prep-interview__company">{app.company}</h3>
+                      <span className="prep-interview__role">{app.role}</span>
+                      <span className="prep-tag prep-tag--accent">{roleLabel}</span>
                     </div>
-
-                    {/* Stage-specific guidance */}
-                    {app.interviewStage && STAGE_GUIDANCE[app.interviewStage] && (
-                      <StageCard stage={app.interviewStage} company={app.company} role={app.role} />
+                    {stage ? (
+                      <StagePlaybookCard stage={stage} onOpenQuestion={openQuestion} />
+                    ) : (
+                      <p className="prep-lede" style={{ marginBottom: 0 }}>
+                        No interview stage recorded yet. Set one on the application to get stage-specific prep, or use the core principles below.
+                      </p>
                     )}
-
-                    {/* Role-relevant study topics */}
-                    <SectionCard
-                      title="Recommended Topics"
-                      subtitle={`Focus areas for ${roleConfig ? roleConfig.label : "this role"} interviews.`}
-                    >
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {relevantGuides.map(g => (
-                          <button
-                            key={g.id}
-                            onClick={() => { setActiveSection("guide"); setSelectedGuide(g.id); setRoleFilter("all"); }}
-                            style={{
-                              padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${g.color}33`,
-                              background: `${g.color}08`, cursor: "pointer", textAlign: "left", flex: "1 1 140px", minWidth: 140,
-                            }}
-                          >
-                            <div style={{ fontSize: 16, marginBottom: 4 }}>{g.emoji}</div>
-                            <div style={{ fontWeight: 700, fontSize: 13, color: "#111827" }}>{g.title}</div>
-                            <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{g.topics.length} topics</div>
-                          </button>
-                        ))}
-                      </div>
-                    </SectionCard>
                   </div>
                 );
               })}
             </>
           ) : (
-            <SectionCard
-              title="No Active Interviews Detected"
-              subtitle="When applications in your pipeline reach the interview stage, personalised prep cards will appear here automatically."
-              style={{ background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)" }}
-            >
-              <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
-                <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "12px 14px", color: "#475569", fontSize: 13, lineHeight: 1.7 }}>
-                  In the meantime, use the <strong>Study Guide</strong> tab to browse all topics and build your knowledge base ahead of time.
-                </div>
-                <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "12px 14px", color: "#475569", fontSize: 13, lineHeight: 1.7 }}>
-                  The <strong>Quick Reference</strong> tab has cheat sheets for the most commonly tested patterns across all three role types.
-                </div>
-                <button
-                  onClick={() => setActiveSection("guide")}
-                  style={{ padding: "12px 18px", borderRadius: 12, border: "2px solid #BFDBFE", background: "#EFF6FF", color: "#1F4E79", cursor: "pointer", fontWeight: 700, fontSize: 13, marginTop: 4 }}
-                >
-                  Browse Study Guide
-                </button>
-              </div>
-            </SectionCard>
+            <div className="prep-empty" style={{ marginBottom: 22 }}>
+              No interviews in play right now. When an application reaches an interview stage, its prep appears here automatically.
+            </div>
           )}
-        </>
-      )}
 
-      {activeSection === "practice" && (
-        <>
-          <SectionCard
-            title="Practice Bank"
-            subtitle="Structured prompts for recruiter screens, behavioral rounds, technical interviews, system design, take-home debriefs, and final rounds."
-            style={{ marginBottom: 16, background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)" }}
-          >
-            <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.7 }}>
-              Practise out loud using the framework first, then check the key points and mistakes. The goal is a clear answer shape, not memorised wording.
-            </p>
-          </SectionCard>
-
-          <div style={{ display: "grid", gap: 16 }}>
-            {PRACTICE_BANK.map((category) => (
-              <SectionCard
-                key={category.id}
-                title={`${category.emoji} ${category.title}`}
-                subtitle={`${category.prompts.length} high-value prompts with answer structure and pitfalls.`}
-                style={{ borderColor: `${category.color}33` }}
-              >
-                <div style={{ display: "grid", gap: 10 }}>
-                  {category.prompts.map((prompt, index) => (
-                    <PracticePromptCard key={prompt.question} prompt={prompt} index={index} color={category.color} />
-                  ))}
-                </div>
-              </SectionCard>
-            ))}
-          </div>
-        </>
-      )}
-
-      {activeSection === "qa" && (
-        <>
-          <SectionCard
-            title="Question & Answer Library"
-            subtitle="High-signal interview questions with concise answer shapes and project evidence to reference."
-            style={{ marginBottom: 16, background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)" }}
-          >
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-              <button onClick={() => setQaFilter("all")} style={{ padding: "7px 14px", borderRadius: 10, border: `2px solid ${qaFilter === "all" ? "#1F4E79" : "#E5E7EB"}`, background: qaFilter === "all" ? "#1F4E79" : "#fff", color: qaFilter === "all" ? "#fff" : "#374151", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
-                All Questions
-              </button>
-              {Object.entries(ROLE_TYPES).map(([key, config]) => (
-                <button key={key} onClick={() => setQaFilter(key)} style={{ padding: "7px 14px", borderRadius: 10, border: `2px solid ${qaFilter === key ? config.color : "#E5E7EB"}`, background: qaFilter === key ? config.color : "#fff", color: qaFilter === key ? "#fff" : "#374151", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
-                  {config.emoji} {config.label}
-                </button>
-              ))}
-            </div>
-            <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.7 }}>
-              Use this as an active rehearsal workflow: answer first without looking, open the card, then repeat using the structure and project tie-in.
-            </p>
-          </SectionCard>
-
-          <div style={{ display: "grid", gap: 10 }}>
-            {filteredQA.map((item, index) => (
-              <QAAnswerCard key={item.id} item={item} index={index} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Profile Section — Elevator pitch & skills overview */}
-      {activeSection === "profile" && (
-        <>
-          <SectionCard
-            title="Your Elevator Pitch"
-            subtitle="Memorise this 30-second introduction. Adapt the ending for each role."
-            style={{ marginBottom: 16, background: "linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%)" }}
-          >
-            <div style={{ background: "#F0F7FF", border: "1.5px solid #BFDBFE", borderRadius: 12, padding: "16px 18px", lineHeight: 1.8, fontSize: 14, color: "#1E3A5F" }}>
-              <p style={{ margin: 0, fontStyle: "italic" }}>"{MY_PROFILE.elevatorPitch}"</p>
-            </div>
-            <div style={{ marginTop: 12, padding: "10px 14px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10 }}>
-              <p style={{ margin: 0, fontSize: 12, color: "#92400E", fontWeight: 600 }}>💡 Tip: Replace the last sentence with something specific to the company you're interviewing at. E.g., "I'm particularly excited about [Company]'s approach to [X] because..."</p>
-            </div>
-          </SectionCard>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14, marginBottom: 16 }}>
-            <SectionCard title="📋 Key Facts to Remember" style={{ background: "linear-gradient(135deg, #fff 0%, #ecfdf5 100%)" }}>
-              <div style={{ display: "grid", gap: 8 }}>
-                {[
-                  { label: "Degree", value: MY_PROFILE.education },
-                  { label: "Location", value: MY_PROFILE.location },
-                  { label: "Focus", value: "Data pipelines, analytics engineering, CDC streaming, ML" },
-                  { label: "Domains", value: "Finance, Sports, Transport, Environment" },
-                  { label: "Projects", value: `${MY_PROJECTS.length} portfolio projects spanning DE, AE, and ML` },
-                  { label: "Writing", value: "2 published articles on building lakehouses and community tech" },
-                ].map((item, i) => (
-                  <div key={i} style={{ display: "flex", gap: 10, padding: "8px 12px", background: "#F8FAFC", borderRadius: 8, alignItems: "baseline" }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#6B7280", minWidth: 80, textTransform: "uppercase", letterSpacing: "0.04em" }}>{item.label}</span>
-                    <span style={{ fontSize: 13, color: "#111827", fontWeight: 600 }}>{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-
-            <SectionCard title="🛠️ Technical Stack" style={{ background: "linear-gradient(135deg, #fff 0%, #f5f3ff 100%)" }}>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {MY_PROFILE.coreSkills.map(skill => (
-                  <span key={skill} style={{ display: "inline-block", padding: "6px 12px", borderRadius: 8, background: "#EDE9FE", border: "1px solid #DDD6FE", fontSize: 12, color: "#5B21B6", fontWeight: 700 }}>{skill}</span>
-                ))}
-              </div>
-              <div style={{ marginTop: 14, padding: "10px 14px", background: "#F8FAFC", borderRadius: 10 }}>
-                <p style={{ margin: 0, fontSize: 12, color: "#6B7280", lineHeight: 1.6 }}>
-                  <strong>When asked "What's your tech stack?":</strong> Lead with Python and SQL, then mention dbt and Airflow for the transformation/orchestration layer, then databases (PostgreSQL, BigQuery, ClickHouse, DuckDB), then streaming (Kafka/Redpanda, Debezium). Mention Docker and GitHub Actions for DevOps.
-                </p>
-              </div>
-            </SectionCard>
-          </div>
-
-          <SectionCard title="💼 Work Experience" subtitle="Reference these achievements with specific numbers in your answers." style={{ marginBottom: 16 }}>
-            {MY_PROFILE.workExperience.map((job, i) => (
-              <div key={i} style={{ background: i === 0 ? "#EFF6FF" : "#F8FAFC", border: `1.5px solid ${i === 0 ? "#BFDBFE" : "#E5E7EB"}`, borderRadius: 12, padding: "16px 18px", marginBottom: i < MY_PROFILE.workExperience.length - 1 ? 12 : 0 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: "#111827" }}>{job.role}</div>
-                    <div style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>{job.company} · {job.location}</div>
-                  </div>
-                  <span style={{ fontSize: 12, color: "#6B7280", fontWeight: 600, whiteSpace: "nowrap" }}>{job.period}</span>
-                </div>
-                <div style={{ display: "grid", gap: 4 }}>
-                  {job.highlights.map((h, j) => (
-                    <div key={j} style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, paddingLeft: 14, position: "relative" }}>
-                      <span style={{ position: "absolute", left: 0, color: "#3B82F6", fontWeight: 800 }}>•</span> {h}
-                    </div>
-                  ))}
-                </div>
+          <h3 className="prep-section-heading">Core principles</h3>
+          <p className="prep-lede">
+            Six things that apply in every round, drawn from the evidence you actually have.
+          </p>
+          <div className="prep-tip-grid">
+            {CORE_TIPS.map(tip => (
+              <div className="prep-tip" key={tip.title}>
+                <p className="prep-tip__title">{tip.title}</p>
+                <p className="prep-tip__body">{tip.body}</p>
               </div>
             ))}
-            <div style={{ marginTop: 12, padding: "10px 14px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10 }}>
-              <p style={{ margin: 0, fontSize: 12, color: "#92400E", fontWeight: 600 }}>💡 Key numbers to remember: 87% freshness improvement, 95% SLA compliance, 12 mentees, 30% defect reduction, 67% faster turnaround, 25+ dashboard users, 8% logistics cost reduction, 12% delivery improvement.</p>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="🔗 Quick Links" subtitle="Have these ready to share during or after interviews.">
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {[
-                { label: "GitHub", url: MY_PROFILE.links.github, color: "#24292E", bg: "#F6F8FA" },
-                { label: "Portfolio", url: MY_PROFILE.links.portfolio, color: "#1F4E79", bg: "#EFF6FF" },
-                { label: "LinkedIn", url: MY_PROFILE.links.linkedin, color: "#0A66C2", bg: "#EFF6FF" },
-              ].map(link => (
-                <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 16px", borderRadius: 10, background: link.bg, color: link.color, fontWeight: 700, fontSize: 13, textDecoration: "none", border: `1.5px solid ${link.color}22` }}>
-                  {link.label} ↗
-                </a>
-              ))}
-            </div>
-          </SectionCard>
-        </>
-      )}
-
-      {/* Tailored Answers Section — Pre-written answers using your projects */}
-      {activeSection === "answers" && (
-        <>
-          <SectionCard
-            title="Tailored Interview Answers"
-            subtitle="Pre-written answers referencing your actual projects and experience. Memorise the structure, then adapt naturally."
-            style={{ marginBottom: 16, background: "linear-gradient(135deg, #ffffff 0%, #fdf2f8 100%)" }}
-          >
-            <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "10px 14px" }}>
-              <p style={{ margin: 0, fontSize: 12, color: "#991B1B", fontWeight: 600 }}>🎯 These answers use the STAR method and reference your real projects. Don't memorise word-for-word — internalise the key points and project references, then deliver naturally.</p>
-            </div>
-          </SectionCard>
-
-          <div style={{ marginBottom: 20 }}>
-            <h3 style={{ fontFamily: "Georgia,serif", color: "#1F4E79", fontSize: 16, marginBottom: 12 }}>🤝 Behavioral & General Questions</h3>
-            {TAILORED_ANSWERS.behavioral.map((item, i) => (
-              <TailoredAnswerCard key={i} item={item} index={i} />
-            ))}
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <h3 style={{ fontFamily: "Georgia,serif", color: "#1F4E79", fontSize: 16, marginBottom: 12 }}>🔧 Technical Questions</h3>
-            {TAILORED_ANSWERS.technical.map((item, i) => (
-              <TailoredAnswerCard key={i} item={item} index={i} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Project Arsenal — Quick reference cards for all projects */}
-      {activeSection === "arsenal" && (
-        <>
-          <SectionCard
-            title="Your Project Arsenal"
-            subtitle={`${MY_PROJECTS.length} projects you can reference in interviews. Each card has key talking points.`}
-            style={{ marginBottom: 16, background: "linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)" }}
-          >
-            <p style={{ margin: 0, fontSize: 13, color: "#475569", lineHeight: 1.7 }}>
-              When an interviewer asks a technical question, reference a specific project. Concrete examples beat abstract knowledge every time. Use the "Interview Talking Points" on each card to structure your answer.
-            </p>
-          </SectionCard>
-
-          <div style={{ display: "grid", gap: 14 }}>
-            {MY_PROJECTS.map(project => (
-              <ProjectArsenalCard key={project.id} project={project} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Study Guide Section — Full manual browse */}
-      {activeSection === "guide" && (
-        <>
-          <SectionCard
-            title="Interview Study Guide"
-            subtitle="Comprehensive preparation material for Data Engineering, Data Analysis, and Analytics Engineering roles."
-            style={{ marginBottom: 16 }}
-          >
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button onClick={() => { setRoleFilter("all"); setSelectedGuide(null); }} style={{ padding: "7px 14px", borderRadius: 10, border: `2px solid ${roleFilter === "all" ? "#1F4E79" : "#E5E7EB"}`, background: roleFilter === "all" ? "#1F4E79" : "#fff", color: roleFilter === "all" ? "#fff" : "#374151", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
-                All Topics
-              </button>
-              {Object.entries(ROLE_TYPES).map(([key, config]) => (
-                <button key={key} onClick={() => { setRoleFilter(key); setSelectedGuide(null); }} style={{ padding: "7px 14px", borderRadius: 10, border: `2px solid ${roleFilter === key ? config.color : "#E5E7EB"}`, background: roleFilter === key ? config.color : "#fff", color: roleFilter === key ? "#fff" : "#374151", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
-                  {config.emoji} {config.label}
-                </button>
-              ))}
-            </div>
-            {detectedRoles.length > 0 && (
-              <p style={{ margin: "10px 0 0", fontSize: 12, color: "#6B7280" }}>
-                💡 Detected roles from your pipeline: {detectedRoles.map(r => ROLE_TYPES[r].label).join(", ")}
-              </p>
-            )}
-          </SectionCard>
-
-          {filteredGuides.map(guide => (
-            <div key={guide.id} style={{ marginBottom: 20 }}>
-              <button
-                onClick={() => setSelectedGuide(selectedGuide === guide.id ? null : guide.id)}
-                style={{
-                  width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "16px 18px", borderRadius: selectedGuide === guide.id ? "14px 14px 0 0" : 14,
-                  border: `2px solid ${guide.color}33`, background: `${guide.color}06`,
-                  cursor: "pointer", marginBottom: selectedGuide === guide.id ? 0 : 0,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 22 }}>{guide.emoji}</span>
-                  <div style={{ textAlign: "left" }}>
-                    <div style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>{guide.title}</div>
-                    <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{guide.description}</div>
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 12, color: "#9CA3AF", fontWeight: 600 }}>{guide.topics.length} topics</span>
-                  <span style={{ fontSize: 16, color: "#9CA3AF", transform: selectedGuide === guide.id ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▼</span>
-                </div>
-              </button>
-              {selectedGuide === guide.id && (
-                <div style={{ border: `2px solid ${guide.color}33`, borderTop: "none", borderRadius: "0 0 14px 14px", padding: "14px 14px", background: "#fff" }}>
-                  {guide.topics.map(topic => (
-                    <TopicCard key={topic.name} topic={topic} />
-                  ))}
-                </div>
-              )}
-            </div>
+          <h3 className="prep-section-heading">
+            {stagesInPlay.length > 0 ? "Every other stage" : "Stage playbook"}
+          </h3>
+          <p className="prep-lede">
+            What each round is really testing, and the questions to rehearse before it.
+          </p>
+          {STAGE_PLAYBOOK.filter(s => !stagesInPlay.includes(s)).map(stage => (
+            <StagePlaybookCard key={stage.stage} stage={stage} onOpenQuestion={openQuestion} />
           ))}
         </>
       )}
 
-      {/* Quick Reference Section */}
-      {activeSection === "quick-ref" && (
+      {/* -------------------------------------------------------------- Q&A -- */}
+      {section === "qa" && (
         <>
-          <SectionCard title="Quick Reference Cards" subtitle="Cheat sheets for the most commonly tested patterns." style={{ marginBottom: 16 }}>
-            <p style={{ margin: 0, fontSize: 13, color: "#475569", lineHeight: 1.7 }}>
-              Rapid-fire reminders for concepts that come up in almost every data interview. Use these for last-minute review.
-            </p>
+          <p className="prep-lede">
+            {QUESTIONS.length} questions with answers written the way you would actually say them, each anchored to real
+            work. Answer out loud first, then open the card and compare.
+          </p>
+
+          <div className="prep-toolbar">
+            <input
+              className="prep-search"
+              type="search"
+              placeholder="Search questions and answers…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              aria-label="Search interview questions"
+            />
+            <button
+              className="prep-chip"
+              onClick={() => setOpenIds(openIds.size ? new Set() : new Set(filteredQuestions.map(q => q.id)))}
+            >
+              {openIds.size ? "Collapse all" : "Expand all"}
+            </button>
+          </div>
+
+          <div className="prep-filters">
+            <button className="prep-chip" aria-pressed={category === "all"} onClick={() => setCategory("all")}>
+              All ({QUESTIONS.length})
+            </button>
+            {CATEGORIES.map(cat => (
+              <button key={cat} className="prep-chip" aria-pressed={category === cat} onClick={() => setCategory(cat)}>
+                {cat} ({QUESTIONS.filter(q => q.category === cat).length})
+              </button>
+            ))}
+          </div>
+
+          {filteredQuestions.length > 0 ? (
+            <div className="prep-qa-list">
+              {filteredQuestions.map(item => (
+                <QuestionCard
+                  key={item.id}
+                  item={item}
+                  open={openIds.has(item.id)}
+                  onToggle={() => toggleQuestion(item.id)}
+                  cardRef={registerCard(item.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="prep-empty">No questions match “{search}”. Try a different term or clear the category filter.</div>
+          )}
+        </>
+      )}
+
+      {/* --------------------------------------------------- Your Evidence -- */}
+      {section === "evidence" && (
+        <>
+          <SectionCard
+            title="Elevator pitch"
+            subtitle="Thirty seconds. Know it well enough to vary it — swap the closing line for something specific to the company."
+            style={{ marginBottom: 16 }}
+          >
+            <p className="prep-pitch">{PROFILE.elevatorPitch}</p>
           </SectionCard>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14, marginBottom: 16 }}>
-            <SectionCard title="🗄️ SQL Patterns to Know Cold" style={{ background: "linear-gradient(135deg, #fff 0%, #eff6ff 100%)" }}>
-              <div style={{ display: "grid", gap: 8 }}>
-                {[
-                  { pattern: "ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)", use: "Deduplicate / pick one row per group" },
-                  { pattern: "LAG(col) OVER (ORDER BY date)", use: "Compare to previous row (e.g., day-over-day)" },
-                  { pattern: "SUM(col) OVER (ORDER BY date ROWS UNBOUNDED PRECEDING)", use: "Running total / cumulative sum" },
-                  { pattern: "WITH cte AS (SELECT ... ) SELECT * FROM cte", use: "Break complex queries into readable steps" },
-                  { pattern: "LEFT JOIN b ON a.id = b.id WHERE b.id IS NULL", use: "Anti-join — find rows with no match" },
-                  { pattern: "CASE WHEN ... THEN ... ELSE ... END", use: "Conditional logic inside SELECT/WHERE" },
-                  { pattern: "COALESCE(col, fallback_value)", use: "Handle NULLs with a default" },
-                  { pattern: "DATE_TRUNC('month', date_col)", use: "Aggregate by time period" },
-                ].map((item, i) => (
-                  <div key={i} style={{ background: "#F8FAFC", borderRadius: 10, padding: "10px 12px" }}>
-                    <code style={{ fontSize: 11, color: "#1E40AF", fontWeight: 700, display: "block", marginBottom: 4, wordBreak: "break-all" }}>{item.pattern}</code>
-                    <span style={{ fontSize: 12, color: "#6B7280" }}>{item.use}</span>
-                  </div>
-                ))}
+          <h3 className="prep-section-heading">Numbers to have ready</h3>
+          <p className="prep-lede">
+            These are the figures that make your answers land. Know them without hesitating.
+          </p>
+          <div className="prep-number-grid" style={{ marginBottom: 8 }}>
+            {KEY_NUMBERS.map(n => (
+              <div className="prep-number" key={n.label}>
+                <div className="prep-number__value">{n.value}</div>
+                <div className="prep-number__label">{n.label}</div>
+                <div className="prep-number__detail">{n.detail}</div>
               </div>
-            </SectionCard>
-
-            <SectionCard title="🐍 Python Patterns to Know Cold" style={{ background: "linear-gradient(135deg, #fff 0%, #ecfdf5 100%)" }}>
-              <div style={{ display: "grid", gap: 8 }}>
-                {[
-                  { pattern: "df.groupby('col').agg({'val': ['mean', 'sum']})", use: "Multi-aggregation in one pass" },
-                  { pattern: "df.merge(other, on='key', how='left', indicator=True)", use: "Join with match diagnostics" },
-                  { pattern: "df['col'].fillna(method='ffill')", use: "Forward-fill missing values" },
-                  { pattern: "df.pivot_table(values='v', index='i', columns='c')", use: "Reshape long to wide" },
-                  { pattern: "from collections import Counter; Counter(items)", use: "Fast frequency counts" },
-                  { pattern: "sorted(data, key=lambda x: x['date'])", use: "Custom sort by any field" },
-                  { pattern: "{k: v for k, v in d.items() if v > threshold}", use: "Dictionary comprehension with filter" },
-                  { pattern: "df.pipe(clean).pipe(transform).pipe(validate)", use: "Readable method chains" },
-                ].map((item, i) => (
-                  <div key={i} style={{ background: "#F8FAFC", borderRadius: 10, padding: "10px 12px" }}>
-                    <code style={{ fontSize: 11, color: "#065F46", fontWeight: 700, display: "block", marginBottom: 4, wordBreak: "break-all" }}>{item.pattern}</code>
-                    <span style={{ fontSize: 12, color: "#6B7280" }}>{item.use}</span>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
+            ))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14, marginBottom: 16 }}>
-            <SectionCard title="🏗️ System Design Checklist" style={{ background: "linear-gradient(135deg, #fff 0%, #fffbeb 100%)" }}>
-              <div style={{ display: "grid", gap: 6 }}>
-                {[
-                  { step: "1. Clarify requirements", detail: "What data, what volume, what SLA, who consumes it?" },
-                  { step: "2. Identify data sources", detail: "APIs, databases, event streams, file drops?" },
-                  { step: "3. Choose batch vs streaming", detail: "Is real-time needed, or is daily/hourly enough?" },
-                  { step: "4. Design ingestion layer", detail: "How does data enter the system? Pull vs push?" },
-                  { step: "5. Design transformation", detail: "Where does cleaning/enrichment happen? Raw -> staged -> mart." },
-                  { step: "6. Choose storage", detail: "Warehouse, lake, or lakehouse? Partitioning strategy?" },
-                  { step: "7. Plan for failure", detail: "Idempotency, retries, dead letter queues, alerting." },
-                  { step: "8. Address data quality", detail: "Tests, monitoring, contracts, freshness checks." },
-                ].map((item, i) => (
-                  <div key={i} style={{ background: "#F8FAFC", borderRadius: 10, padding: "10px 12px" }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: "#92400E" }}>{item.step}</div>
-                    <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{item.detail}</div>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-
-            <SectionCard title="🤝 Behavioral Interview Playbook" style={{ background: "linear-gradient(135deg, #fff 0%, #fdf2f8 100%)" }}>
-              <div style={{ display: "grid", gap: 6 }}>
-                {[
-                  { tip: "STAR structure every answer", detail: "Situation (2 sentences) → Task → Action (bulk of answer) → Result (quantified)." },
-                  { tip: "Prepare 5-6 versatile stories", detail: "Conflict, failure, leadership, technical challenge, ambiguity, tight deadline." },
-                  { tip: "Quantify results", detail: "'Reduced pipeline runtime by 40%' beats 'made it faster'." },
-                  { tip: "Use 'I' not 'we'", detail: "Interviewers want YOUR contribution. Credit the team, but be specific about your role." },
-                  { tip: "Show growth", detail: "Pick stories where you learned something. 'Here's what I'd do differently' shows self-awareness." },
-                  { tip: "Ask good questions back", detail: "Team culture, biggest data challenges, how success is measured, what the onboarding looks like." },
-                  { tip: "Handle 'I don't know'", detail: "Say 'I haven't worked with X directly, but here's how I'd approach learning it' — shows adaptability." },
-                  { tip: "Close strong", detail: "End with genuine enthusiasm. 'I'm excited about this because...' leaves a lasting impression." },
-                ].map((item, i) => (
-                  <div key={i} style={{ background: "#F8FAFC", borderRadius: 10, padding: "10px 12px" }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: "#BE185D" }}>{item.tip}</div>
-                    <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{item.detail}</div>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-          </div>
-
-          <SectionCard title="⚡ Last-Minute Reminders" subtitle="Read this 30 minutes before any interview.">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
-              {[
-                { emoji: "🔇", text: "Silence your phone, close Slack/email, test your mic and camera." },
-                { emoji: "📝", text: "Have a notepad ready. Write down the interviewer's name." },
-                { emoji: "💧", text: "Water within reach. It buys you thinking time." },
-                { emoji: "🧠", text: "Think out loud. Silence makes interviewers nervous." },
-                { emoji: "⏸️", text: "It's OK to pause and say 'Let me think about that for a moment'." },
-                { emoji: "🤔", text: "Clarify before solving. 'Can I confirm my understanding?' is always welcome." },
-                { emoji: "🏁", text: "Summarise your answer at the end. 'So in summary, I would...' lands well." },
-                { emoji: "😊", text: "Be human. A little warmth and humour goes a long way." },
-              ].map((item, i) => (
-                <div key={i} style={{ background: "#F8FAFC", borderRadius: 12, padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>{item.emoji}</span>
-                  <span style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>{item.text}</span>
+          <h3 className="prep-section-heading">Experience</h3>
+          {PROFILE.workExperience.map(job => (
+            <div className="prep-role" key={`${job.company}-${job.role}`}>
+              <div className="prep-role__head">
+                <div>
+                  <div className="prep-role__title">{job.role}</div>
+                  <div className="prep-role__org">{job.company} · {job.location}</div>
                 </div>
-              ))}
+                <span className="prep-role__period">{job.period}</span>
+              </div>
+              <ul className="prep-role__points">
+                {job.highlights.map(h => <li key={h}>{h}</li>)}
+              </ul>
+            </div>
+          ))}
+
+          <h3 className="prep-section-heading">Projects to lead with</h3>
+          <p className="prep-lede">
+            Reach for these four first — they cover streaming, batch orchestration, modelling, and real user impact between them.
+          </p>
+          {headlineProjects.map(p => <ProjectCard key={p.id} project={p} />)}
+
+          <h3 className="prep-section-heading">Further depth</h3>
+          <p className="prep-lede">
+            Useful when a question calls for something specific, but do not volunteer all of these unprompted.
+          </p>
+          {supportingProjects.map(p => <ProjectCard key={p.id} project={p} />)}
+
+          <h3 className="prep-section-heading">Stack &amp; links</h3>
+          <SectionCard
+            title="Technical stack"
+            subtitle="Asked what you work with? Lead with Python and SQL, then dbt and Airflow, then the databases, then streaming."
+            style={{ marginBottom: 12 }}
+          >
+            <div className="prep-steps">
+              {PROFILE.coreSkills.map(skill => <span key={skill} className="prep-step">{skill}</span>)}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Share these" subtitle="Have them ready to drop into a chat window or a follow-up email.">
+            <div className="prep-link-row">
+              <a className="prep-link" href={PROFILE.links.github} target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+              <a className="prep-link" href={PROFILE.links.portfolio} target="_blank" rel="noopener noreferrer">Portfolio ↗</a>
+              <a className="prep-link" href={PROFILE.links.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
             </div>
           </SectionCard>
         </>
