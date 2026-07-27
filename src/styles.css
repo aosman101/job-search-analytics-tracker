@@ -1377,3 +1377,95 @@ a:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Shared tracker primitives
+   Extracted from repeated inline styles so the dashboard, analytics and prep
+   surfaces share one scale of type, spacing and colour.
+   --------------------------------------------------------------------------- */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+}
+
+.stat-card__label {
+  color: var(--muted-soft);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stat-card__value {
+  margin-top: 6px;
+  color: var(--accent);
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+/* Colour carries urgency here rather than decorating each tile differently. */
+.stat-card--attention .stat-card__value { color: var(--amber); }
+.stat-card--active .stat-card__value { color: var(--teal); }
+.stat-card--idle .stat-card__value { color: var(--muted-soft); }
+
+.stat-card__note {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.soft-button {
+  padding: 8px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.soft-button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.tile-button {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+}
+
+.tile-button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.tile-button__label {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tile-button__helper {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}

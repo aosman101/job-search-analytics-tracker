@@ -774,25 +774,25 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
 
         {activeTab === "Home" && (
           <>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:12, marginBottom:16 }}>
+            <div className="stat-grid">
               {[
-                { label: "Active Search", value: activeApplications, color: "#1F4E79", note: "roles still in play" },
-                { label: "This Week", value: freshThisWeek, color: "#3B82F6", note: "applications added" },
-                { label: "Follow-Ups Due", value: dueFollowUps.length, color: "#F59E0B", note: "priority actions" },
-                { label: "Interview Queue", value: interviewQueue.length, color: "#8B5CF6", note: "late-stage roles" },
+                { label: "Active Search", value: activeApplications, note: "roles still in play" },
+                { label: "This Week", value: freshThisWeek, note: "applications added", tone: freshThisWeek === 0 ? "idle" : null },
+                { label: "Follow-Ups Due", value: dueFollowUps.length, note: "priority actions", tone: dueFollowUps.length > 0 ? "attention" : "idle" },
+                { label: "Interview Queue", value: interviewQueue.length, note: "late-stage roles", tone: interviewQueue.length > 0 ? "active" : "idle" },
               ].map((card) => (
-                <SectionCard key={card.label} style={{ padding: "16px 16px" }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "#94A3B8", letterSpacing: "0.08em", textTransform: "uppercase" }}>{card.label}</div>
-                  <div style={{ marginTop: 6, fontSize: 30, fontWeight: 800, color: card.color, fontFamily: "Georgia,serif" }}>{card.value}</div>
-                  <div style={{ marginTop: 4, color: "#64748B", fontSize: 12 }}>{card.note}</div>
-                </SectionCard>
+                <div key={card.label} className={`stat-card${card.tone ? ` stat-card--${card.tone}` : ""}`}>
+                  <div className="stat-card__label">{card.label}</div>
+                  <div className="stat-card__value">{card.value}</div>
+                  <div className="stat-card__note">{card.note}</div>
+                </div>
               ))}
             </div>
 
             <SectionCard
               title="Priority Queue"
               subtitle="Automatically generated workflow actions from your tracker data."
-              actions={<button onClick={() => setActiveTab("Analytics")} style={{ padding:"8px 14px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:9, cursor:"pointer", fontSize:12, fontWeight:700 }}>Open Analytics</button>}
+              actions={<button onClick={() => setActiveTab("Analytics")} className="soft-button">Open Analytics</button>}
               style={{ marginBottom: 16 }}
             >
               {metrics.nextActions.length > 0 ? (
@@ -826,7 +826,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               <SectionCard
                 title="Welcome Back"
                 subtitle="A quick read on where your search stands right now."
-                actions={<button onClick={openNewApplication} style={{ padding:"8px 14px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:9, cursor:"pointer", fontSize:12, fontWeight:700 }}>Add Application</button>}
+                actions={<button onClick={openNewApplication} className="soft-button">Add Application</button>}
               >
                 <div style={{ display:"grid", gap:10 }}>
                   {[
@@ -871,7 +871,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               <SectionCard
                 title="Latest Applications"
                 subtitle="Your newest entries and their current status."
-                actions={<button onClick={() => setActiveTab("Job Search")} style={{ padding:"8px 14px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:9, cursor:"pointer", fontSize:12, fontWeight:700 }}>Open Job Search</button>}
+                actions={<button onClick={() => setActiveTab("Job Search")} className="soft-button">Open Job Search</button>}
               >
                 {latestApplications.length > 0 ? latestApplications.map((app) => (
                   <div key={app.id} style={{ padding:"12px 0", borderTop:"1px solid #F1F5F9" }}>
@@ -896,9 +896,9 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                     { label: "Update search list", helper: `${filtered.length} visible application${filtered.length !== 1 ? "s" : ""}`, action: () => setActiveTab("Job Search") },
                     { label: "Check performance", helper: `${responseRate}% response rate`, action: () => setActiveTab("Analytics") },
                   ].map((item) => (
-                    <button key={item.label} onClick={item.action} style={{ textAlign:"left", padding:"12px 14px", borderRadius:12, border:"1.5px solid #E2E8F0", background:"#F8FAFC", cursor:"pointer" }}>
-                      <div style={{ fontWeight:700, color:"#0F172A", fontSize:13 }}>{item.label}</div>
-                      <div style={{ marginTop:4, color:"#64748B", fontSize:12 }}>{item.helper}</div>
+                    <button key={item.label} onClick={item.action} className="tile-button">
+                      <div className="tile-button__label">{item.label}</div>
+                      <div className="tile-button__helper">{item.helper}</div>
                     </button>
                   ))}
                 </div>

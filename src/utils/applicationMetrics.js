@@ -182,17 +182,17 @@ export function buildTrackerMetrics(apps, options = {}) {
       dueFollowUps.length > 0 && {
         tone: "warning",
         label: "Clear due follow-ups",
-        detail: `${dueFollowUps.length} follow-up${dueFollowUps.length !== 1 ? "s" : ""} need a response today.`,
+        detail: `${dueFollowUps.length} follow-up${dueFollowUps.length !== 1 ? "s need" : " needs"} a response today.`,
       },
       stalledInterviews.length > 0 && {
         tone: "interview",
         label: "Refresh interview items",
-        detail: `${stalledInterviews.length} interview-stage role${stalledInterviews.length !== 1 ? "s" : ""} have not been updated recently.`,
+        detail: `${stalledInterviews.length} interview-stage role${stalledInterviews.length !== 1 ? "s have" : " has"} not been updated recently.`,
       },
       unscheduledFollowUps.length > 0 && {
         tone: "followup",
         label: "Schedule missing follow-ups",
-        detail: `${unscheduledFollowUps.length} open application${unscheduledFollowUps.length !== 1 ? "s" : ""} have no follow-up date.`,
+        detail: `${unscheduledFollowUps.length} open application${unscheduledFollowUps.length !== 1 ? "s have" : " has"} no follow-up date.`,
       },
       atRiskApps.length > 0 && {
         tone: "risk",
