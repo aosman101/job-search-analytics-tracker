@@ -35,9 +35,25 @@
       }
     ],
     "coreSkills": [
-      "Python", "SQL", "dbt", "Apache Airflow", "Apache Spark", "DuckDB", "PostgreSQL",
-      "BigQuery", "ClickHouse", "Kafka/Redpanda", "Debezium", "Great Expectations",
-      "OpenLineage", "FastAPI", "Docker", "GitHub Actions", "PyTorch", "LightGBM", "React"
+      "Python",
+      "SQL",
+      "dbt",
+      "Apache Airflow",
+      "Apache Spark",
+      "DuckDB",
+      "PostgreSQL",
+      "BigQuery",
+      "ClickHouse",
+      "Kafka/Redpanda",
+      "Debezium",
+      "Great Expectations",
+      "OpenLineage",
+      "FastAPI",
+      "Docker",
+      "GitHub Actions",
+      "PyTorch",
+      "LightGBM",
+      "React"
     ],
     "links": {
       "github": "https://github.com/aosman101",
@@ -45,13 +61,763 @@
       "linkedin": "https://www.linkedin.com/in/adil-osman-303185297/"
     }
   },
+  "keyNumbers": [
+    {
+      "value": "87%",
+      "label": "Data freshness improvement",
+      "detail": "6 hours to 45 minutes on the TfL pipeline at Somalis in Tech"
+    },
+    {
+      "value": "95%",
+      "label": "On-time SLA compliance",
+      "detail": "Sustained sub-60-minute pipeline latency in production"
+    },
+    {
+      "value": "12",
+      "label": "Engineers mentored",
+      "detail": "Early-career candidates across four modules at Somalis in Tech"
+    },
+    {
+      "value": "65%",
+      "label": "Manual reporting reduced",
+      "detail": "Automated reporting that had been assembled by hand"
+    },
+    {
+      "value": "30%",
+      "label": "Data defects reduced",
+      "detail": "Multi-source preprocessing at HQ Analytics"
+    },
+    {
+      "value": "67%",
+      "label": "Faster stakeholder turnaround",
+      "detail": "Three days down to same-day at HQ Analytics"
+    },
+    {
+      "value": "25+",
+      "label": "Power BI dashboard users",
+      "detail": "Operations teams across HQ Analytics"
+    },
+    {
+      "value": "8%",
+      "label": "Logistics cost reduction",
+      "detail": "Plus 12% improvement in on-time delivery at HQ Analytics"
+    }
+  ],
+  "coreTips": [
+    {
+      "title": "Lead with the number, then the story",
+      "body": "You have unusually concrete metrics for someone early in their career. Open an answer with '87%' or '30%' and the interviewer leans in — then spend the rest of the answer earning it. Never leave a result unquantified when you have the figure."
+    },
+    {
+      "title": "Every answer lands on a real project",
+      "body": "Abstract knowledge sounds rehearsed; a named system sounds like experience. TfL for batch and orchestration, StreamShop for streaming and CDC, F1 RaceOps and Premier League for modelling, HQ Analytics for stakeholders. Pick one before you start talking."
+    },
+    {
+      "title": "Say 'I', credit the team separately",
+      "body": "Interviewers are hiring you, not your team. Describe your decisions and your code in the first person, then give credit explicitly at the end. 'We' throughout an answer makes your contribution impossible to assess."
+    },
+    {
+      "title": "Clarify before you solve",
+      "body": "On any design or SQL question, ask what the source is, what the volume is, what the SLA is, and who consumes it. Jumping straight to tools is the single most common failure mode in data interviews — and asking costs you fifteen seconds."
+    },
+    {
+      "title": "Own the gaps out loud",
+      "body": "You have not run Spark at petabyte scale or managed a large cloud estate. Say so plainly, then pivot to how you learned dbt, Debezium, and ClickHouse from scratch. Confident honesty reads as senior; bluffing gets caught in the follow-up."
+    },
+    {
+      "title": "Finish with what you would do next",
+      "body": "Close technical answers with the improvement you did not have time for. It signals that you know the difference between shipped and finished, which is exactly what an interviewer is trying to work out."
+    }
+  ],
+  "stagePlaybook": [
+    {
+      "stage": "1st Interview",
+      "emoji": "👋",
+      "focus": "Screening & narrative",
+      "accent": "blue",
+      "tips": [
+        "Have the two-minute version of your background ready: Birkbeck First, Somalis in Tech, HQ Analytics, portfolio, what you want next.",
+        "Read the company's engineering blog and name their stack back to them. Specifics separate you from the pile.",
+        "Expect surface-level technical screening — SQL fundamentals and 'tell me about a project'. Depth comes later.",
+        "Bring three questions about the team's data challenges. Not perks."
+      ],
+      "questions": [
+        "tell-me-about-yourself",
+        "what-are-you-looking-for",
+        "recent-role-impact",
+        "why-this-role"
+      ]
+    },
+    {
+      "stage": "2nd Interview",
+      "emoji": "🔍",
+      "focus": "Technical depth",
+      "accent": "violet",
+      "tips": [
+        "Narrate before you type. Silence during live coding reads as being stuck, even when you are thinking.",
+        "Window functions, CTEs and joins are near-certain. Rehearse ROW_NUMBER deduplication until it is muscle memory.",
+        "Expect 'why did you choose X over Y' — have the DuckDB-over-Postgres and Redpanda-over-Kafka reasoning ready.",
+        "If you do not know something, say what you would read and how you would test it."
+      ],
+      "questions": [
+        "window-functions",
+        "slow-query",
+        "messy-data-python",
+        "dbt-structure",
+        "modelling-approach"
+      ]
+    },
+    {
+      "stage": "3rd Interview",
+      "emoji": "🧪",
+      "focus": "Design & cross-functional",
+      "accent": "pink",
+      "tips": [
+        "This round crosses domains — expect data quality tangled up with stakeholder communication.",
+        "Scenario questions ('the pipeline breaks at 2am before a board meeting') are testing composure and process, not trivia.",
+        "Talk about operating systems, not just building them: alerting, ownership, runbooks, backfills.",
+        "Have one example of a technical disagreement you resolved with evidence rather than seniority."
+      ],
+      "questions": [
+        "design-pipeline",
+        "cdc-design",
+        "data-quality",
+        "schema-change",
+        "explain-to-non-technical"
+      ]
+    },
+    {
+      "stage": "Home Assignment",
+      "emoji": "🏠",
+      "focus": "Take-home execution",
+      "accent": "amber",
+      "tips": [
+        "Read the brief twice and underline every requirement. Missing a stated requirement fails more take-homes than weak code does.",
+        "Time-box to the stated hours. Over-engineering signals poor prioritisation, not enthusiasm.",
+        "Ship a README with your approach, assumptions, and how to run it — plus a few tests on the logic that matters.",
+        "End with a 'what I would do next' section. It is the cheapest seniority signal in the whole submission."
+      ],
+      "questions": [
+        "take-home-walkthrough",
+        "data-quality",
+        "late-arriving-data"
+      ]
+    },
+    {
+      "stage": "Final Interview",
+      "emoji": "🏆",
+      "focus": "Fit & alignment",
+      "accent": "green",
+      "tips": [
+        "Your skills are already validated by this point. Shift from 'I can do the work' to 'I am the right person for this team'.",
+        "Know your London market range and say it without flinching, then note you are flexible on the total package.",
+        "Reference specific conversations from earlier rounds. It shows you were listening, not performing.",
+        "Ask how success is measured at six months, and about the decision timeline."
+      ],
+      "questions": [
+        "first-90-days",
+        "why-hire-you",
+        "salary-expectations",
+        "questions-to-ask"
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "tell-me-about-yourself",
+      "question": "Tell me about yourself.",
+      "category": "Opening",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "Where you are now",
+        "One quantified work result",
+        "One portfolio proof point",
+        "What you want next"
+      ],
+      "answer": "I'm a data engineer based in London with a First Class BSc in Data Science and Computing from Birkbeck. Most recently I spent about a year and a half as a Junior Data Engineer at Somalis in Tech, building production pipelines in Python, SQL, dbt and Airflow — the headline result there was taking data freshness from six hours down to forty-five minutes while holding 95% on-time SLA compliance. Alongside that I mentored around twelve early-career engineers. Before that I was a Junior Data Analyst at HQ Analytics in Dubai, where I cut data defects by 30% and built Power BI dashboards for twenty-five-odd users across operations. Outside work I've built a portfolio around the things I want to do more of — a CDC streaming pipeline with Debezium and ClickHouse, a few dbt warehouses, and a real-time lakehouse on TfL data. What I'm looking for now is a team where I can own reliable pipelines end to end.",
+      "evidence": "Somalis in Tech · HQ Analytics · 87% freshness · 12 mentees",
+      "watchOut": "Do not list all ten portfolio projects. Name two at most and stop — the interviewer will ask about the ones they care about."
+    },
+    {
+      "id": "what-are-you-looking-for",
+      "question": "What are you looking for in your next role? / Why are you leaving?",
+      "category": "Opening",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "What you have done",
+        "What is missing",
+        "What good looks like",
+        "Why this team fits"
+      ],
+      "answer": "I want to go deeper on production ownership. At Somalis in Tech I built and ran pipelines, but the scale was what a small team needs — I want to work on systems where reliability is genuinely hard, where there are real SLAs and real consequences when a pipeline is late. I'd also like to be the more junior person in a strong team for a while. I've spent a lot of the last year mentoring, which I loved, but I learn fastest when I'm the one having my design decisions challenged. Concretely: somewhere using dbt and a proper orchestrator, with a team that treats data quality as part of the build rather than something you bolt on afterwards. That's the part of the work I care most about.",
+      "evidence": "Somalis in Tech · mentoring 12 engineers",
+      "watchOut": "Never frame it as escaping something. Growth-forward, specific, and never critical of a former employer."
+    },
+    {
+      "id": "why-this-role",
+      "question": "What interests you about this role / company?",
+      "category": "Opening",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "A belief you hold",
+        "Where it came from",
+        "Why this company matches it",
+        "The tooling overlap"
+      ],
+      "answer": "Building the TfL Travel App taught me something that stuck. It started because a student on the mentorship programme asked how they'd actually know when their bus was coming — and the gap between 'it works' and 'it helps someone' turned out to be most of the engineering. That's the kind of data work I want to keep doing: systems where somebody downstream is genuinely better off. From what I've read about your stack and the problems your team is solving, that's what this role is — pipelines with real consumers, not reporting for its own sake. I'm also drawn to the tooling overlap; I've been working with dbt and Airflow daily and I'd rather go deeper on that than start again somewhere else.",
+      "evidence": "TfL Travel App · Somalis in Tech",
+      "watchOut": "This answer must be re-tailored per company. Replace the last two sentences with something specific you actually read about them."
+    },
+    {
+      "id": "recent-role-impact",
+      "question": "Walk me through your most recent role and the impact you had.",
+      "category": "Experience",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "The before state",
+        "What you built",
+        "The architecture in one breath",
+        "The measured after"
+      ],
+      "answer": "At Somalis in Tech I was the Junior Data Engineer on a small team, and my main piece of work was the TfL data platform. When I picked it up, data was landing roughly every six hours through a manual process, which meant nothing built on it could be close to real time. I rebuilt it as a four-layer pipeline: Airflow polling the TfL Unified API every three minutes into date and hour partitioned Parquet, dbt transforming through staging, intermediate and marts, and Great Expectations validating quality at the staging boundary. That took freshness to forty-five minutes — an 87% improvement — and we held 95% on-time SLA compliance with sub-sixty-minute latency. It also cut manual reporting by about 65%, because reports that people had been assembling by hand became marts. And because it was a community organisation, the pipeline doubled as the teaching platform for the twelve engineers I was mentoring.",
+      "evidence": "Somalis in Tech · 87% freshness · 95% SLA · 65% less manual reporting",
+      "watchOut": "Do not skip the 'before' state. The 87% only means something once they know it was six hours and manual."
+    },
+    {
+      "id": "freshness-improvement",
+      "question": "You improved data freshness from six hours to forty-five minutes. How?",
+      "category": "Experience",
+      "roles": [
+        "DE",
+        "AE"
+      ],
+      "structure": [
+        "Ingestion cadence",
+        "Incremental transforms",
+        "Detection time",
+        "Why you stopped at 45 minutes"
+      ],
+      "answer": "Three changes, in order of impact. First, the ingestion was manual and batch — I moved it to Airflow polling the TfL Unified API on a three-minute schedule, writing straight into date and hour partitioned Parquet, so raw data was always current. Second, the transformations were full-refresh, so every run reprocessed everything and got slower as the dataset grew. I moved the heavy models to incremental dbt materialisations keyed on the partition, so a run only touches new data. Third, and this was the one I didn't expect, a lot of the six hours was waiting for a human to notice a failure. I added Great Expectations checks at staging plus OpenLineage so a break surfaced immediately with the affected downstream models attached, instead of being discovered when someone's dashboard looked wrong. Forty-five minutes is what's left, and most of it is the polling interval by design — hammering the API harder would have hit rate limits for no real benefit.",
+      "evidence": "TfL Travel App · Airflow · dbt incremental · Great Expectations · OpenLineage",
+      "watchOut": "The third point is the strongest one because it is about operations, not code. Do not rush it."
+    },
+    {
+      "id": "analyst-experience",
+      "question": "Tell me about your analyst experience.",
+      "category": "Experience",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "The context",
+        "The quality fix",
+        "The turnaround fix",
+        "The business outcome",
+        "What it taught you"
+      ],
+      "answer": "I spent nine months as a Junior Data Analyst at HQ Analytics in Dubai, working remotely with their operations teams. The core of it was multi-source preprocessing — data arriving from several systems with inconsistent keys, formats and definitions. I built a standardised cleaning and validation step in front of the reporting layer, which brought data defects down by about 30%. The bigger win was turnaround: requests had been taking three days because every one started from raw data, and by building reusable Power BI dashboards for twenty-five-plus users I got most of it to same-day, roughly a 67% improvement. Out of the exploratory work I put forward twelve-odd concrete recommendations, and the ones the business acted on contributed to an 8% reduction in logistics costs and a 12% improvement in on-time delivery. That role is where I learned that the analysis is the easy part — getting people to trust and use it is the job.",
+      "evidence": "HQ Analytics · 30% fewer defects · 67% faster turnaround · 8% cost reduction",
+      "watchOut": "For a DE role, land on what the analyst experience gives you now: you know what your consumers actually need."
+    },
+    {
+      "id": "hardest-project",
+      "question": "What's the most technically challenging thing you've built?",
+      "category": "Experience",
+      "roles": [
+        "DE",
+        "AE"
+      ],
+      "structure": [
+        "The architecture",
+        "Ordering",
+        "Deletes",
+        "Schema contracts",
+        "What changed in how you think"
+      ],
+      "answer": "StreamShop, my CDC analytics pipeline. It captures changes from a PostgreSQL write-ahead log with Debezium, publishes them to Redpanda, and a Python consumer lands them in ClickHouse, where dbt models them into current-state and SCD2 history tables. The hard part wasn't wiring it together — it was everything that happens when the happy path stops. Ordering: events for the same key have to be applied in sequence, so the consumer is keyed and idempotent rather than just appending. Deletes: a CDC delete isn't a row you can ignore, so I carry a _deleted flag through to the models instead of losing history. Schema changes: I put Avro and a schema registry in front of the topics so a producer change is caught as a contract violation rather than silently corrupting downstream tables. And I implemented the outbox pattern so domain events are published in the same transaction as the state change, which removes the dual-write problem entirely. It's the project where I stopped thinking about pipelines as data movement and started thinking about them as guarantees.",
+      "evidence": "StreamShop CDC · Debezium · Redpanda · ClickHouse · SCD2 · outbox",
+      "watchOut": "The last sentence is the point of the whole answer. Do not let the tool list eat the time you need for it."
+    },
+    {
+      "id": "mentoring",
+      "question": "Tell me about a time you mentored or led others.",
+      "category": "Experience",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "Scale and structure",
+        "What you got wrong",
+        "What you changed",
+        "The outcome",
+        "What it did for you"
+      ],
+      "answer": "At Somalis in Tech I mentored about twelve early-career data engineers, and I structured it around four modules — API ingestion, data modelling, data quality, and pipeline orchestration — using the TfL platform as the live teaching system rather than toy exercises. The thing I got wrong at the start was demonstrating too much. I'd walk through my solution, everyone would nod, and then nobody could reproduce it. So I switched to giving them a broken pipeline and letting them diagnose it, which was slower and much more uncomfortable, and it worked — several of them went on to build their own lakehouses afterwards. What I took from it is that explaining something well is a completely different skill from doing it well, and the second one made me better at the first. My design docs and PR descriptions got a lot clearer once I'd spent a year having to justify decisions to people who would immediately ask why.",
+      "evidence": "Somalis in Tech · 12 mentees · 4 modules · TfL platform",
+      "watchOut": "Include the thing you got wrong. A mentoring story with no mistake in it sounds like a brochure."
+    },
+    {
+      "id": "window-functions",
+      "question": "Explain window functions and when you'd use one.",
+      "category": "SQL",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "Definition versus GROUP BY",
+        "When you reach for them",
+        "A concrete pattern",
+        "The tie-breaking trap"
+      ],
+      "answer": "A window function computes across a set of related rows without collapsing them, which is the key difference from GROUP BY — you keep row-level output and gain context. I reach for them whenever I need each row plus something about its neighbours: ranking, deduplication, running totals, or comparing a row to the previous one. The one I use most is deduplication. To get the latest status per application I'd write ROW_NUMBER() OVER (PARTITION BY application_id ORDER BY updated_at DESC, event_id DESC) and filter to row number one. The second ordering column matters — with timestamps at second granularity you get ties, and without a tiebreaker the result is non-deterministic, which is a genuinely nasty bug because it passes tests intermittently. I use LAG for day-over-day comparisons and SUM with an unbounded preceding frame for cumulative totals. In F1 RaceOps I use them heavily for ranking pit stop performance within a race.",
+      "evidence": "F1 RaceOps · driver and pit stop ranking",
+      "watchOut": "Say the tiebreaker point out loud. It is the detail that separates someone who has used these in production from someone who has read about them."
+    },
+    {
+      "id": "slow-query",
+      "question": "A dashboard query is slow. How do you investigate?",
+      "category": "SQL",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "Reproduce and measure",
+        "Read the plan",
+        "Reduce data scanned",
+        "Fix joins",
+        "Materialise last"
+      ],
+      "answer": "I'd reproduce and measure before changing anything, because the most common mistake here is guessing at an index. First I check whether it's actually the query or the surrounding context — concurrency, a cold cache, or a dashboard firing twelve queries where one would do. Then I read the execution plan and look for the expensive step: a full scan where I expected a partition prune, a nested loop over something large, a spill, or a shuffle in a distributed engine. From there the fixes go in rough order of payoff. Reduce data scanned first — push filters earlier, stop selecting columns nobody uses, make sure partition and cluster keys line up with how the dashboard actually filters. Then fix joins, checking key cardinality and whether a broadcast is appropriate. Indexing or clustering comes after that, and materialising the result comes last, because it's the option that adds a freshness obligation. On the Premier League warehouse in BigQuery, most of my cost savings came from partition pruning and dropping columns, not from anything clever.",
+      "evidence": "Premier League warehouse · BigQuery partition pruning",
+      "watchOut": "Lead with 'measure first'. Candidates who open by suggesting an index lose the point immediately."
+    },
+    {
+      "id": "scd-tracking",
+      "question": "How would you handle a value that changes over time — say a customer's address?",
+      "category": "SQL",
+      "roles": [
+        "DE",
+        "AE"
+      ],
+      "structure": [
+        "Ask if history matters",
+        "Type 1 versus Type 2",
+        "How you implemented it",
+        "The fan-out trap"
+      ],
+      "answer": "It depends on whether anyone needs to ask questions about the past. If not, a Type 1 overwrite is fine and much cheaper — people over-engineer this. But the moment someone wants to know what a metric looked like at the time, you need Type 2: each version becomes a row with valid_from and valid_to timestamps and a current flag, and facts join on the key plus the event date falling inside that window. I've implemented this twice. In StreamShop it's built on the CDC stream in ClickHouse with _version and _deleted fields, so a delete closes the current record rather than removing history. In F1 RaceOps I used dbt snapshots, which handle the same pattern declaratively. The two things that bite you are late-arriving changes, where a new version turns up out of order and you have to reopen and re-close an interval, and joins that forget the date predicate — those silently fan out and inflate every downstream number.",
+      "evidence": "StreamShop CDC · SCD2 in ClickHouse · F1 RaceOps · dbt snapshots",
+      "watchOut": "Start with 'does anyone need history' — recommending Type 2 unconditionally is the wrong instinct."
+    },
+    {
+      "id": "messy-data-python",
+      "question": "How would you clean a messy dataset — duplicate IDs, inconsistent dates, missing values?",
+      "category": "Python",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "Profile first",
+        "Parse and count failures",
+        "Standardise then deduplicate",
+        "Missing values are a business call",
+        "Validate and report"
+      ],
+      "answer": "I'd profile before touching anything, because the fix depends on the scale of the problem — how many rows are affected, whether the bad rows cluster in one source or one date range. Then I work in a fixed order. Parse dates explicitly with to_datetime and errors set to coerce, then count what failed to parse rather than letting it disappear. Standardise the categorical fields next, because inconsistent casing and whitespace are what make deduplication miss. Then deduplicate on a stable key with an explicit rule for which row wins — usually the most recent by update timestamp — not just drop_duplicates and hope. Missing values are a business decision, not a technical one: forward-fill is right for a sensor reading, wrong for a transaction amount, so I ask rather than assume. And I finish with assertions and a summary of exactly how many rows were changed or dropped. At HQ Analytics that discipline is where the 30% defect reduction came from — the audit trail is what made people trust the numbers.",
+      "evidence": "HQ Analytics · 30% defect reduction · TfL and London Air ingestion",
+      "watchOut": "The 'blind dropna' trap is the one they are testing for. Make the missing-value policy explicitly a business question."
+    },
+    {
+      "id": "api-rate-limits",
+      "question": "How do you handle API rate limits and flaky external dependencies?",
+      "category": "Python",
+      "roles": [
+        "DE",
+        "AE"
+      ],
+      "structure": [
+        "The real constraint",
+        "Priority-based polling",
+        "Degrade rather than fail",
+        "Retries, timeouts, breaker",
+        "Immutable raw enables replay"
+      ],
+      "answer": "This was a real constraint on the TfL Travel App, not a hypothetical. The Unified API has rate limits and I needed three-minute freshness across a lot of stops, so uniform polling wasn't going to fit in the budget. I moved to priority-based polling: high-traffic stops refresh on the fast cadence, quieter ones back off, and the priority is derived from actual usage rather than set by hand. When we did approach the limit, the pipeline degraded gracefully to cached data with the staleness surfaced to the consumer, instead of failing the run — a slightly old arrival time is useful, an error page isn't. Underneath that, the standard defences: retries with exponential backoff and jitter, timeouts on everything, and a circuit breaker so a sustained outage doesn't have Airflow retrying into a wall for an hour. And the raw layer stores the unmodified response, so if I discover a parsing bug next week I can reprocess history without re-hitting the API.",
+      "evidence": "TfL Travel App · priority polling · graceful degradation · immutable raw layer",
+      "watchOut": "The graceful-degradation choice is the interesting part — it is a product decision, not just an engineering one."
+    },
+    {
+      "id": "design-pipeline",
+      "question": "Design a data pipeline from scratch.",
+      "category": "Pipelines",
+      "roles": [
+        "DE",
+        "AE"
+      ],
+      "structure": [
+        "Four framing questions",
+        "Immutable raw",
+        "Idempotent orchestration",
+        "Layered transformation",
+        "Quality and ownership"
+      ],
+      "answer": "I'd ask four questions before drawing anything: what's the source and can I control it, where does the data need to land, what's the freshness SLA, and what's the volume and growth. Those four answers determine most of the design. Assuming a typical case — an API source, analytics consumers, hourly freshness — I'd land raw responses immutably first, partitioned by date and hour, and never transform on the way in. That raw layer is what lets you reprocess when you find a bug, and you always find a bug. Orchestration in Airflow with idempotent tasks, so a rerun of any partition produces the same result and a backfill is just a rerun over a range. Transformation in dbt through staging, intermediate and marts, incremental where volume justifies the complexity and not before. Quality checks at the staging boundary so bad data stops before it reaches anything anyone looks at, plus freshness and volume monitoring with a named owner for alerts. That's the shape of both the TfL and London Air Quality pipelines.",
+      "evidence": "TfL Lakehouse · London Air Quality · Airflow · dbt medallion",
+      "watchOut": "Ask the four questions out loud even if they hand you the answers. The asking is what is being scored."
+    },
+    {
+      "id": "cdc-design",
+      "question": "Design a CDC pipeline from Postgres into an analytics database.",
+      "category": "Pipelines",
+      "roles": [
+        "DE"
+      ],
+      "structure": [
+        "Capture and broker",
+        "Consume idempotently",
+        "Ordering per key",
+        "Deletes as events",
+        "Schema contracts",
+        "Replay path"
+      ],
+      "answer": "I've built exactly this, so I'll describe what I did and where the sharp edges were. Debezium reads the PostgreSQL write-ahead log and publishes change events to Redpanda — which is Kafka-compatible but a single binary, so it was far easier to run locally and in CI. A Python consumer lands events in ClickHouse, and dbt models them into both a current-state table and an SCD2 history table, because those serve different questions. The parts that need care: ordering has to be preserved per key, so partitioning is by primary key and the consumer is idempotent on key plus log sequence number. Deletes must be first-class — I carry a _deleted flag rather than dropping rows, otherwise you lose the fact that something was deleted, which is often the interesting event. Schema evolution goes through Avro and a schema registry so a producer change fails as a contract violation instead of corrupting downstream tables. And there's a replay path from a snapshot plus the log, because a consumer bug that you can't reprocess your way out of is a very bad afternoon.",
+      "evidence": "StreamShop CDC · Debezium · Redpanda · ClickHouse · Avro registry",
+      "watchOut": "Say why Redpanda over Kafka — operational simplicity for the scale you needed. Tool choices need reasons."
+    },
+    {
+      "id": "batch-vs-streaming",
+      "question": "Batch or streaming — how do you decide?",
+      "category": "Pipelines",
+      "roles": [
+        "DE",
+        "AE"
+      ],
+      "structure": [
+        "Does freshness change a decision",
+        "Where you chose streaming",
+        "Where you chose batch",
+        "The operational cost"
+      ],
+      "answer": "I decide on whether a decision changes with the freshness. If nobody acts differently on data that's five minutes old versus six hours old, streaming is cost and complexity you're paying for nothing. TfL was genuinely real-time-shaped — an arrival prediction is worthless if it's an hour stale — so that pipeline polls every three minutes. StreamShop was streaming because CDC is inherently event-driven; you're reading a log of changes, and batching that back up throws away the ordering you were given for free. But the F1 and Premier League warehouses are batch, because nobody needs last night's race analysed within seconds. The other half of the answer is operational: streaming systems fail differently. Backfills are harder, exactly-once is expensive, and you need people who can debug a consumer lag at 3am. I'd rather run a well-monitored hourly batch than a streaming pipeline nobody on the team can operate.",
+      "evidence": "TfL (3-min) · StreamShop (CDC streaming) · F1 and Premier League (batch)",
+      "watchOut": "Having built both is your advantage here. Name a project on each side of the line."
+    },
+    {
+      "id": "late-arriving-data",
+      "question": "How do you handle late-arriving data?",
+      "category": "Pipelines",
+      "roles": [
+        "DE",
+        "AE"
+      ],
+      "structure": [
+        "Event time versus processing time",
+        "Measured lookback window",
+        "Idempotent merge",
+        "Explicit restatement beyond the window",
+        "Monitor lateness itself"
+      ],
+      "answer": "The root cause is usually treating yesterday's partition as final when it isn't. So the first thing I do is separate event time from processing time and keep both, because you can't reason about lateness without them. Then I define a lookback window based on how late data actually arrives — measure it, don't guess — and reprocess that window on every run rather than only the newest partition. That only works if the pipeline is idempotent, which is why I merge on stable keys instead of appending. Past the lookback window, late data becomes an explicit restatement with a backfill, not a silent correction, because a number that quietly changes after people have quoted it destroys trust faster than a number that was late. And I monitor it: if the volume of late-arriving records shifts, that's usually an upstream problem worth chasing before it becomes a metrics problem.",
+      "evidence": "TfL and London Air Quality · partitioned backfills",
+      "watchOut": "The 'silently changing numbers destroy trust' point is a maturity signal. Include it."
+    },
+    {
+      "id": "data-quality",
+      "question": "How do you ensure data quality in your pipelines?",
+      "category": "Data Quality",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "Layered, not bolted on",
+        "Contract at ingestion",
+        "Semantics at staging",
+        "dbt tests in transformation",
+        "Freshness, volume, lineage"
+      ],
+      "answer": "I build it in at layers rather than bolting a checker on the end, because by the time you're validating the output you've already lost the ability to say where it broke. At ingestion I validate structure and contract — in StreamShop that's Avro against a schema registry, so a producer change is rejected rather than absorbed. At staging I check semantics with Great Expectations: nullability on the fields that matter, and range checks on things I know the bounds of, like time-to-station on the TfL data, which can't be negative and shouldn't be six hours. In the transformation layer, dbt tests on uniqueness, not-null, accepted values and relationships run on every model, so a broken join surfaces as a failing test rather than a duplicated row count. Then freshness and volume monitoring above all of it, plus OpenLineage into Marquez so when something does fail I can see exactly which downstream models are affected instead of guessing. The principle is that checks belong where the failure happens, not where you notice it.",
+      "evidence": "StreamShop (Avro) · TfL and London Air (Great Expectations) · dbt tests · OpenLineage",
+      "watchOut": "Give a specific expectation, not just the tool name. 'Time-to-station cannot be negative' proves you wrote them."
+    },
+    {
+      "id": "schema-change",
+      "question": "An upstream API changes its schema without warning. What happens?",
+      "category": "Data Quality",
+      "roles": [
+        "DE",
+        "AE"
+      ],
+      "structure": [
+        "Raw layer is safe",
+        "Staging fails loudly by design",
+        "Tests catch second-order breaks",
+        "Incident response",
+        "Add the expectation afterwards"
+      ],
+      "answer": "In my pipelines the raw layer survives it, because I store the response unmodified — so nothing is lost even if everything downstream fails. Staging is where it breaks, deliberately: I use explicit column selection rather than select-star, so a renamed or dropped field fails loudly at the boundary instead of propagating nulls into marts that people are looking at. That's the whole design decision — fail early and visibly, because a pipeline that silently produces wrong numbers is far worse than one that stops. The dbt tests catch the second-order effects: a schema change that doesn't break parsing but breaks a join shows up as a uniqueness or relationship failure. Then it's a normal incident — assess blast radius via lineage, communicate to whoever consumes the affected marts before they notice themselves, fix staging, and reprocess from raw. Afterwards I'd add an expectation for that specific field, because upstreams that change once change again.",
+      "evidence": "TfL Travel App · immutable raw · explicit staging columns · dbt tests",
+      "watchOut": "'Fail loudly rather than propagate nulls' is the sentence they are listening for."
+    },
+    {
+      "id": "dbt-structure",
+      "question": "How would you structure a dbt project from scratch?",
+      "category": "Modelling",
+      "roles": [
+        "DE",
+        "AE"
+      ],
+      "structure": [
+        "Staging rules",
+        "Intermediate for shared logic",
+        "Marts named for the business",
+        "Test placement",
+        "Materialisation ladder"
+      ],
+      "answer": "Three layers, and the discipline is about what's allowed in each. Staging does one thing per source — rename to consistent conventions, cast types, light cleaning, no business logic and no joins. One staging model per source table, materialised as views because they're cheap and always current. Intermediate is where reusable joins and shared logic live, so a business rule that appears in five marts is defined once and referenced, not copy-pasted — that's the layer people skip and then regret. Marts are business-facing entities and metrics, named for what a stakeholder would call them rather than what the source system calls them. Tests at every layer, with the strictest at staging where it's cheapest to catch things. On materialisation I default to views, move to tables when query time hurts, and only go incremental when volume genuinely justifies the extra complexity, because incremental models are where the subtle bugs live. That's the structure in F1 RaceOps, Premier League and the TfL pipeline.",
+      "evidence": "F1 RaceOps · Premier League · TfL · 3-layer dbt",
+      "watchOut": "The 'intermediate layer is the one people skip' observation shows you have maintained a project, not just built one."
+    },
+    {
+      "id": "modelling-approach",
+      "question": "How would you model a new domain for analytics?",
+      "category": "Modelling",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "Start from questions",
+        "Establish grain",
+        "Facts and dimensions",
+        "SCD2 where history matters",
+        "Denormalise deliberately"
+      ],
+      "answer": "I start from the questions, not the tables. What decisions does this data need to support, and what's the grain of each one — because getting the grain wrong is the mistake you can't fix later without a rewrite. Then I identify the business processes, which become facts, and the things you slice by, which become dimensions. That's a star schema, and I default to it for analytics because it's the shape BI tools and analysts expect; the join is predictable and the mental model is teachable. F1 RaceOps is a good example — nine dimensions around race, driver, constructor, circuit and so on, with facts at lap and pit-stop grain, which means questions about pit stop performance and questions about season standings both have a natural home. Where a dimension changes over time and history matters, that becomes SCD2. I'd denormalise into a wide table if there's a specific dashboard that needs it and the joins are measurably hurting — but as an addition on top, not instead of the star.",
+      "evidence": "F1 RaceOps · 9 dimensions · lap and pit-stop grain",
+      "watchOut": "Say 'grain' early and explicitly. It is the vocabulary that signals you have done this properly."
+    },
+    {
+      "id": "explain-to-non-technical",
+      "question": "How do you explain a complex data issue to a non-technical stakeholder?",
+      "category": "Stakeholders",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "Impact before mechanism",
+        "The concrete example",
+        "Scope the blast radius",
+        "Give a time",
+        "Follow up in writing"
+      ],
+      "answer": "I lead with impact and skip the mechanism unless they ask. At HQ Analytics a dashboard the operations team relied on was showing inflated figures, and the cause was a join fanning out because a source had started sending duplicate records. Nobody needed the word 'fan-out'. What I said was: some deliveries are being counted more than once, it affects these three numbers and not the others, the totals are too high by roughly this much, we've stopped it happening from this morning, and the corrected history will be in by tomorrow. Then I offered the detail to anyone who wanted it. Three things I try to always do — say what's affected and equally clearly what isn't, because uncertainty spreads further than the actual problem; give a time, even a rough one, because 'we're looking into it' with no horizon is what makes people escalate; and follow up in writing so they can forward it without having to re-explain it themselves.",
+      "evidence": "HQ Analytics · 25+ dashboard users · operations teams",
+      "watchOut": "The 'say what is not affected' point is unusually good. Do not lose it at the end of the answer."
+    },
+    {
+      "id": "disagreed-technical",
+      "question": "Tell me about a time you disagreed with a technical approach.",
+      "category": "Stakeholders",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "The disagreement",
+        "Why you thought it was wrong",
+        "You measured instead of arguing",
+        "The outcome",
+        "The transferable principle"
+      ],
+      "answer": "On the Premier League warehouse the plan was to materialise almost everything as tables in BigQuery, for speed. I thought the cost profile was wrong for how the data was actually queried — most models were hit occasionally, and we'd be paying storage and rebuild cost on everything to make a handful of queries faster. Rather than argue it in the abstract, I built both. I measured query time and cost across a representative set of queries, and it showed that views were fine for most models and materialising the three heaviest got nearly all the benefit for a fraction of the cost. That settled it in about ten minutes, and I'd rather have spent an afternoon on evidence than a week on opinions. The thing I'd carry into any team: disagreeing well is mostly about converting the disagreement into something measurable. If you can't measure it, the disagreement is about values, and then you should say that explicitly and defer to whoever owns the decision.",
+      "evidence": "Premier League warehouse · BigQuery materialisation and cost",
+      "watchOut": "The closing principle is what elevates this from a story to a way of working. Land it."
+    },
+    {
+      "id": "something-failed",
+      "question": "Tell me about a time something went wrong.",
+      "category": "Behavioural",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "What broke and who felt it",
+        "Immediate cause",
+        "The deeper design flaw",
+        "What you changed",
+        "The principle you kept"
+      ],
+      "answer": "Early on with the TfL pipeline I hit rate limits during a busy period and the run failed, which meant no fresh arrival data for a stretch of the morning — for an app whose entire value is knowing when your bus is coming. The immediate cause was uniform polling: I was refreshing every stop at the same cadence regardless of whether anyone used it, so I was spending the API budget on stops nobody queried. I fixed the cause with priority-based polling driven by actual usage. But the more important fix was the design assumption underneath it: the pipeline treated an API failure as a run failure, when the honest behaviour is to degrade — serve cached data with the staleness visible, because slightly old is useful and nothing is not. So I added graceful degradation, plus alerting on approaching the limit rather than hitting it. What I took from it is that resilience is mostly about deciding in advance what the system should do when it can't do the ideal thing.",
+      "evidence": "TfL Travel App · rate limits · priority polling · graceful degradation",
+      "watchOut": "Give the user-visible consequence before the technical cause. Owning the impact is the whole point of the question."
+    },
+    {
+      "id": "problem-nobody-noticed",
+      "question": "Tell me about a problem nobody else had noticed.",
+      "category": "Behavioural",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "The offhand question",
+        "Verifying it was real",
+        "What you built",
+        "The thing that surprised you",
+        "The lesson"
+      ],
+      "answer": "A student on the mentorship programme asked me how they'd actually know when their bus was coming. It was a throwaway question, but it pointed at something real: TfL publishes excellent open data, and none of it was reaching the students in a form they'd use. Everyone had accepted that as normal. I checked whether it was a real gap — asked around, and the pattern held — then built the TfL Travel App around three things people said they'd actually use: live arrival predictions, disruption alerts, and historical reliability. The third one surprised me. I'd assumed real-time was the whole product, but what students valued most was knowing which routes were consistently unreliable, because that changes how you plan rather than how you wait. It ended up as a real platform — forty-five-minute freshness, 65% less manual reporting, and the teaching system for twelve engineers. The lesson I keep is that the interesting problems usually arrive as an offhand question from someone who doesn't know it's a problem.",
+      "evidence": "TfL Travel App · Somalis in Tech · 3 data products",
+      "watchOut": "The surprise — historical reliability beating real-time — is what makes this sound true rather than rehearsed."
+    },
+    {
+      "id": "take-home-walkthrough",
+      "question": "Walk us through your take-home solution.",
+      "category": "Closing",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "How you read the brief",
+        "Assumptions",
+        "Architecture",
+        "Trade-offs against the time box",
+        "Tests",
+        "What is next"
+      ],
+      "answer": "I'd start with how I read the brief, because most of the interesting decisions are interpretation rather than code — here's what I understood the requirement to be, here are the ambiguities I found, and here's the assumption I made on each and why. Then the architecture at a high level before any code: the shape, and the one or two decisions that determined it. Then the trade-offs, explicitly framed against the time box — what I chose to do properly, what I chose to do simply, and why that split. I'd show the tests, and I'd be specific that they cover the logic that matters rather than claiming coverage I don't have. Then what I'd do with more time, in priority order, which is usually where I'd want the conversation to go anyway. And I'd flag anything I'm not confident about myself before they find it — it turns a potential gotcha into a discussion, and it's a much better use of the room.",
+      "evidence": "Applies to any submission · mirrors your README structure",
+      "watchOut": "Do not open by demoing code. Interpretation and trade-offs are what is being assessed."
+    },
+    {
+      "id": "first-90-days",
+      "question": "What would you do in your first 90 days?",
+      "category": "Closing",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "30: map the landscape",
+        "Ship something small early",
+        "60: contribute independently",
+        "90: own something measurable"
+      ],
+      "answer": "First thirty days I'd be trying to build an accurate map: what the pipelines are, what depends on what, where the lineage actually goes as opposed to where the docs say it goes, what the SLAs are, who consumes what, and where the team's recurring pain is. I'd also want to know what breaks most often, because that tells you more about a data platform than any architecture diagram. I'd expect to ship something small and useful in that window — a test, a fix, a piece of documentation — mostly to learn the deployment path end to end. By sixty days I'd want to be delivering scoped work in the existing systems and taking on-call or review responsibility, contributing without needing much supervision. By ninety I'd want to own something measurable: a pipeline, a domain, or a reliability metric that's mine to be accountable for. I'd rather be genuinely trusted with one area than superficially involved in five.",
+      "evidence": "Mirrors how you approached the TfL platform",
+      "watchOut": "Anchor the learning phase in specifics — lineage, SLAs, what breaks. Generic enthusiasm is forgettable."
+    },
+    {
+      "id": "why-hire-you",
+      "question": "Why should we hire you?",
+      "category": "Closing",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "Build and operate",
+        "Both sides of the handoff",
+        "Can explain it",
+        "Name the gap and answer it"
+      ],
+      "answer": "Three things. First, I've built and operated production pipelines, not just written them — the freshness improvement at Somalis in Tech was 87%, and holding 95% SLA compliance afterwards was the harder part, because that's about monitoring and incident response rather than the initial build. Second, I've worked both sides of the handoff: nine months as an analyst at HQ Analytics means I know what it's like to consume a badly modelled table, and I build differently because of it. Third, I can explain things — mentoring twelve engineers forces you to justify every decision to someone who'll immediately ask why, and that made my design docs and reviews much sharper. Where I'm honest about the gap: I haven't operated at very large scale or owned a big cloud estate. But my portfolio is mostly me learning production patterns from scratch — Debezium, ClickHouse, dbt, OpenLineage — so the evidence that I close gaps quickly is on the table rather than something you have to take on trust.",
+      "evidence": "87% freshness · 95% SLA · 12 mentees · self-taught production stack",
+      "watchOut": "Naming the gap yourself is what makes the other three claims believable. Do not drop it to sound stronger."
+    },
+    {
+      "id": "salary-expectations",
+      "question": "What are your salary expectations?",
+      "category": "Closing",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "A researched range",
+        "Flexibility on scope and package",
+        "Turn it back into a question"
+      ],
+      "answer": "Based on what I've seen for data engineering roles in London at my level, I'm targeting a range of roughly X to Y. That said, I'm flexible depending on the scope of the role, the total package, and what the growth path looks like — if there's a clear route to more ownership, that genuinely matters to me. Is that in line with the band you have for this position?",
+      "evidence": "Research the current London band before every screen — do not reuse a stale figure",
+      "watchOut": "Give an actual range. Deflecting entirely reads as unprepared and hands the anchor to them."
+    },
+    {
+      "id": "questions-to-ask",
+      "question": "Do you have any questions for us?",
+      "category": "Closing",
+      "roles": [
+        "DE",
+        "AE",
+        "DA"
+      ],
+      "structure": [
+        "Biggest reliability problem",
+        "How success is measured",
+        "What happens when it breaks",
+        "Where the platform is going"
+      ],
+      "answer": "Always yes — three, and never about perks. Ask what the team's biggest data reliability problem is right now, because the answer tells you what the job is actually like day to day and whether they're honest about it. Ask how success is measured at six months, which surfaces whether they've thought about the role or are hiring reactively. Ask what happens when a pipeline breaks — who finds out, who fixes it, whether there's a runbook — because incident culture tells you more about engineering maturity than the stack does. If it's the final round, add one about where the platform is going in the next year, and whether the team is planning to build or buy. And note their answers down; referencing something specific from an earlier round in a later one is one of the cheapest ways to stand out.",
+      "evidence": "Use in every round · vary by interviewer seniority",
+      "watchOut": "Have these written down. 'No, I think you covered everything' is a genuinely bad ending."
+    }
+  ],
   "projects": [
     {
       "id": "tfl-lakehouse",
       "name": "TfL Real-Time Lakehouse",
       "emoji": "🚇",
       "category": "Data Engineering / Real-Time",
-      "stack": ["Python", "Airflow", "dbt", "DuckDB", "Parquet", "Great Expectations", "OpenLineage", "Docker"],
+      "stack": [
+        "Python",
+        "Airflow",
+        "dbt",
+        "DuckDB",
+        "Parquet",
+        "Great Expectations",
+        "OpenLineage",
+        "Docker"
+      ],
       "summary": "Production-pattern lakehouse ingesting live Transport for London arrival data. Airflow orchestrates ingestion from the TfL API into partitioned Parquet, dbt transforms into analytics-ready marts, Great Expectations validates data quality, and OpenLineage tracks end-to-end lineage via Marquez.",
       "interviewUse": [
         "Pipeline architecture: real-time ingestion → raw Parquet → DuckDB silver layer → dbt marts",
@@ -59,14 +825,25 @@
         "Observability: OpenLineage + Marquez for full lineage tracking",
         "Idempotent design: date-partitioned writes, incremental dbt models"
       ],
-      "github": "https://github.com/aosman101/tfl-realtime-lakehouse"
+      "github": "https://github.com/aosman101/tfl-realtime-lakehouse",
+      "tier": "headline"
     },
     {
       "id": "tfl-travel-app",
       "name": "TfL Travel App (Somalis in Tech)",
       "emoji": "🚌",
       "category": "Community / Production Data Engineering",
-      "stack": ["Python", "Apache Airflow", "dbt", "DuckDB", "Parquet", "Great Expectations", "OpenLineage", "TfL Unified API", "Docker"],
+      "stack": [
+        "Python",
+        "Apache Airflow",
+        "dbt",
+        "DuckDB",
+        "Parquet",
+        "Great Expectations",
+        "OpenLineage",
+        "TfL Unified API",
+        "Docker"
+      ],
       "summary": "Production data engineering project built with Somalis in Tech, born from a student's question: 'How do I actually know when my bus is coming?' Four-layer architecture — Airflow ingests from TfL Unified API every 3 minutes into date/hour-partitioned Parquet, dbt transforms through staging → intermediate → marts (medallion pattern), Great Expectations validates quality, and OpenLineage tracks lineage. Features real-time arrival predictions, line disruption alerts, and historical reliability patterns. Improved data freshness from 6 hours to 45 minutes (87%), reduced manual reporting by 65%, and served as a teaching platform for ~12 early-career engineers via the Caawi Mentorship Platform.",
       "interviewUse": [
         "Origin story: a student asked 'How do I know when my bus is coming?' — identified a real gap in how TfL data served commuters",
@@ -79,14 +856,23 @@
         "Impact: 87% freshness improvement, 65% manual reporting reduction, mentees went on to build their own lakehouses",
         "Key insight: 'The gap between it works and it helps is the difference between engineering and software worth building'"
       ],
-      "github": "https://github.com/aosman101/tfl-realtime-lakehouse"
+      "github": "https://github.com/aosman101/tfl-realtime-lakehouse",
+      "tier": "headline"
     },
     {
       "id": "streamshop-cdc",
       "name": "StreamShop CDC Analytics",
       "emoji": "🔄",
       "category": "Data Engineering / CDC Streaming",
-      "stack": ["Python", "Debezium", "Redpanda", "ClickHouse", "dbt", "PostgreSQL", "Docker"],
+      "stack": [
+        "Python",
+        "Debezium",
+        "Redpanda",
+        "ClickHouse",
+        "dbt",
+        "PostgreSQL",
+        "Docker"
+      ],
       "summary": "Full production-style Change Data Capture pipeline: PostgreSQL → Debezium → Redpanda → Python consumer → ClickHouse, with dbt modelling including SCD2 snapshots, outbox pattern, and Avro schema registry.",
       "interviewUse": [
         "CDC architecture: explain Debezium, WAL, Redpanda as Kafka-compatible broker",
@@ -94,14 +880,24 @@
         "Schema evolution: Avro validation + schema registry for contract enforcement",
         "Outbox pattern for reliable domain event publishing"
       ],
-      "github": "https://github.com/aosman101/streamshop-cdc-analytics"
+      "github": "https://github.com/aosman101/streamshop-cdc-analytics",
+      "tier": "headline"
     },
     {
       "id": "deep-stocks",
       "name": "Deep Stock Insights",
       "emoji": "📊",
       "category": "Machine Learning / Full-Stack",
-      "stack": ["Python", "FastAPI", "React", "TensorFlow", "LightGBM", "XGBoost", "WebSocket", "SQLite"],
+      "stack": [
+        "Python",
+        "FastAPI",
+        "React",
+        "TensorFlow",
+        "LightGBM",
+        "XGBoost",
+        "WebSocket",
+        "SQLite"
+      ],
       "summary": "ML platform predicting prices across 53 assets (crypto, equities, commodities) using N-HiTS, LightGBM, and XGBoost. Features live WebSocket streaming, walk-forward backtesting, 18+ technical indicators, and a React dashboard.",
       "interviewUse": [
         "End-to-end ML pipeline: feature engineering → model training → API serving → React frontend",
@@ -109,14 +905,22 @@
         "Technical indicators: RSI, MACD, Bollinger Bands, ADX — domain feature engineering",
         "System design: FastAPI backend + WebSocket for real-time price updates"
       ],
-      "github": "https://github.com/aosman101/deep-stocks-insights"
+      "github": "https://github.com/aosman101/deep-stocks-insights",
+      "tier": "supporting"
     },
     {
       "id": "f1-raceops",
       "name": "F1 RaceOps Analytics Warehouse",
       "emoji": "🏎️",
       "category": "Analytics Engineering",
-      "stack": ["Python", "PostgreSQL", "dbt", "Docker", "Tableau", "GitHub Actions"],
+      "stack": [
+        "Python",
+        "PostgreSQL",
+        "dbt",
+        "Docker",
+        "Tableau",
+        "GitHub Actions"
+      ],
       "summary": "Local-first F1 analytics warehouse with Ergast-compatible schema. Three-layer dbt architecture (staging → core dimensions/facts → RaceOps marts) for pit stop performance, reliability metrics, and seasonal summaries.",
       "interviewUse": [
         "Data modelling: star schema with 9 staging views, 9 dim/fact tables, 4 specialised marts",
@@ -124,14 +928,20 @@
         "Dimensional modelling: driver, constructor, circuit, race dimensions + facts",
         "CI/CD: GitHub Actions pipeline for automated dbt builds"
       ],
-      "github": "https://github.com/aosman101/f1-raceops-analytics-warehouse"
+      "github": "https://github.com/aosman101/f1-raceops-analytics-warehouse",
+      "tier": "headline"
     },
     {
       "id": "pl-warehouse",
       "name": "Premier League Analytics Warehouse",
       "emoji": "⚽",
       "category": "Analytics Engineering / Cloud",
-      "stack": ["Python", "BigQuery", "dbt", "GitHub Actions"],
+      "stack": [
+        "Python",
+        "BigQuery",
+        "dbt",
+        "GitHub Actions"
+      ],
       "summary": "End-to-end analytics warehouse on BigQuery for Premier League data (2014–2025). dbt models include dim_team, fct_match_results, fct_team_season_stats, and a time_spine. CI pipeline auto-loads raw data and runs dbt build.",
       "interviewUse": [
         "Cloud warehouse: BigQuery cost management, partitioning, service account auth",
@@ -139,14 +949,24 @@
         "CI/CD: GitHub Actions loads raw data → runs dbt build --target ci",
         "Metrics layer: team season aggregations, match result facts"
       ],
-      "github": "https://github.com/aosman101/premier-league-analytics-warehouse"
+      "github": "https://github.com/aosman101/premier-league-analytics-warehouse",
+      "tier": "supporting"
     },
     {
       "id": "london-air",
       "name": "London Air Quality & Weather Lakehouse",
       "emoji": "🌫️",
       "category": "Data Engineering / Lakehouse",
-      "stack": ["Python", "Airflow", "dbt", "PostgreSQL", "MinIO", "Great Expectations", "Metabase", "Docker"],
+      "stack": [
+        "Python",
+        "Airflow",
+        "dbt",
+        "PostgreSQL",
+        "MinIO",
+        "Great Expectations",
+        "Metabase",
+        "Docker"
+      ],
       "summary": "Medallion-pattern lakehouse: OpenAQ + Open-Meteo APIs → Airflow → MinIO (raw) → PostgreSQL → dbt transformations → Metabase dashboards. Idempotent upserts, incremental fact modelling, and data quality validation.",
       "interviewUse": [
         "Medallion architecture: raw (MinIO/S3) → warehouse (PostgreSQL) → marts (dbt)",
@@ -154,14 +974,20 @@
         "Visualisation layer: Metabase dashboards connected to PostgreSQL",
         "API ingestion: handling sensor discovery, hourly pulls, error recovery"
       ],
-      "github": "https://github.com/aosman101/london-air-quality-weather-lakehouse"
+      "github": "https://github.com/aosman101/london-air-quality-weather-lakehouse",
+      "tier": "supporting"
     },
     {
       "id": "mini-lake",
       "name": "Mini Lake dbt + DuckDB",
       "emoji": "🦆",
       "category": "Analytics Engineering / Demo",
-      "stack": ["dbt", "DuckDB", "Python", "GitHub Actions"],
+      "stack": [
+        "dbt",
+        "DuckDB",
+        "Python",
+        "GitHub Actions"
+      ],
       "summary": "Compact local-first analytics demo: CSV seeds → staging views → mart aggregations, with schema-based validation, dbt docs generation, and CI enforcement on every push.",
       "interviewUse": [
         "dbt fundamentals: seeds, staging, marts, materialisation strategies",
@@ -169,14 +995,22 @@
         "Local development: DuckDB as zero-infrastructure analytical engine",
         "CI/CD: automated dbt build + test on every PR"
       ],
-      "github": "https://github.com/aosman101/mini-lake-dbt-duckdb"
+      "github": "https://github.com/aosman101/mini-lake-dbt-duckdb",
+      "tier": "supporting"
     },
     {
       "id": "ai-trading",
       "name": "AI Trading Agent",
       "emoji": "🤖",
       "category": "ML / Reinforcement Learning",
-      "stack": ["Python", "PyTorch", "LightGBM", "FastAPI", "Supabase", "Docker"],
+      "stack": [
+        "Python",
+        "PyTorch",
+        "LightGBM",
+        "FastAPI",
+        "Supabase",
+        "Docker"
+      ],
       "summary": "Autonomous swing trading agent combining N-HiTS, TFT, LightGBM, FinBERT sentiment, and PPO/DQN reinforcement learning into a risk-managed ensemble. Features ATR-based position sizing, daily loss limits, and paper-trading safety gates via Alpaca.",
       "interviewUse": [
         "Ensemble architecture: multiple models with dynamic weighting",
@@ -184,107 +1018,28 @@
         "RL in practice: PPO/DQN as meta-controllers for buy/sell/hold decisions",
         "System design: FastAPI + Supabase for state management and API exposure"
       ],
-      "github": "https://github.com/aosman101/ai-trading-agent"
+      "github": "https://github.com/aosman101/ai-trading-agent",
+      "tier": "supporting"
     },
     {
       "id": "stock-prediction",
       "name": "Stock Market Prediction (LSTM)",
       "emoji": "📈",
       "category": "Machine Learning",
-      "stack": ["Python", "TensorFlow", "Keras", "Jupyter"],
+      "stack": [
+        "Python",
+        "TensorFlow",
+        "Keras",
+        "Jupyter"
+      ],
       "summary": "LSTM deep learning model for equity price forecasting achieving R² of 0.95. Includes KNN baseline, backtesting, and time series analysis.",
       "interviewUse": [
         "Deep learning: LSTM for sequential time series prediction",
         "Model evaluation: R² of 0.95, comparison with KNN baseline",
         "Feature engineering for financial time series"
       ],
-      "github": "https://github.com/aosman101/Stock-Market-Prediction"
+      "github": "https://github.com/aosman101/Stock-Market-Prediction",
+      "tier": "supporting"
     }
-  ],
-  "tailoredAnswers": {
-    "behavioral": [
-      {
-        "question": "Tell me about yourself / Walk me through your background.",
-        "answer": "I'm Adil, a London-based data engineer with a First Class BSc in Data Science & Computing from Birkbeck. Most recently I was a Junior Data Engineer at Somalis in Tech where I built production data pipelines and mentored 12 early-career engineers. My proudest work there was the TfL Travel App — it started when a student asked 'How do I actually know when my bus is coming?' and I turned that into a full production system: Airflow ingesting live TfL data every 3 minutes, dbt transforming through a medallion architecture, Great Expectations validating quality. It improved data freshness from 6 hours to 45 minutes and became a real tool for London students and commuters. Before that I was a Data Analyst at HQ Analytics in Dubai, where I built Power BI dashboards for 25+ users and contributed to an 8% reduction in logistics costs. My portfolio also includes CDC streaming pipelines, analytics warehouses on BigQuery, and ML platforms. I'm drawn to roles where I can build reliable data systems that genuinely help people.",
-        "tags": ["1st Interview", "Screening"]
-      },
-      {
-        "question": "Tell me about a technically challenging project.",
-        "answer": "My StreamShop CDC Analytics project was the most complex. I built a full Change Data Capture pipeline: PostgreSQL captures row-level changes via Debezium, streams them through Redpanda (a Kafka-compatible broker), and a Python consumer lands them in ClickHouse. The trickiest parts were handling SCD Type 2 snapshots in dbt on ClickHouse using _version and _deleted fields for upserts and tombstones, and implementing the outbox pattern so domain events were published reliably alongside database transactions. I also added Avro schema validation to enforce contracts as the schema evolved. The result was a fully production-style CDC stack running locally in Docker Compose.",
-        "tags": ["2nd Interview", "Technical"]
-      },
-      {
-        "question": "Describe a project where you had to learn something new quickly.",
-        "answer": "When I built the AI Trading Agent, I needed to combine multiple ML paradigms I hadn't used together before — N-HiTS temporal models, FinBERT for NLP sentiment, and PPO/DQN reinforcement learning — all in one ensemble. I gave myself a structured learning plan: first understood each model individually, then focused on the integration layer that dynamically weights their signals. The key challenge was the risk management layer — implementing ATR-based position sizing and daily loss limits. Within a few weeks I had a working system with paper-trading safety gates via the Alpaca broker API.",
-        "tags": ["Behavioral", "Growth"]
-      },
-      {
-        "question": "How do you ensure data quality in your pipelines?",
-        "answer": "I build quality in at multiple layers rather than bolting it on at the end. The TfL Travel App is a good example — TfL periodically modifies their API response schemas, adding fields or changing data types. I handled this by storing raw responses unmodified in the raw layer, then using defensive casting with explicit column selection in dbt staging models. When schema changes break staging, dbt tests catch it before anything propagates downstream. On top of that, Great Expectations validates staging tables for nullability and time-to-station bounds, and OpenLineage tracks lineage across the entire DAG via Marquez. In the StreamShop CDC project I added Avro schema validation at ingestion as a contract layer. For me, data quality means: raw layer preserves truth, staging layer is defensive, marts are tested, and lineage is tracked everywhere.",
-        "tags": ["2nd Interview", "Data Quality"]
-      },
-      {
-        "question": "Walk me through how you'd design a data pipeline from scratch.",
-        "answer": "I'd start with four questions: What's the source? What's the destination? What's the SLA? What's the volume? Take my TfL Travel App — the source was the TfL Unified API (arrivals every 3 minutes, line statuses every 10, stop data daily), the destination was mart tables serving real-time predictions for students and commuters, and the SLA was sub-minute latency for arrivals. I designed a four-layer architecture: Airflow orchestrates ingestion into date/hour-partitioned Parquet, dbt transforms through a medallion pattern (staging → intermediate → marts), Great Expectations validates at each boundary, and OpenLineage tracks lineage. A key design decision was priority-based API polling — high-traffic stops like major tube stations refresh more frequently, and when rate limits hit, the system gracefully degrades to cached data rather than failing. I'd apply the same framework to any pipeline: clarify requirements, design for graceful degradation, and layer quality checks at every boundary.",
-        "tags": ["System Design", "Pipeline"]
-      },
-      {
-        "question": "Tell me about a time you disagreed with a technical approach.",
-        "answer": "While working on the Premier League Analytics Warehouse, I initially considered using views for all dbt models to keep compute costs low on BigQuery. But as the dataset grew across 10 seasons, query times degraded for the fct_team_season_stats mart. I had to weigh cost vs performance and ultimately moved the marts to table materialisation with incremental loading, keeping staging as views. The lesson was that materialisation strategy isn't one-size-fits-all — it depends on query patterns, data volume, and cost constraints. I documented the rationale in the dbt project so future decisions would have context.",
-        "tags": ["Behavioral", "Technical Decision"]
-      },
-      {
-        "question": "How do you explain a complex data issue to a non-technical stakeholder?",
-        "answer": "I focus on impact and analogy rather than implementation. At HQ Analytics, when a dashboard showed conflicting numbers due to a data source refresh delay, I explained to the operations team: 'The data feeding this report is still catching up — think of it like a delayed train. We've identified the issue and the numbers will be accurate within the hour.' I always pair the explanation with what I'm doing about it and when they can expect resolution. At Somalis in Tech, I mentored junior engineers on this same skill — translating pipeline failures into business-friendly language. I also build self-serve dashboards (Power BI at HQ, Metabase in my projects) to reduce these conversations in the first place.",
-        "tags": ["Behavioral", "Communication"]
-      },
-      {
-        "question": "What's your experience with dbt?",
-        "answer": "dbt is central to almost all my projects. In the F1 RaceOps warehouse, I built a three-layer architecture: 9 staging views standardising Ergast source tables, 9 core dimension and fact tables (drivers, constructors, circuits, races), and 4 specialised RaceOps marts for pit stop performance and reliability metrics. In the StreamShop CDC project, I used dbt on ClickHouse with contracts, SCD2 snapshots, and CI that runs on every PR. I also have a Mini Lake demo project specifically built to demonstrate dbt + DuckDB fundamentals — seeds, staging, marts, schema tests, and docs generation with full CI enforcement.",
-        "tags": ["2nd Interview", "dbt", "Analytics Engineering"]
-      },
-      {
-        "question": "What interests you about this role?",
-        "answer": "Building the TfL Travel App taught me something — the gap between 'it works' and 'it helps' is the difference between engineering and software worth building. That pipeline processed data correctly, but more importantly it reduced someone's commuting stress and gave 12 mentees a real system to learn from. That's the kind of engineering I want to keep doing. At HQ Analytics I saw the same thing — my dashboards didn't just display numbers, they contributed to an 8% cut in logistics costs because the operations team could actually act on the data. I'm particularly excited about [company-specific detail] because [tailored reason]. I want to bring that same mindset — build reliable systems that genuinely make a difference — to a team operating at a larger scale.",
-        "tags": ["1st Interview", "Final Interview", "Motivation"]
-      },
-      {
-        "question": "Tell me about a project you built that had real-world impact.",
-        "answer": "The TfL Travel App is the project I'm most proud of. It started when a student at Somalis in Tech asked: 'How do I actually know when my bus is coming?' The existing TfL app worked, but it didn't serve the actual travel patterns of students hopping between buses and tubes on tight schedules. I saw an opportunity to build something that solved a real problem and doubled as a teaching platform. I built a four-layer production system: Airflow ingests live data from the TfL Unified API — arrivals every 3 minutes, line statuses every 10, stop data daily — into date/hour-partitioned Parquet files. dbt transforms through a medallion architecture: staging handles type-casting and deduplication, intermediate applies business logic, and mart tables are optimised for the three features users care about — real-time arrival predictions, disruption alerts, and historical reliability patterns. Great Expectations validates at every layer, and OpenLineage tracks lineage via Marquez. The result: data freshness went from 6 hours to 45 minutes — an 87% improvement — manual reporting dropped by 65%, and the system is still running and actively used by the Somalis in Tech community. Students told me the historical reliability patterns were the most valuable feature because the official TfL app doesn't show that.",
-        "tags": ["1st Interview", "2nd Interview", "Impact"]
-      },
-      {
-        "question": "Describe a time you mentored or led others.",
-        "answer": "At Somalis in Tech, I mentored about 12 early-career data engineering candidates through the Caawi Mentorship Platform, and I structured the teaching around the TfL Travel App rather than abstract exercises. I broke it into four modules: API ingestion — they learned REST integration, rate limiting, retry logic using the real TfL API. Data modelling — they built their own dbt models against actual TfL data, learning why the staging-to-marts pattern matters. Data quality — they authored Great Expectations suites and grappled with what 'correct data' means in a live transport feed. Pipeline orchestration — Airflow DAGs gave them visual representations of real data flow with dependencies, retries, and SLAs. My philosophy was that the best way to teach data engineering isn't to lecture — it's to build something real and let people pull it apart. It worked: several mentees went on to build their own projects independently, including a weather data lakehouse and a sports analytics warehouse using the same dbt patterns they learned from the TfL project.",
-        "tags": ["Behavioral", "Leadership", "Mentorship"]
-      },
-      {
-        "question": "How do you handle API rate limits and external dependencies?",
-        "answer": "This was a real challenge with the TfL Travel App. The TfL Unified API imposes rate limits, and when you're polling thousands of stops every few minutes, you hit them fast. I solved it with priority-based polling: high-traffic stops like major tube stations and university-adjacent bus terminals get more frequent refreshes, while quieter stops run on extended intervals. Critically, when rate limits do trigger, the pipeline doesn't fail — it gracefully degrades to cached recent data. Users still see predictions, just slightly older ones. This is a pattern I'd apply to any external API dependency: differentiate by priority, cache aggressively, and design for graceful degradation rather than hard failure. The Airflow DAG handles retry logic natively, and I set SLA monitoring so I know if freshness drops below acceptable thresholds.",
-        "tags": ["2nd Interview", "Technical", "System Design"]
-      },
-      {
-        "question": "Tell me about a time you identified a problem nobody else noticed.",
-        "answer": "At Somalis in Tech, a student asked a simple question — 'How do I know when my bus is coming?' — and everyone accepted the existing TfL app as the answer. But I noticed a real gap: the official app doesn't serve the actual travel patterns of students managing tight schedules on limited budgets. They're hopping between buses, checking multiple stops simultaneously, and planning around disruptions — and the existing tools didn't support that workflow. I proposed building a data-driven alternative and got buy-in by framing it as both a community tool and a teaching platform. That dual purpose was key — it wasn't just a side project, it was an educational vehicle for 12 mentees and a practical tool for the whole community. The historical reliability patterns feature — showing which routes consistently delay at certain times — was something the official app simply doesn't offer, and students said it was the most valuable feature.",
-        "tags": ["Behavioral", "Ownership", "Initiative"]
-      }
-    ],
-    "technical": [
-      {
-        "question": "Explain ETL vs ELT and when you'd use each.",
-        "answer": "ETL transforms data before loading — useful when the target system has limited compute (e.g., a traditional database). ELT loads raw data first and transforms in the warehouse — this is my default approach because modern warehouses like BigQuery and ClickHouse have the compute power to handle transformations efficiently. In my Premier League project, I load raw JSON into BigQuery first, then dbt handles all transformations. In the StreamShop CDC project, raw CDC events land in ClickHouse via a Python consumer, and dbt builds the marts. ELT gives me lineage visibility and version-controlled transformations.",
-        "tags": ["System Design", "Pipeline"]
-      },
-      {
-        "question": "How do you handle late-arriving data?",
-        "answer": "It depends on the SLA and architecture. In my TfL Lakehouse, I use date-partitioned Parquet writes — late arrivals naturally land in the correct partition on reprocessing because the ingestion is idempotent. In the London Air Quality project, I use upserts keyed on (sensor_id, ts_utc), so late data overwrites cleanly without duplicates. For a streaming context like my CDC stack, I'd leverage event timestamps rather than processing timestamps, and design the consumer to handle out-of-order events by using the Debezium transaction sequence for ordering.",
-        "tags": ["Data Engineering", "Pipeline"]
-      },
-      {
-        "question": "Describe your experience with streaming vs batch.",
-        "answer": "I've built both and I've learned when each is appropriate. The TfL Travel App is a great example of smart near-real-time batch — Airflow polls arrivals every 3 minutes, line statuses every 10 minutes, and stop data daily. That's not true streaming, but it's fast enough for commuters who need to know when their bus is coming. I also built priority-based polling so high-traffic stops refresh more frequently. On the other hand, my StreamShop project is true streaming: Debezium captures PostgreSQL WAL changes, Redpanda brokers them, and a Python consumer writes to ClickHouse continuously. The key lesson is that streaming adds significant operational complexity — back-pressure, exactly-once semantics, consumer group management. I'd only recommend it when the business genuinely needs sub-minute latency. For most use cases, well-designed batch with the right polling cadence — like the TfL approach — is simpler, cheaper, and easier to debug.",
-        "tags": ["System Design", "Streaming"]
-      }
-    ]
-  }
+  ]
 }
