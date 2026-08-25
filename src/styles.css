@@ -3418,3 +3418,21 @@ textarea.field__control {
 .recharts-surface:focus {
   outline: none;
 }
+
+/* The base toggle sits on the dark header; on the login panel it needs the
+   surface treatment instead of the translucent-white one. */
+.login-status-row__end {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.theme-toggle--onlight {
+  border-color: var(--line-strong);
+  color: var(--accent-strong);
+  background: var(--card);
+}
+
+.theme-toggle--onlight:hover {
+  background: var(--accent-soft);
+}

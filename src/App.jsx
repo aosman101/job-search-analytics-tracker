@@ -192,7 +192,8 @@ export default function App() {
             onChange={(event) => setPassword(event.target.value)}
           />
 
-          {error && <p className="auth-error">{error}</p>}
+          {/* role=alert so the failure is announced, not just shown. */}
+          {error && <p className="auth-error" role="alert">{error}</p>}
 
           <button className="auth-button" disabled={busy} type="submit">
             {busy ? "Unlocking..." : "Unlock Tracker"}
