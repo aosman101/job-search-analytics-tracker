@@ -52,7 +52,7 @@ export default function App() {
 
   if (authenticated) {
     return (
-      <Suspense fallback={<main className="login-shell"><div className="login-card"><p className="card-kicker">Loading</p><h1 className="login-title">Preparing your tracker...</h1></div></main>}>
+      <Suspense fallback={<main className="login-shell"><div className="login-card"><p className="card-kicker">Loading</p><h1 className="login-title">Preparing your tracker…</h1></div></main>}>
         <JobTracker initialApps={apps} onLogout={handleLogout} />
       </Suspense>
     );
