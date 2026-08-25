@@ -640,11 +640,6 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const todayBannerHelper = dueFollowUps.length > 0
     ? `${dueFollowUps.length} follow-up${dueFollowUps.length !== 1 ? "s still need" : " still needs"} attention.`
     : "A quick update here keeps your pipeline accurate.";
-  const todaySummaryValue = todayIsWeekend
-    ? (todayCount > 0 ? `${todayCount} logged` : "Weekend")
-    : (todayCount > 0 ? `${todayCount} logged` : "No activity");
-  const todaySummaryColor = todayIsWeekend ? "#9CA3AF" : todayCount > 0 ? "#3B82F6" : "#64748B";
-  const todaySummaryEmoji = todayIsWeekend ? "🛋️" : "📆";
   const detailApp = detailId !== null ? appById(detailId) : null;
   const deleteApp = deleteConfirmId !== null ? appById(deleteConfirmId) : null;
 
@@ -827,101 +822,90 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               style={{ marginBottom: 16 }}
             >
               {metrics.nextActions.length > 0 ? (
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:10 }}>
-                  {metrics.nextActions.slice(0, 4).map((action) => {
-                    const tone = {
-                      warning: { bg:"#FFFBEB", border:"#FDE68A", color:"#92400E" },
-                      interview: { bg:"#F5F3FF", border:"#DDD6FE", color:"#6D28D9" },
-                      followup: { bg:"#EFF6FF", border:"#BFDBFE", color:"#1D4ED8" },
-                      risk: { bg:"#FFF7ED", border:"#FED7AA", color:"#C2410C" },
-                      neutral: { bg:"#F8FAFC", border:"#E2E8F0", color:"#475569" },
-                    }[action.tone] || { bg:"#F8FAFC", border:"#E2E8F0", color:"#475569" };
-                    return (
-                      <button
-                        key={action.label}
-                        onClick={() => setActiveTab(action.tone === "interview" ? "Interview Prep" : action.tone === "risk" || action.tone === "warning" ? "Pipeline" : "Job Search")}
-                        style={{ textAlign:"left", padding:"12px 14px", borderRadius:12, border:`1.5px solid ${tone.border}`, background:tone.bg, cursor:"pointer" }}
-                      >
-                        <div style={{ color:tone.color, fontWeight:800, fontSize:13 }}>{action.label}</div>
-                        <div style={{ marginTop:4, color:"#64748B", fontSize:12, lineHeight:1.5 }}>{action.detail}</div>
-                      </button>
-                    );
-                  })}
+                <div className="dash-grid dash-grid--tight dash-grid--flush">
+                  {metrics.nextActions.slice(0, 4).map((action) => (
+                    <button
+                      key={action.label}
+                      type="button"
+                      className="action-tile"
+                      data-tone={action.tone}
+                      onClick={() => setActiveTab(action.tone === "interview" ? "Interview Prep" : action.tone === "risk" || action.tone === "warning" ? "Pipeline" : "Job Search")}
+                    >
+                      <div className="action-tile__label">{action.label}</div>
+                      <div className="action-tile__detail">{action.detail}</div>
+                    </button>
+                  ))}
                 </div>
               ) : (
-                <p style={{ margin:0, color:"#64748B", fontSize:13 }}>No urgent actions. Keep adding applications, updating outcomes, and logging follow-ups.</p>
+                <p className="muted-note">No urgent actions. Keep adding applications, updating outcomes, and logging follow-ups.</p>
               )}
             </SectionCard>
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:14, marginBottom:16 }}>
+            <div className="dash-grid dash-grid--auto">
               <SectionCard
                 title="Welcome Back"
                 subtitle="A quick read on where your search stands right now."
                 actions={<button onClick={openNewApplication} className="soft-button">Add Application</button>}
               >
-                <div style={{ display:"grid", gap:10 }}>
+                <div className="stack">
                   {[
                     dueFollowUps.length > 0 ? `Clear ${dueFollowUps.length} overdue follow-up${dueFollowUps.length !== 1 ? "s" : ""} to keep momentum.` : "No overdue follow-ups right now.",
                     atRiskApps.length > 0 ? `${atRiskApps.length} application${atRiskApps.length !== 1 ? "s are" : " is"} close to ghosting. Consider nudging the strongest ones.` : "No immediate ghost-risk applications this week.",
                     responseRate > 0 ? `Your current response rate is ${responseRate}%. Keep targeting similar roles and companies.` : "You are still early in the cycle. Keep the tracker current and focus on the roles that fit best.",
                   ].map((item) => (
-                    <div key={item} style={{ background:"#F8FAFC", borderRadius:12, padding:"10px 12px", color:"#475569", fontSize:13, lineHeight:1.6 }}>
-                      {item}
-                    </div>
+                    <div key={item} className="note-item">{item}</div>
                   ))}
                 </div>
               </SectionCard>
 
               <SectionCard title="Search Focus" subtitle="Patterns from your current applications.">
-                <div style={{ display:"grid", gap:12 }}>
+                <div className="stack stack--wide">
                   <div>
-                    <div style={{ fontSize:11, fontWeight:800, color:"#94A3B8", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:6 }}>Top Roles</div>
-                    <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    <div className="field-group__label">Top Roles</div>
+                    <div className="chip-row">
                       {roleFocus.length > 0 ? roleFocus.map(([role, count]) => (
-                        <span key={role} style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 10px", borderRadius:999, background:"#EFF6FF", border:"1px solid #BFDBFE", color:"#1F4E79", fontSize:12, fontWeight:700 }}>
-                          {role} <span style={{ color:"#64748B" }}>{count}</span>
+                        <span key={role} className="focus-chip">
+                          {role} <span className="focus-chip__count">{count}</span>
                         </span>
-                      )) : <span style={{ color:"#94A3B8", fontSize:12 }}>No role pattern yet.</span>}
+                      )) : <span className="muted-note">No role pattern yet.</span>}
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize:11, fontWeight:800, color:"#94A3B8", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:6 }}>Top Locations</div>
-                    <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    <div className="field-group__label">Top Locations</div>
+                    <div className="chip-row">
                       {locationFocus.length > 0 ? locationFocus.map(([location, count]) => (
-                        <span key={location} style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 10px", borderRadius:999, background:"#F8FAFC", border:"1px solid #E2E8F0", color:"#334155", fontSize:12, fontWeight:700 }}>
-                          {location} <span style={{ color:"#64748B" }}>{count}</span>
+                        <span key={location} className="focus-chip focus-chip--neutral">
+                          {location} <span className="focus-chip__count">{count}</span>
                         </span>
-                      )) : <span style={{ color:"#94A3B8", fontSize:12 }}>No location pattern yet.</span>}
+                      )) : <span className="muted-note">No location pattern yet.</span>}
                     </div>
                   </div>
                 </div>
               </SectionCard>
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))", gap:14 }}>
+            <div className="dash-grid dash-grid--wide dash-grid--flush">
               <SectionCard
                 title="Latest Applications"
                 subtitle="Your newest entries and their current status."
                 actions={<button onClick={() => setActiveTab("Job Search")} className="soft-button">Open Job Search</button>}
               >
                 {latestApplications.length > 0 ? latestApplications.map((app) => (
-                  <div key={app.id} style={{ padding:"12px 0", borderTop:"1px solid #F1F5F9" }}>
-                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap" }}>
-                      <div>
-                        <div style={{ fontWeight:700, color:"#111827", fontSize:14 }}>{app.company}</div>
-                        <div style={{ color:"#64748B", fontSize:12 }}>{app.role} · {app.dateApplied}</div>
-                      </div>
-                      <Badge status={app.status} interviewStage={app.interviewStage} />
+                  <div key={app.id} className="queue-row">
+                    <div>
+                      <div className="queue-row__name">{app.company}</div>
+                      <div className="queue-row__detail">{app.role} · {app.dateApplied}</div>
                     </div>
+                    <Badge status={app.status} interviewStage={app.interviewStage} />
                   </div>
-                )) : <p style={{ margin:0, color:"#94A3B8", fontSize:13 }}>No applications yet.</p>}
+                )) : <p className="muted-note">No applications yet.</p>}
               </SectionCard>
 
               <SectionCard
                 title="Next Best Actions"
                 subtitle="Use these shortcuts to keep the workflow moving."
               >
-                <div style={{ display:"grid", gap:10 }}>
+                <div className="stack">
                   {[
                     { label: "Review follow-ups", helper: `${dueFollowUps.length} due right now`, action: () => setActiveTab("Pipeline") },
                     { label: "Update search list", helper: `${filtered.length} visible application${filtered.length !== 1 ? "s" : ""}`, action: () => setActiveTab("Job Search") },
@@ -945,65 +929,75 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               subtitle="Manage the active search list, keep statuses current, and add fresh leads."
               style={{ marginBottom: 16 }}
             >
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(85px, 1fr))", gap:8 }}>
-                {[{label:"All",count:apps.length,color:"#1F4E79"}, ...Object.keys(STATUS_CONFIG).map(s=>({label:s,count:apps.filter(a=>a.status===s).length,color:STATUS_CONFIG[s].color}))].map(s=>(
-                  <div key={s.label} onClick={()=>setFilterStatus(s.label)} style={{ background:"#fff", borderRadius:11, padding:"10px 6px", textAlign:"center", border:`2px solid ${filterStatus===s.label?s.color:"#E5E7EB"}`, cursor:"pointer", boxShadow:filterStatus===s.label?`0 0 0 3px ${s.color}22`:"0 1px 3px rgba(0,0,0,0.05)" }}>
-                    <div style={{ fontSize:18, fontWeight:800, color:s.color, fontFamily:"Georgia,serif" }}>{s.count}</div>
-                    <div style={{ fontSize:9, fontWeight:700, color:"#9CA3AF", letterSpacing:"0.03em" }}>{s.label.toUpperCase()}</div>
-                  </div>
+              {/* Buttons rather than clickable divs: these are the primary way
+                  to filter the list, so they must be tabbable and expose their
+                  pressed state. */}
+              <div className="status-filter-grid">
+                {[{ label: "All", count: apps.length }, ...Object.keys(STATUS_CONFIG).map(s => ({ label: s, count: apps.filter(a => a.status === s).length }))].map(s => (
+                  <button
+                    key={s.label}
+                    type="button"
+                    className="status-filter"
+                    data-status={s.label === "All" ? undefined : s.label}
+                    aria-pressed={filterStatus === s.label}
+                    aria-label={`Filter by ${s.label}: ${s.count} application${s.count !== 1 ? "s" : ""}`}
+                    onClick={() => setFilterStatus(s.label)}
+                  >
+                    <div className="status-filter__count">{s.count}</div>
+                    <div className="status-filter__label">{s.label}</div>
+                  </button>
                 ))}
               </div>
             </SectionCard>
 
-            <div style={{ display:"flex", gap:10, marginBottom:10, flexWrap:"wrap" }}>
+            <div className="search-toolbar">
               <input
                 ref={searchInputRef}
                 type="search"
+                className="search-input"
                 aria-label="Search applications by company, role, location or source"
-                placeholder="🔍 Search company, role, location or source…  (press /)"
+                placeholder="Search company, role, location or source…  (press /)"
                 value={search}
                 onChange={e=>setSearch(e.target.value)}
-                style={{ flex:1, minWidth:180, padding:"9px 14px", border:"1.5px solid #E5E7EB", borderRadius:9, fontSize:13, background:"#fff", outline:"none", fontFamily:"inherit" }}
               />
-              <select aria-label="Filter by source" value={filterSource} onChange={e=>setFilterSource(e.target.value)} style={{ padding:"9px 12px", border:"1.5px solid #E5E7EB", borderRadius:9, fontSize:13, background:"#fff", outline:"none", fontFamily:"inherit", cursor:"pointer" }}>
+              <select className="search-select" aria-label="Filter by source" value={filterSource} onChange={e=>setFilterSource(e.target.value)}>
                 <option value="All">Source: All</option>
                 {availableSources.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
-              <select aria-label="Sort applications" value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{ padding:"9px 12px", border:"1.5px solid #E5E7EB", borderRadius:9, fontSize:13, background:"#fff", outline:"none", fontFamily:"inherit", cursor:"pointer" }}>
+              <select className="search-select" aria-label="Sort applications" value={sortBy} onChange={e=>setSortBy(e.target.value)}>
                 <option value="date">Sort: Date</option>
                 <option value="company">Sort: Company</option>
                 <option value="status">Sort: Status</option>
               </select>
             </div>
 
-            <div style={{ display:"flex", gap:10, marginBottom:14, flexWrap:"wrap", alignItems:"center" }}>
+            <div className="filter-row">
               <button
                 type="button"
+                className="filter-toggle"
                 aria-pressed={onlyNeedsAttention}
                 onClick={()=>setOnlyNeedsAttention(v=>!v)}
-                style={{ padding:"7px 13px", borderRadius:999, fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.15s",
-                  background:onlyNeedsAttention?"#F59E0B":"#FFFBEB", color:onlyNeedsAttention?"#fff":"#92400E", border:"1.5px solid #FDE68A" }}
               >
-                ⚡ Needs attention {attentionCount > 0 && `· ${attentionCount}`}
+                <span aria-hidden="true">⚡ </span>Needs attention {attentionCount > 0 && `· ${attentionCount}`}
               </button>
-              <span style={{ color:"#64748B", fontSize:12 }}>
-                Showing <strong style={{ color:"#0F172A" }}>{filtered.length}</strong> of {apps.length}
+              <span className="filter-count">
+                Showing <strong>{filtered.length}</strong> of {apps.length}
               </span>
               {filtersActive && (
-                <button type="button" onClick={clearFilters} style={{ padding:"7px 13px", borderRadius:999, fontSize:12, fontWeight:700, cursor:"pointer", background:"#F8FAFC", color:"#475569", border:"1.5px solid #E2E8F0" }}>
-                  ✕ Clear filters <span style={{ color:"#94A3B8", fontWeight:600 }}>(Esc)</span>
+                <button type="button" className="clear-filters" onClick={clearFilters}>
+                  Clear filters <span className="hint">(Esc)</span>
                 </button>
               )}
             </div>
 
             {filtered.length===0 ? (
-              <div style={{ background:"#fff", borderRadius:14, padding:"48px 24px", textAlign:"center", border:"1.5px dashed #E5E7EB" }}>
-                <p style={{ fontSize:36, margin:"0 0 8px" }}>📭</p>
-                <p style={{ color:"#9CA3AF", fontSize:14, margin:"0 0 14px" }}>{apps.length===0?"No applications yet — add your first one!":"No results match your filter."}</p>
+              <div className="empty-state">
+                <p className="empty-state__icon" aria-hidden="true">📭</p>
+                <p className="empty-state__text">{apps.length===0?"No applications yet — add your first one!":"No results match your filter."}</p>
                 {apps.length===0 ? (
-                  <button type="button" onClick={openNewApplication} style={{ padding:"9px 18px", background:"#1F4E79", color:"#fff", border:"none", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13 }}>+ Add your first application</button>
+                  <button type="button" className="modal-button modal-button--primary" onClick={openNewApplication}>Add your first application</button>
                 ) : filtersActive && (
-                  <button type="button" onClick={clearFilters} style={{ padding:"9px 18px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:9, cursor:"pointer", fontWeight:700, fontSize:13 }}>Clear filters</button>
+                  <button type="button" className="modal-button modal-button--secondary" onClick={clearFilters}>Clear filters</button>
                 )}
               </div>
             ) : filtered.map(app => {
