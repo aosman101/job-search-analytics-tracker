@@ -1175,51 +1175,45 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
             <Field label="Follow-Up Note" value={form.followUpNote} onChange={f("followUpNote")} placeholder="What should you mention next?"/>
 
             {/* Hiring Manager — inline availability dropdown */}
-            <div style={{marginBottom:13}}>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:"#6B7280",marginBottom:4,letterSpacing:"0.05em",textTransform:"uppercase"}}>Hiring Manager</label>
-              <div style={{display:"flex",gap:6}}>
-                <select value={form.hmAvailable?"available":"na"}
-                  onChange={e=>{const avail=e.target.value==="available";setForm(p=>({...p,hmAvailable:avail,hiringManager:avail?(p.hiringManager==="Not Available"?"":p.hiringManager):"Not Available"}));}}
-                  style={{padding:"9px 8px",border:"1.5px solid #E5E7EB",borderRadius:8,fontSize:12,color:"#111827",outline:"none",fontFamily:"inherit",background:"#FAFAFA",cursor:"pointer",flexShrink:0}}>
+            <div className="field">
+              <label className="field__label" htmlFor="hm-name">Hiring Manager</label>
+              <div className="field__split">
+                <select className="field__control" aria-label="Hiring manager availability" value={form.hmAvailable?"available":"na"}
+                  onChange={e=>{const avail=e.target.value==="available";setForm(p=>({...p,hmAvailable:avail,hiringManager:avail?(p.hiringManager==="Not Available"?"":p.hiringManager):"Not Available"}));}}>
                   <option value="available">Known</option>
                   <option value="na">N/A</option>
                 </select>
-                <input value={form.hmAvailable?form.hiringManager:""} onChange={e=>f("hiringManager")(e.target.value)}
+                <input id="hm-name" className="field__control" value={form.hmAvailable?form.hiringManager:""} onChange={e=>f("hiringManager")(e.target.value)}
                   placeholder={form.hmAvailable?"e.g. Sarah Jones":"Not available"}
-                  disabled={!form.hmAvailable}
-                  style={{flex:1,padding:"9px 12px",border:"1.5px solid #E5E7EB",borderRadius:8,fontSize:13,color:form.hmAvailable?"#111827":"#9CA3AF",outline:"none",fontFamily:"inherit",background:form.hmAvailable?"#FAFAFA":"#F3F4F6",boxSizing:"border-box"}}
-                  onFocus={e=>{if(form.hmAvailable)e.target.style.borderColor="#1F4E79";}} onBlur={e=>e.target.style.borderColor="#E5E7EB"}/>
+                  disabled={!form.hmAvailable}/>
               </div>
             </div>
 
             {/* HM LinkedIn — inline availability dropdown */}
-            <div style={{marginBottom:13}}>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:"#6B7280",marginBottom:4,letterSpacing:"0.05em",textTransform:"uppercase"}}>HM LinkedIn</label>
-              <div style={{display:"flex",gap:6}}>
-                <select value={form.hmLinkedInAvailable?"available":"na"}
-                  onChange={e=>{const avail=e.target.value==="available";setForm(p=>({...p,hmLinkedInAvailable:avail,hmLinkedIn:avail?p.hmLinkedIn:""}));}}
-                  style={{padding:"9px 8px",border:"1.5px solid #E5E7EB",borderRadius:8,fontSize:12,color:"#111827",outline:"none",fontFamily:"inherit",background:"#FAFAFA",cursor:"pointer",flexShrink:0}}>
+            <div className="field">
+              <label className="field__label" htmlFor="hm-linkedin">HM LinkedIn</label>
+              <div className="field__split">
+                <select className="field__control" aria-label="Hiring manager LinkedIn availability" value={form.hmLinkedInAvailable?"available":"na"}
+                  onChange={e=>{const avail=e.target.value==="available";setForm(p=>({...p,hmLinkedInAvailable:avail,hmLinkedIn:avail?p.hmLinkedIn:""}));}}>
                   <option value="available">Available</option>
                   <option value="na">N/A</option>
                 </select>
-                <input value={form.hmLinkedInAvailable?form.hmLinkedIn:""} onChange={e=>f("hmLinkedIn")(e.target.value)}
+                <input id="hm-linkedin" className="field__control" value={form.hmLinkedInAvailable?form.hmLinkedIn:""} onChange={e=>f("hmLinkedIn")(e.target.value)}
                   placeholder={form.hmLinkedInAvailable?"https://linkedin.com/in/...":"Not available"}
-                  disabled={!form.hmLinkedInAvailable}
-                  style={{flex:1,padding:"9px 12px",border:"1.5px solid #E5E7EB",borderRadius:8,fontSize:13,color:form.hmLinkedInAvailable?"#111827":"#9CA3AF",outline:"none",fontFamily:"inherit",background:form.hmLinkedInAvailable?"#FAFAFA":"#F3F4F6",boxSizing:"border-box"}}
-                  onFocus={e=>{if(form.hmLinkedInAvailable)e.target.style.borderColor="#1F4E79";}} onBlur={e=>e.target.style.borderColor="#E5E7EB"}/>
+                  disabled={!form.hmLinkedInAvailable}/>
               </div>
             </div>
           </div>
           <Field label="Notes" value={form.notes} onChange={f("notes")} as="textarea" placeholder="Interview feedback, key contacts, how you found the role…" rows={3}/>
           {formError && (
-            <div style={{background:"#FEF2F2",border:"1.5px solid #FECACA",borderRadius:8,padding:"9px 14px",marginTop:4,fontSize:13,color:"#EF4444",fontWeight:600}}>
-              ⚠️ {formError}
-            </div>
+            <p className="form-error" role="alert">
+              <span aria-hidden="true">⚠️ </span>{formError}
+            </p>
           )}
         </div>
-        <div style={{padding:"12px 26px 20px",display:"flex",gap:10,justifyContent:"flex-end"}}>
-          <button type="button" onClick={()=>{setModalOpen(false);setEditId(null);setForm(EMPTY_FORM);setFormError("");}} style={{padding:"9px 20px",background:"#F3F4F6",color:"#374151",border:"none",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Cancel</button>
-          <button type="button" onClick={handleSubmit} style={{padding:"9px 24px",background:"#1F4E79",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13,boxShadow:"0 4px 12px rgba(31,78,121,0.3)"}}>{editId!==null?"Save Changes":"Add Application"}</button>
+        <div className="modal-footer">
+          <button type="button" className="modal-button modal-button--neutral" onClick={()=>{setModalOpen(false);setEditId(null);setForm(EMPTY_FORM);setFormError("");}}>Cancel</button>
+          <button type="button" className="modal-button modal-button--primary" onClick={handleSubmit}>{editId!==null?"Save Changes":"Add Application"}</button>
         </div>
       </Modal>
 
