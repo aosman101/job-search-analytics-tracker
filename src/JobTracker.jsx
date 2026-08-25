@@ -1043,82 +1043,96 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
 
         {activeTab === "Pipeline" && (
           <>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:14, marginBottom:14 }}>
+            <div className="dash-grid dash-grid--auto">
               <SectionCard title="Follow-Ups" subtitle="Clear the overdue queue first.">
-                {dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).length > 0 ? dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).map((a) => {
+                {visibleFollowUps.length > 0 ? visibleFollowUps.map((a) => {
                   const fs = FOLLOWUP_STATUS[a.followUpStatus || ""];
                   const hasAnswered = !!a.followUpStatus;
+                  const methods = [
+                    { key: "messaged", label: "Messaged", variant: "success" },
+                    { key: "premium", label: "Premium", variant: "violet" },
+                    { key: "email_instead", label: "Emailed", variant: "accent" },
+                    { key: "no_linkedin", label: "No LinkedIn", variant: "muted" },
+                  ];
                   return (
-                    <div key={a.id} style={{ background: "#fff", border: `1.5px solid ${fs.border}`, borderRadius: 10, padding: "10px 14px", marginBottom: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                          <span style={{ fontWeight: 700, fontSize: 13, color: "#111827" }}>{a.company}</span>
-                          <span style={{ fontSize: 12, color: "#6B7280" }}>— {a.role} · due {a.followUpDate}</span>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: fs.color, background: fs.bg, border: `1px solid ${fs.border}`, padding: "1px 8px", borderRadius: 10 }}>{fs.emoji} {fs.label}</span>
+                    <div key={a.id} className="followup-card" data-status={fs.statusToken}>
+                      <div className="followup-card__top">
+                        <div className="followup-card__ident">
+                          <span className="followup-card__company">{a.company}</span>
+                          <span className="followup-card__role">— {a.role} · due {a.followUpDate}</span>
+                          <span className="status-badge" data-status={fs.statusToken}><span aria-hidden="true">{fs.emoji}</span> {fs.label}</span>
                         </div>
-                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center" }}>
+                        <div className="followup-card__actions">
                           {a.hmLinkedIn && (
-                            <a href={a.hmLinkedIn} target="_blank" rel="noreferrer" style={{ padding: "4px 10px", background: "#EFF6FF", color: "#1F4E79", border: "1.5px solid #BFDBFE", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700, textDecoration: "none" }}>LinkedIn ↗</a>
+                            <a href={a.hmLinkedIn} target="_blank" rel="noreferrer" className="chip-button chip-button--accent">LinkedIn ↗</a>
                           )}
-                          <button onClick={() => handleFollowUpStatus(a.id, "messaged")} style={{ padding: "4px 10px", background: a.followUpStatus==="messaged"?"#10B981":"#ECFDF5", color: a.followUpStatus==="messaged"?"#fff":"#065F46", border: "1.5px solid #A7F3D0", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>✅ Messaged</button>
-                          <button onClick={() => handleFollowUpStatus(a.id, "premium")} style={{ padding: "4px 10px", background: a.followUpStatus==="premium"?"#8B5CF6":"#F5F3FF", color: a.followUpStatus==="premium"?"#fff":"#5B21B6", border: "1.5px solid #DDD6FE", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>🔒 Premium</button>
-                          <button onClick={() => handleFollowUpStatus(a.id, "email_instead")} style={{ padding: "4px 10px", background: a.followUpStatus==="email_instead"?"#3B82F6":"#EFF6FF", color: a.followUpStatus==="email_instead"?"#fff":"#1e40af", border: "1.5px solid #BFDBFE", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>📧 Emailed</button>
-                          <button onClick={() => handleFollowUpStatus(a.id, "no_linkedin")} style={{ padding: "4px 10px", background: a.followUpStatus==="no_linkedin"?"#6B7280":"#F3F4F6", color: a.followUpStatus==="no_linkedin"?"#fff":"#374151", border: "1.5px solid #D1D5DB", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>🚫 No LinkedIn</button>
+                          {methods.map((m) => (
+                            <button
+                              key={m.key}
+                              type="button"
+                              className={`chip-button chip-button--${m.variant}`}
+                              aria-pressed={a.followUpStatus === m.key}
+                              onClick={() => handleFollowUpStatus(a.id, m.key)}
+                            >
+                              <span aria-hidden="true">{FOLLOWUP_STATUS[m.key].emoji}</span> {m.label}
+                            </button>
+                          ))}
                           {hasAnswered && (
-                            <button onClick={() => setDismissedFollowUps(prev => new Set([...prev, a.id]))}
-                              style={{ padding: "4px 10px", background: "#FEF2F2", color: "#EF4444", border: "1.5px solid #FECACA", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 700, marginLeft: 4 }}>
-                              ✕ Clear
+                            <button
+                              type="button"
+                              className="chip-button chip-button--danger"
+                              onClick={() => setDismissedFollowUps(prev => new Set([...prev, a.id]))}
+                            >
+                              Clear
                             </button>
                           )}
                         </div>
                       </div>
                     </div>
                   );
-                }) : <p style={{ margin:0, color:"#94A3B8", fontSize:13 }}>No overdue follow-ups. Good.</p>}
+                }) : <p className="muted-note">No overdue follow-ups. Good.</p>}
               </SectionCard>
 
               <SectionCard title="Interview & Offer Queue" subtitle="Roles that need close attention.">
                 {interviewQueue.length > 0 ? interviewQueue.map((app) => (
-                  <div key={app.id} style={{ padding:"10px 0", borderTop:"1px solid #F1F5F9", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap" }}>
+                  <div key={app.id} className="queue-row">
                     <div>
-                      <div style={{ fontWeight:700, color:"#111827", fontSize:13 }}>{app.company}</div>
-                      <div style={{ color:"#64748B", fontSize:12 }}>{app.role}{app.interviewStage ? ` · ${app.interviewStage}` : ""}</div>
+                      <div className="queue-row__name">{app.company}</div>
+                      <div className="queue-row__detail">{app.role}{app.interviewStage ? ` · ${app.interviewStage}` : ""}</div>
                     </div>
-                    <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+                    <div className="queue-row__actions">
                       <Badge status={app.status} interviewStage={app.interviewStage} />
-                      <button onClick={() => setDetailId(app.id)} style={{ padding:"5px 10px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:8, cursor:"pointer", fontSize:11, fontWeight:700 }}>Open</button>
+                      <button type="button" className="chip-button chip-button--accent" onClick={() => setDetailId(app.id)}>Open</button>
                     </div>
                   </div>
-                )) : <p style={{ margin:0, color:"#94A3B8", fontSize:13 }}>No interviews or offers in the queue yet.</p>}
+                )) : <p className="muted-note">No interviews or offers in the queue yet.</p>}
               </SectionCard>
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:14 }}>
+            <div className="dash-grid dash-grid--auto dash-grid--flush">
               <SectionCard title="Ghost Risk" subtitle={`Applications likely to ghost within ${GHOST_DAYS} days if untouched.`}>
                 {atRiskApps.length > 0 ? atRiskApps.map((app) => {
                   const dLeft = daysUntilGhost(app);
                   return (
-                    <div key={app.id} style={{ padding:"10px 0", borderTop:"1px solid #F1F5F9", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap" }}>
+                    <div key={app.id} className="queue-row">
                       <div>
-                        <div style={{ fontWeight:700, color:"#111827", fontSize:13 }}>{app.company}</div>
-                        <div style={{ color:"#64748B", fontSize:12 }}>{app.role} · {dLeft} day{dLeft !== 1 ? "s" : ""} left</div>
+                        <div className="queue-row__name">{app.company}</div>
+                        <div className="queue-row__detail">{app.role} · {dLeft} day{dLeft !== 1 ? "s" : ""} left</div>
                       </div>
-                      <button onClick={() => openEdit(app.id)} style={{ padding:"5px 10px", background:"#FFF7ED", color:"#C2410C", border:"1.5px solid #FED7AA", borderRadius:8, cursor:"pointer", fontSize:11, fontWeight:700 }}>Update</button>
+                      <button type="button" className="chip-button chip-button--risk" onClick={() => openEdit(app.id)}>Update</button>
                     </div>
                   );
-                }) : <p style={{ margin:0, color:"#94A3B8", fontSize:13 }}>No ghost-risk applications this week.</p>}
+                }) : <p className="muted-note">No ghost-risk applications this week.</p>}
               </SectionCard>
 
               <SectionCard title="Pipeline Notes" subtitle="Useful reminders for keeping the process disciplined.">
-                <div style={{ display:"grid", gap:10 }}>
+                <div className="stack">
                   {[
                     "Prioritise overdue follow-ups before adding low-fit new applications.",
                     "Update interview stages immediately after each recruiter or hiring manager touchpoint.",
                     "Export a fresh backup after large edits or imports.",
                   ].map((tip) => (
-                    <div key={tip} style={{ background:"#F8FAFC", borderRadius:12, padding:"11px 12px", color:"#475569", fontSize:13, lineHeight:1.6 }}>
-                      {tip}
-                    </div>
+                    <div key={tip} className="note-item">{tip}</div>
                   ))}
                 </div>
               </SectionCard>
@@ -1127,30 +1141,28 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         )}
 
         {activeTab === "Analytics" && (
-          <Suspense fallback={<div style={{ textAlign: "center", padding: 40, color: "#6B7280" }}>Loading analytics...</div>}>
-            <AnalyticsView apps={apps} />
+          <Suspense fallback={<div className="suspense-fallback">Loading analytics…</div>}>
+            <AnalyticsView apps={apps} theme={resolvedTheme} />
           </Suspense>
         )}
 
         {activeTab === "Interview Prep" && (
-          <Suspense fallback={<div style={{ textAlign: "center", padding: 40, color: "#6B7280" }}>Loading interview prep...</div>}>
+          <Suspense fallback={<div className="suspense-fallback">Loading interview prep…</div>}>
             <InterviewPrep apps={apps} />
           </Suspense>
         )}
       </div>
 
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 16px 20px" }}>
-        <div style={{ color: "#94A3B8", fontSize: 12, textAlign: "center" }}>
-          Live build v{__APP_VERSION__} · updated {__BUILD_DATE__} · encrypted starter data, browser-first storage, GitHub Pages deployment
-        </div>
-      </div>
+      <footer className="tracker-footer">
+        Live build v{__APP_VERSION__} · updated {__BUILD_DATE__} · encrypted starter data, browser-first storage, GitHub Pages deployment
+      </footer>
 
       <Modal label={editId!==null?"Edit application":"New application"} open={modalOpen} onClose={()=>{setModalOpen(false);setEditId(null);setForm(EMPTY_FORM);setFormError("");}}>
-        <div style={{padding:"22px 26px 12px",borderBottom:"1px solid #F3F4F6"}}>
-          <h2 style={{margin:0,fontSize:18,color:"#1F4E79",fontFamily:"Georgia,serif"}}>{editId!==null?"✏️ Edit Application":"📤 New Application"}</h2>
+        <div className="modal-header">
+          <h2 className="modal-title">{editId!==null?"Edit Application":"New Application"}</h2>
         </div>
-        <div style={{padding:"16px 26px 0"}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 16px"}}>
+        <div className="modal-body--flush">
+          <div className="form-grid">
             <Field label="Company" value={form.company} onChange={f("company")} placeholder="e.g. Google" required/>
             <Field label="Role" value={form.role} onChange={f("role")} placeholder="e.g. Data Engineer" required/>
             <Field label="Location" value={form.location} onChange={f("location")} placeholder="London / Remote"/>
