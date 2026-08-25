@@ -2,10 +2,11 @@ import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis
 import { GHOST_DAYS, STATUS_CONFIG } from "../../constants";
 import { STAGE_DEPTH, buildTrackerMetrics } from "../../utils/applicationMetrics";
 import { daysSince } from "../../utils/dates";
+import { useChartTokens } from "../../useChartTokens";
 
-function SectionCard({ title, subtitle, actions = null, children, style = {} }) {
+function SectionCard({ title, subtitle, actions = null, children, className = "" }) {
   return (
-    <section className="section-card" style={style}>
+    <section className={`section-card ${className}`.trim()}>
       {(title || subtitle || actions) && (
         <div className="section-card__header">
           <div>
@@ -20,7 +21,34 @@ function SectionCard({ title, subtitle, actions = null, children, style = {} }) 
   );
 }
 
-function SankeyFunnel({ apps }) {
+/** Shared Recharts tooltip styling so every chart matches the active theme. */
+function tooltipProps(t) {
+  return {
+    contentStyle: {
+      background: t["--chart-tooltip-bg"],
+      border: `1px solid ${t["--chart-tooltip-border"]}`,
+      borderRadius: 8,
+      color: t["--ink"],
+      fontSize: 12,
+    },
+    labelStyle: { color: t["--muted"], fontWeight: 700 },
+    itemStyle: { color: t["--ink"] },
+    cursor: { fill: t["--chart-track"] },
+  };
+}
+
+function axisProps(t) {
+  return { tick: { fontSize: 11, fill: t["--chart-label"] }, stroke: t["--chart-axis"] };
+}
+
+/**
+ * Funnel stages are ordinal — reordering them would change their meaning — so
+ * they take a single-hue ramp that darkens with depth rather than a rotating
+ * set of hues. The previous rainbow spent the identity channel re-encoding a
+ * sequence the bar heights already show, and left the stage order unreadable
+ * to anyone who couldn't separate the hues.
+ */
+function SankeyFunnel({ apps, tokens }) {
   const reachedAtLeast = (depth) => apps.filter((app) => {
     const ownDepth = STAGE_DEPTH[app.interviewStage] || 0;
     if (ownDepth >= depth) return true;
@@ -29,11 +57,11 @@ function SankeyFunnel({ apps }) {
     return false;
   }).length;
   const stages = [
-    { label: "Applied", count: apps.length, color: "#3B82F6" },
-    { label: "1st Interview", count: reachedAtLeast(1), color: "#8B5CF6" },
-    { label: "2nd+ Interview", count: reachedAtLeast(2), color: "#EC4899" },
-    { label: "Final Round", count: reachedAtLeast(4), color: "#F59E0B" },
-    { label: "Offer", count: apps.filter((app) => app.status === "Offer").length, color: "#10B981" },
+    { label: "Applied", count: apps.length, color: tokens["--funnel-1"] },
+    { label: "1st Interview", count: reachedAtLeast(1), color: tokens["--funnel-2"] },
+    { label: "2nd+ Interview", count: reachedAtLeast(2), color: tokens["--funnel-3"] },
+    { label: "Final Round", count: reachedAtLeast(4), color: tokens["--funnel-4"] },
+    { label: "Offer", count: apps.filter((app) => app.status === "Offer").length, color: tokens["--funnel-5"] },
   ];
   const maxCount = stages[0].count || 1;
   const width = 600;
@@ -42,8 +70,13 @@ function SankeyFunnel({ apps }) {
   const barWidth = 60;
   const gap = (width - padX * 2 - barWidth * stages.length) / (stages.length - 1);
   return (
-    <div style={{ overflowX: "auto" }}>
-      <svg viewBox={`0 0 ${width} ${height + 60}`} style={{ width: "100%", maxWidth: width, display: "block", margin: "0 auto" }}>
+    <div className="funnel-scroll">
+      <svg
+        viewBox={`0 0 ${width} ${height + 60}`}
+        className="funnel-svg"
+        role="img"
+        aria-label={`Application funnel: ${stages.map((s) => `${s.label} ${s.count}`).join(", ")}`}
+      >
         {stages.map((stage, index) => {
           const x = padX + index * (barWidth + gap);
           const barHeight = Math.max(8, (stage.count / maxCount) * (height - 40));
@@ -61,14 +94,16 @@ function SankeyFunnel({ apps }) {
                   <>
                     <path d={`M ${x + barWidth} ${y} C ${midX} ${y}, ${midX} ${ny}, ${nx} ${ny} L ${nx} ${ny + nextHeight} C ${midX} ${ny + nextHeight}, ${midX} ${y + barHeight}, ${x + barWidth} ${y + barHeight} Z`} fill={stage.color} fillOpacity={0.15} />
                     {conversion !== null && (
-                      <text x={midX} y={(y + barHeight / 2 + ny + nextHeight / 2) / 2} textAnchor="middle" fontSize={10} fontWeight={700} fill="#475569">{conversion}%</text>
+                      <text x={midX} y={(y + barHeight / 2 + ny + nextHeight / 2) / 2} textAnchor="middle" fontSize={10} fontWeight={700} fill={tokens["--chart-label"]}>{conversion}%</text>
                     )}
                   </>
                 );
               })()}
-              <rect x={x} y={y} width={barWidth} height={barHeight} rx={6} fill={stage.color} />
-              <text x={x + barWidth / 2} y={y - 8} textAnchor="middle" fontSize={15} fontWeight={800} fill={stage.color}>{stage.count}</text>
-              <text x={x + barWidth / 2} y={height + 30} textAnchor="middle" fontSize={10} fill="#6B7280" fontWeight={600}>{stage.label}</text>
+              <rect x={x} y={y} width={barWidth} height={barHeight} rx={4} fill={stage.color} />
+              {/* Counts and labels wear text tokens, not the series colour, so
+                  they stay legible against both surfaces. */}
+              <text x={x + barWidth / 2} y={y - 8} textAnchor="middle" fontSize={15} fontWeight={800} fill={tokens["--ink"]}>{stage.count}</text>
+              <text x={x + barWidth / 2} y={height + 30} textAnchor="middle" fontSize={10} fill={tokens["--chart-label"]} fontWeight={600}>{stage.label}</text>
             </g>
           );
         })}
@@ -86,7 +121,8 @@ function rankBy(apps, key) {
   }, {})).sort((a, b) => b[1] - a[1]).slice(0, 5);
 }
 
-export default function AnalyticsView({ apps }) {
+export default function AnalyticsView({ apps, theme }) {
+  const t = useChartTokens(theme);
   const metrics = buildTrackerMetrics(apps);
   const stageOrder = ["No Interview", "1st Interview", "2nd Interview", "3rd Interview", "Home Assignment", "Final Interview"];
   const roleFocus = rankBy(apps, "role");
