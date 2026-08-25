@@ -135,77 +135,79 @@ export default function AnalyticsView({ apps, theme }) {
     return acc;
   }, {})).map(([method, count]) => ({ method, count }));
   const openApps = apps.filter((app) => !["Rejected", "Withdrawn", "Ghosted", "Offer"].includes(app.status));
+  // Age buckets are ordinal, so they read as a green→red severity progression
+  // rather than four unrelated hues.
   const agingBuckets = [
-    { label: "0-7 days", count: openApps.filter((app) => daysSince(app.dateApplied) <= 7).length, color: "#10B981" },
-    { label: "8-14 days", count: openApps.filter((app) => daysSince(app.dateApplied) > 7 && daysSince(app.dateApplied) <= 14).length, color: "#3B82F6" },
-    { label: "15-21 days", count: openApps.filter((app) => daysSince(app.dateApplied) > 14 && daysSince(app.dateApplied) <= 21).length, color: "#F59E0B" },
-    { label: "22+ days", count: openApps.filter((app) => daysSince(app.dateApplied) > 21).length, color: "#EF4444" },
+    { label: "0-7 days", count: openApps.filter((app) => daysSince(app.dateApplied) <= 7).length, color: t["--status-offer"] },
+    { label: "8-14 days", count: openApps.filter((app) => daysSince(app.dateApplied) > 7 && daysSince(app.dateApplied) <= 14).length, color: t["--status-applied"] },
+    { label: "15-21 days", count: openApps.filter((app) => daysSince(app.dateApplied) > 14 && daysSince(app.dateApplied) <= 21).length, color: t["--status-followup"] },
+    { label: "22+ days", count: openApps.filter((app) => daysSince(app.dateApplied) > 21).length, color: t["--status-rejected"] },
   ];
 
   if (apps.length === 0) {
     return (
-      <div style={{ background: "#fff", borderRadius: 14, padding: "60px 24px", textAlign: "center", border: "1.5px dashed #E5E7EB" }}>
-        <p style={{ fontSize: 40, margin: "0 0 10px" }}>📊</p>
-        <p style={{ color: "#9CA3AF", fontSize: 14 }}>Add applications to see your analytics.</p>
+      <div className="empty-state">
+        <p className="empty-state__icon" aria-hidden="true">📊</p>
+        <p className="empty-state__text">Add applications to see your analytics.</p>
       </div>
     );
   }
 
+  const scoreTone = metrics.pipelineScore >= 75 ? t["--success"] : metrics.pipelineScore >= 55 ? t["--warning"] : t["--danger"];
+
   return (
     <>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginBottom: 18 }}>
+      <div className="metric-grid">
         {[
-          { label: "Total Applied", value: apps.length, color: "#1F4E79", emoji: "📤" },
-          { label: "Active Pipeline", value: metrics.activeApplications, color: "#0F766E", emoji: "🧭" },
-          { label: "Response Rate", value: `${metrics.responseRate}%`, color: "#8B5CF6", emoji: "📬" },
-          { label: "Interview Rate", value: `${metrics.interviewRate}%`, color: "#3B82F6", emoji: "🗣️" },
-          { label: "Reached Interview", value: metrics.everInterviewedCount, color: "#EC4899", emoji: "🎯" },
-          { label: "Offer Rate", value: `${metrics.offerRate}%`, color: "#10B981", emoji: "🎉" },
-          { label: "Avg Rejection Time", value: metrics.avgDaysToRejection === null ? "—" : `${metrics.avgDaysToRejection}d`, color: "#EF4444", emoji: "⏱️" },
-          { label: "Avg To Interview", value: metrics.avgDaysToInterview === null ? "—" : `${metrics.avgDaysToInterview}d`, color: "#0F766E", emoji: "⚡" },
-          { label: "Avg Open Age", value: metrics.avgOpenAge === null ? "—" : `${metrics.avgOpenAge}d`, color: "#64748B", emoji: "📌" },
-          { label: "Ghost Risk", value: metrics.atRiskApps.length, color: "#EA580C", emoji: "⏳" },
-          { label: "Ghost Rate", value: `${metrics.ghostRate}%`, color: "#9CA3AF", emoji: "👻" },
-          { label: "Follow-Ups Logged", value: followUpCompleted, color: "#F59E0B", emoji: "🔔" },
+          { label: "Total Applied", value: apps.length, ink: "var(--accent-ink)", emoji: "📤" },
+          { label: "Active Pipeline", value: metrics.activeApplications, ink: "var(--teal)", emoji: "🧭" },
+          { label: "Response Rate", value: `${metrics.responseRate}%`, ink: "var(--status-interview)", emoji: "📬" },
+          { label: "Interview Rate", value: `${metrics.interviewRate}%`, ink: "var(--status-applied)", emoji: "🗣️" },
+          { label: "Reached Interview", value: metrics.everInterviewedCount, ink: "var(--rose)", emoji: "🎯" },
+          { label: "Offer Rate", value: `${metrics.offerRate}%`, ink: "var(--status-offer)", emoji: "🎉" },
+          { label: "Avg Rejection Time", value: metrics.avgDaysToRejection === null ? "—" : `${metrics.avgDaysToRejection}d`, ink: "var(--status-rejected)", emoji: "⏱️" },
+          { label: "Avg To Interview", value: metrics.avgDaysToInterview === null ? "—" : `${metrics.avgDaysToInterview}d`, ink: "var(--teal)", emoji: "⚡" },
+          { label: "Avg Open Age", value: metrics.avgOpenAge === null ? "—" : `${metrics.avgOpenAge}d`, ink: "var(--muted)", emoji: "📌" },
+          { label: "Ghost Risk", value: metrics.atRiskApps.length, ink: "var(--tone-risk-ink)", emoji: "⏳" },
+          { label: "Ghost Rate", value: `${metrics.ghostRate}%`, ink: "var(--status-ghosted)", emoji: "👻" },
+          { label: "Follow-Ups Logged", value: followUpCompleted, ink: "var(--status-followup)", emoji: "🔔" },
         ].map((card) => (
-          <div key={card.label} style={{ background: "#fff", borderRadius: 13, padding: "16px 12px", textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", border: "1.5px solid #E5E7EB" }}>
-            <div style={{ fontSize: 20 }}>{card.emoji}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: card.color, fontFamily: "Georgia,serif", margin: "4px 0 2px" }}>{card.value}</div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.05em" }}>{card.label.toUpperCase()}</div>
+          <div key={card.label} className="metric-tile" style={{ "--m-ink": card.ink }}>
+            <div className="metric-tile__icon" aria-hidden="true">{card.emoji}</div>
+            <div className="metric-tile__value">{card.value}</div>
+            <div className="metric-tile__label">{card.label}</div>
           </div>
         ))}
       </div>
 
-      <SectionCard title="Pipeline Health" subtitle="The fastest read on momentum and risk." style={{ marginBottom: 14 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+      <SectionCard title="Pipeline Health" subtitle="The fastest read on momentum and risk." className="section-card--spaced">
+        <div className="dash-grid dash-grid--tight dash-grid--flush">
           {[
-            { label: "Follow-ups due", value: metrics.dueFollowUps.length, color: "#F59E0B", note: "Clear these before adding low-fit leads." },
-            { label: "Near ghosting", value: metrics.atRiskApps.length, color: "#EA580C", note: `Within ${GHOST_DAYS} days of no response.` },
-            { label: "Fresh this week", value: metrics.freshThisWeek, color: "#3B82F6", note: "New applications added recently." },
-            { label: "Interview queue", value: metrics.interviewQueue.length, color: "#8B5CF6", note: "Roles requiring close prep." },
+            { label: "Follow-ups due", value: metrics.dueFollowUps.length, ink: "var(--status-followup)", note: "Clear these before adding low-fit leads." },
+            { label: "Near ghosting", value: metrics.atRiskApps.length, ink: "var(--tone-risk-ink)", note: `Within ${GHOST_DAYS} days of no response.` },
+            { label: "Fresh this week", value: metrics.freshThisWeek, ink: "var(--status-applied)", note: "New applications added recently." },
+            { label: "Interview queue", value: metrics.interviewQueue.length, ink: "var(--status-interview)", note: "Roles requiring close prep." },
           ].map((item) => (
-            <div key={item.label} style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 12, padding: "12px 14px" }}>
-              <div style={{ color: item.color, fontWeight: 800, fontSize: 24, fontFamily: "Georgia,serif" }}>{item.value}</div>
-              <div style={{ color: "#0F172A", fontWeight: 800, fontSize: 12, marginTop: 2 }}>{item.label}</div>
-              <div style={{ color: "#64748B", fontSize: 11, lineHeight: 1.5, marginTop: 4 }}>{item.note}</div>
+            <div key={item.label} className="health-tile" style={{ "--m-ink": item.ink }}>
+              <div className="health-tile__value">{item.value}</div>
+              <div className="health-tile__label">{item.label}</div>
+              <div className="health-tile__note">{item.note}</div>
             </div>
           ))}
         </div>
       </SectionCard>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 0.72fr) minmax(300px, 1.28fr)", gap: 14, marginBottom: 14 }}>
+      <div className="dash-grid dash-grid--lead">
         <SectionCard title="Search Control Score" subtitle="A practical health score based on freshness, follow-ups, interviews, and ghost risk.">
-          <div style={{ display: "grid", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-              <div style={{ fontSize: 42, fontFamily: "Georgia,serif", fontWeight: 800, color: metrics.pipelineScore >= 75 ? "#0F766E" : metrics.pipelineScore >= 55 ? "#B45309" : "#DC2626" }}>
-                {metrics.pipelineScore}
-              </div>
-              <div style={{ color: "#64748B", fontSize: 13, fontWeight: 800 }}>/ 100</div>
+          <div className="stack stack--wide">
+            <div className="score-row" style={{ "--m-ink": scoreTone }}>
+              <div className="score-value">{metrics.pipelineScore}</div>
+              <div className="score-max">/ 100</div>
             </div>
-            <div style={{ height: 10, background: "#E5E7EB", borderRadius: 999, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${metrics.pipelineScore}%`, background: metrics.pipelineScore >= 75 ? "#0F766E" : metrics.pipelineScore >= 55 ? "#F59E0B" : "#EF4444" }} />
+            <div className="meter__track meter__track--tall" style={{ "--m-ink": scoreTone }}>
+              <div className="meter__fill" style={{ width: `${metrics.pipelineScore}%` }} />
             </div>
-            <p style={{ margin: 0, color: "#64748B", fontSize: 12, lineHeight: 1.6 }}>
+            <p className="health-tile__note">
               Higher scores mean recent applications, fewer overdue follow-ups, lower ghost risk, and an active interview queue.
             </p>
           </div>
@@ -213,78 +215,79 @@ export default function AnalyticsView({ apps, theme }) {
 
         <SectionCard title="Priority Action Queue" subtitle="The next operational moves the tracker recommends.">
           {metrics.nextActions.length > 0 ? (
-            <div style={{ display: "grid", gap: 8 }}>
-              {metrics.nextActions.map((action) => {
-                const tone = {
-                  warning: { bg: "#FFFBEB", border: "#FDE68A", color: "#92400E" },
-                  interview: { bg: "#F5F3FF", border: "#DDD6FE", color: "#6D28D9" },
-                  followup: { bg: "#EFF6FF", border: "#BFDBFE", color: "#1D4ED8" },
-                  risk: { bg: "#FFF7ED", border: "#FED7AA", color: "#C2410C" },
-                  neutral: { bg: "#F8FAFC", border: "#E2E8F0", color: "#475569" },
-                }[action.tone] || { bg: "#F8FAFC", border: "#E2E8F0", color: "#475569" };
-                return (
-                  <div key={action.label} style={{ background: tone.bg, border: `1px solid ${tone.border}`, borderRadius: 10, padding: "10px 12px" }}>
-                    <div style={{ color: tone.color, fontWeight: 800, fontSize: 13 }}>{action.label}</div>
-                    <div style={{ color: "#64748B", fontSize: 12, lineHeight: 1.5, marginTop: 3 }}>{action.detail}</div>
-                  </div>
-                );
-              })}
+            <div className="stack">
+              {metrics.nextActions.map((action) => (
+                <div key={action.label} className="action-tile" data-tone={action.tone}>
+                  <div className="action-tile__label">{action.label}</div>
+                  <div className="action-tile__detail">{action.detail}</div>
+                </div>
+              ))}
             </div>
           ) : (
-            <p style={{ margin: 0, color: "#64748B", fontSize: 13 }}>No urgent workflow issues. Keep applications and interview stages current.</p>
+            <p className="muted-note">No urgent workflow issues. Keep applications and interview stages current.</p>
           )}
         </SectionCard>
       </div>
 
-      <SectionCard title="Daily Activity - Last 7 Days" style={{ marginBottom: 14 }}>
+      <SectionCard title="Daily Activity — Last 7 Days" className="section-card--spaced">
         <ResponsiveContainer width="100%" height={150}>
           <BarChart data={metrics.last7} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-            <Tooltip />
-            <Bar dataKey="count" name="Applications logged" radius={[5, 5, 0, 0]}>
-              {metrics.last7.map((entry, index) => <Cell key={index} fill={entry.weekend ? "#D1D5DB" : entry.count >= 3 ? "#10B981" : entry.count > 0 ? "#3B82F6" : "#E5E7EB"} />)}
+            <XAxis dataKey="day" {...axisProps(t)} />
+            <YAxis {...axisProps(t)} allowDecimals={false} />
+            <Tooltip {...tooltipProps(t)} />
+            <Bar dataKey="count" name="Applications logged" radius={[4, 4, 0, 0]}>
+              {metrics.last7.map((entry, index) => (
+                <Cell
+                  key={index}
+                  fill={entry.weekend ? t["--chart-weekend"] : entry.count >= 3 ? t["--status-offer"] : entry.count > 0 ? t["--status-applied"] : t["--chart-empty"]}
+                />
+              ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </SectionCard>
 
-      <SectionCard title="Momentum - Last 4 Weeks" subtitle="Applications logged against status responses recorded in each week." style={{ marginBottom: 14 }}>
+      <SectionCard title="Momentum — Last 4 Weeks" subtitle="Applications logged against status responses recorded in each week." className="section-card--spaced">
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={metrics.last28} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <XAxis dataKey="week" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-            <Tooltip />
-            <Bar dataKey="applied" fill="#3B82F6" radius={[5, 5, 0, 0]} name="Applications" />
-            <Bar dataKey="responses" fill="#0F766E" radius={[5, 5, 0, 0]} name="Responses" />
+            <XAxis dataKey="week" {...axisProps(t)} />
+            <YAxis {...axisProps(t)} allowDecimals={false} />
+            <Tooltip {...tooltipProps(t)} />
+            <Bar dataKey="applied" fill={t["--status-applied"]} radius={[4, 4, 0, 0]} name="Applications" />
+            <Bar dataKey="responses" fill={t["--teal"]} radius={[4, 4, 0, 0]} name="Responses" />
           </BarChart>
         </ResponsiveContainer>
+        {/* Two series, so identity cannot rest on position alone. */}
+        <div className="chart-legend">
+          <span className="chart-legend__item"><span className="chart-legend__swatch" style={{ background: t["--status-applied"] }} />Applications</span>
+          <span className="chart-legend__item"><span className="chart-legend__swatch" style={{ background: t["--teal"] }} />Responses</span>
+        </div>
       </SectionCard>
 
-      <SectionCard title="Application Funnel" subtitle="Set interview stages on applications to make this more precise." style={{ marginBottom: 14 }}>
-        <SankeyFunnel apps={apps} />
+      <SectionCard title="Application Funnel" subtitle="Set interview stages on applications to make this more precise." className="section-card--spaced">
+        <SankeyFunnel apps={apps} tokens={t} />
       </SectionCard>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 14 }}>
+      <div className="dash-grid dash-grid--auto">
         <SectionCard title="Status Breakdown">
           <ResponsiveContainer width="100%" height={210}>
             <PieChart>
               <Pie data={metrics.statusCounts} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} labelLine={false} label={({ name, value }) => value > 0 ? `${name} (${value})` : ""}>
-                {metrics.statusCounts.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                {metrics.statusCounts.map((entry, index) => <Cell key={index} fill={t[entry.cssVar]} stroke={t["--surface-chart"]} strokeWidth={2} />)}
               </Pie>
-              <Tooltip />
+              <Tooltip {...tooltipProps(t)} />
             </PieChart>
           </ResponsiveContainer>
         </SectionCard>
 
         <SectionCard title="Applications by Month">
-          {metrics.monthData.length === 0 ? <p style={{ color: "#9CA3AF", fontSize: 12, textAlign: "center", paddingTop: 40 }}>No date data yet.</p> : (
+          {metrics.monthData.length === 0 ? <p className="chart-empty">No date data yet.</p> : (
             <ResponsiveContainer width="100%" height={210}>
               <BarChart data={metrics.monthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#3B82F6" radius={[5, 5, 0, 0]} name="Applications" />
+                <XAxis dataKey="month" {...axisProps(t)} />
+                <YAxis {...axisProps(t)} allowDecimals={false} />
+                <Tooltip {...tooltipProps(t)} />
+                <Bar dataKey="count" fill={t["--status-applied"]} radius={[4, 4, 0, 0]} name="Applications" />
               </BarChart>
             </ResponsiveContainer>
           )}
