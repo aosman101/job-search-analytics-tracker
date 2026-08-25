@@ -21,7 +21,10 @@
   --ink: #0f172a;
   --ink-soft: #26364b;
   --muted: #526072;
-  --muted-soft: #7b8796;
+  /* Darkened from #7b8796, which measured 3.65:1 — below AA for the small
+     uppercase labels this token is used on. Now 4.75:1 on card, 4.50:1 on
+     surface. */
+  --muted-soft: #687484;
 
   /* Structure */
   --line: rgba(15, 23, 42, 0.1);

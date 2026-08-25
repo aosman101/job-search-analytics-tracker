@@ -168,9 +168,9 @@ function Field({ id, label, value, onChange, type = "text", placeholder, require
   );
 }
 
-function SectionCard({ title, subtitle, actions = null, children, style = {} }) {
+function SectionCard({ title, subtitle, actions = null, children, className = "" }) {
   return (
-    <section className="section-card" style={style}>
+    <section className={`section-card ${className}`.trim()}>
       {(title || subtitle || actions) && (
         <div className="section-card__header">
           <div>
@@ -819,7 +819,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               title="Priority Queue"
               subtitle="Automatically generated workflow actions from your tracker data."
               actions={<button onClick={() => setActiveTab("Analytics")} className="soft-button">Open Analytics</button>}
-              style={{ marginBottom: 16 }}
+              className="section-card--spaced"
             >
               {metrics.nextActions.length > 0 ? (
                 <div className="dash-grid dash-grid--tight dash-grid--flush">
@@ -927,7 +927,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
             <SectionCard
               title="Job Search Workspace"
               subtitle="Manage the active search list, keep statuses current, and add fresh leads."
-              style={{ marginBottom: 16 }}
+              className="section-card--spaced"
             >
               {/* Buttons rather than clickable divs: these are the primary way
                   to filter the list, so they must be tabbable and expose their
