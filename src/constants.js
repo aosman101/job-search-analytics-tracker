@@ -1,13 +1,25 @@
 export const GHOST_DAYS = 21;
 
+/**
+ * Status metadata.
+ *
+ * Colour deliberately lives in CSS, not here. Each status carries the name of
+ * its token so a component can either stamp `data-status` (styling resolves in
+ * the stylesheet) or read `cssVar` at runtime for canvas/SVG contexts like
+ * Recharts that cannot consume a CSS class. That keeps light and dark in step
+ * from a single definition.
+ *
+ * `emoji` is not decoration: the status scale always ships colour alongside an
+ * icon and a text label so meaning never rests on hue alone.
+ */
 export const STATUS_CONFIG = {
-  Applied: { color: "#3B82F6", bg: "#EFF6FF", border: "#BFDBFE", emoji: "📤" },
-  "Follow-Up": { color: "#F59E0B", bg: "#FFFBEB", border: "#FDE68A", emoji: "🔔" },
-  Interview: { color: "#8B5CF6", bg: "#F5F3FF", border: "#DDD6FE", emoji: "🗣️" },
-  Offer: { color: "#10B981", bg: "#ECFDF5", border: "#A7F3D0", emoji: "🎉" },
-  Rejected: { color: "#EF4444", bg: "#FEF2F2", border: "#FECACA", emoji: "❌" },
-  Ghosted: { color: "#9CA3AF", bg: "#F9FAFB", border: "#E5E7EB", emoji: "👻" },
-  Withdrawn: { color: "#6B7280", bg: "#F3F4F6", border: "#D1D5DB", emoji: "↩️" },
+  Applied: { emoji: "📤", cssVar: "--status-applied" },
+  "Follow-Up": { emoji: "🔔", cssVar: "--status-followup" },
+  Interview: { emoji: "🗣️", cssVar: "--status-interview" },
+  Offer: { emoji: "🎉", cssVar: "--status-offer" },
+  Rejected: { emoji: "❌", cssVar: "--status-rejected" },
+  Ghosted: { emoji: "👻", cssVar: "--status-ghosted" },
+  Withdrawn: { emoji: "↩️", cssVar: "--status-withdrawn" },
 };
 
 export const INTERVIEW_STAGES = ["", "1st Interview", "2nd Interview", "3rd Interview", "Home Assignment", "Final Interview"];
@@ -46,12 +58,17 @@ export const EMPTY_FORM = {
   hmLinkedInAvailable: true,
 };
 
+/**
+ * Follow-up outcomes borrow the status palette rather than defining a second
+ * one — `statusToken` names the status whose colour each outcome adopts, so
+ * both scales stay consistent and theme together.
+ */
 export const FOLLOWUP_STATUS = {
-  "": { label: "Pending", color: "#F59E0B", bg: "#FFFBEB", border: "#FDE68A", emoji: "🔔" },
-  messaged: { label: "Messaged", color: "#10B981", bg: "#ECFDF5", border: "#A7F3D0", emoji: "✅" },
-  premium: { label: "Premium Required", color: "#8B5CF6", bg: "#F5F3FF", border: "#DDD6FE", emoji: "🔒" },
-  no_linkedin: { label: "No LinkedIn", color: "#6B7280", bg: "#F3F4F6", border: "#D1D5DB", emoji: "🚫" },
-  email_instead: { label: "Emailed Instead", color: "#3B82F6", bg: "#EFF6FF", border: "#BFDBFE", emoji: "📧" },
+  "": { label: "Pending", emoji: "🔔", statusToken: "Follow-Up" },
+  messaged: { label: "Messaged", emoji: "✅", statusToken: "Offer" },
+  premium: { label: "Premium Required", emoji: "🔒", statusToken: "Interview" },
+  no_linkedin: { label: "No LinkedIn", emoji: "🚫", statusToken: "Withdrawn" },
+  email_instead: { label: "Emailed Instead", emoji: "📧", statusToken: "Applied" },
 };
 
 export const FOLLOWUP_METHODS = {

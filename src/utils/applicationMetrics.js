@@ -138,8 +138,10 @@ export function buildTrackerMetrics(apps, options = {}) {
     today,
     sorted,
     dueFollowUps,
+    // Carries the token name rather than a literal colour; the view resolves it
+    // against the active theme at render time.
     statusCounts: Object.keys(STATUS_CONFIG)
-      .map((name) => ({ name, value: apps.filter((app) => app.status === name).length, color: STATUS_CONFIG[name].color }))
+      .map((name) => ({ name, value: apps.filter((app) => app.status === name).length, cssVar: STATUS_CONFIG[name].cssVar }))
       .filter((item) => item.value > 0),
     monthData: Object.entries(byMonth).sort().map(([month, count]) => ({ month: `${month.slice(5)}/${month.slice(2, 4)}`, count })),
     last7: Array.from({ length: 7 }, (_, index) => {
