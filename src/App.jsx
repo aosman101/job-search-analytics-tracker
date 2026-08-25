@@ -1,9 +1,11 @@
 import { Suspense, lazy, useState } from "react";
+import { Monitor as MonitorIcon, Moon, Sun } from "lucide-react";
 import {
   AUTH_SESSION_KEY,
   readUnlockedSession,
   unlockSeed,
 } from "./auth";
+import { useTheme } from "./useTheme";
 
 const JobTracker = lazy(() => import("./JobTracker"));
 
@@ -14,6 +16,11 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [apps, setApps] = useState([]);
   const [authenticated, setAuthenticated] = useState(readUnlockedSession);
+  // Mounted here too so the theme applies on the login screen, not just after
+  // unlocking — otherwise a dark-mode visitor meets a white page first.
+  const { preference: themePreference, resolved: resolvedTheme, cycleTheme } = useTheme();
+  const ThemeIcon = themePreference === "light" ? Sun : themePreference === "dark" ? Moon : MonitorIcon;
+  const themeLabel = themePreference === "system" ? `System (${resolvedTheme})` : themePreference === "light" ? "Light" : "Dark";
 
   async function handleLogin(event) {
     event.preventDefault();
@@ -57,7 +64,18 @@ export default function App() {
         <div className="login-panel">
           <div className="login-status-row">
             <p className="eyebrow">Personal Productivity Tool</p>
-            <span className="privacy-pill">Private Data Protected</span>
+            <div className="login-status-row__end">
+              <span className="privacy-pill">Private Data Protected</span>
+              <button
+                type="button"
+                className="theme-toggle theme-toggle--onlight"
+                onClick={cycleTheme}
+                title={`Theme: ${themeLabel}. Click to change.`}
+                aria-label={`Change theme. Current setting: ${themeLabel}`}
+              >
+                <ThemeIcon size={16} aria-hidden="true" />
+              </button>
+            </div>
           </div>
           <h1 className="login-title">Job Search Analytics Tracker</h1>
           <p className="login-copy">

@@ -740,8 +740,8 @@ a:focus-visible {
 .visitor-brief div {
   padding: 16px 18px;
   border-radius: var(--radius);
-  background: rgba(15, 23, 42, 0.045);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--tone-neutral-bg);
+  border: 1px solid var(--line);
 }
 
 .visitor-brief span,
@@ -875,7 +875,7 @@ a:focus-visible {
   padding: 13px 14px;
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--line);
   min-height: 104px;
 }
 
@@ -942,7 +942,7 @@ a:focus-visible {
   padding: 11px 12px;
   border-radius: var(--radius);
   background: rgba(248, 250, 252, 0.96);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--line);
 }
 
 .auth-summary span,
