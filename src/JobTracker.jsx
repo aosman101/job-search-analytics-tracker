@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useId, useMemo, useRef, useCallback, lazy, Suspense } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -7,13 +7,17 @@ import {
   Home as HomeIcon,
   LogOut,
   Keyboard,
+  Monitor as MonitorIcon,
+  Moon,
   Plus,
   Route as RouteIcon,
   Search as SearchIcon,
+  Sun,
   Target as TargetIcon,
   Upload,
   BarChart3 as BarChartIcon,
 } from "lucide-react";
+import { useTheme } from "./useTheme";
 import { APPLICATION_SOURCES, EMPTY_FORM, FOLLOWUP_METHODS, FOLLOWUP_STATUS, GHOST_DAYS, INTERVIEW_STAGES, STATUS_CONFIG } from "./constants";
 import {
   STORAGE_KEY,
@@ -66,8 +70,8 @@ function Badge({ status, interviewStage }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG["Applied"];
   const showStage = interviewStage && interviewStage !== "" && ["Rejected", "Withdrawn", "Ghosted"].includes(status);
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
-      {cfg.emoji} {status.toUpperCase()}{showStage ? ` · ${interviewStage.toUpperCase()}` : ""}
+    <span className="status-badge" data-status={status}>
+      <span aria-hidden="true">{cfg.emoji}</span> {status.toUpperCase()}{showStage ? ` · ${interviewStage.toUpperCase()}` : ""}
     </span>
   );
 }
@@ -117,7 +121,7 @@ function Modal({ open, onClose, label, children }) {
 
   if (!open) return null;
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.65)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(6px)", animation: "modalFade 0.16s ease" }}>
+    <div className="modal-scrim" onClick={onClose}>
       <div
         ref={panelRef}
         role="dialog"
@@ -126,7 +130,7 @@ function Modal({ open, onClose, label, children }) {
         tabIndex={-1}
         onKeyDown={handleKeyDown}
         onClick={e => e.stopPropagation()}
-        style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 660, maxHeight: "92vh", overflowY: "auto", boxShadow: "0 30px 70px rgba(0,0,0,0.25)", outline: "none", animation: "modalRise 0.18s cubic-bezier(0.2, 0.8, 0.3, 1)" }}
+        className="modal-panel"
       >
         {children}
       </div>
@@ -134,21 +138,31 @@ function Modal({ open, onClose, label, children }) {
   );
 }
 
-function Field({ label, value, onChange, type = "text", placeholder, required, as, options, rows }) {
-  const base = { width: "100%", padding: "9px 12px", border: "1.5px solid #E5E7EB", borderRadius: 8, fontSize: 13, color: "#111827", outline: "none", fontFamily: "inherit", background: "#FAFAFA", boxSizing: "border-box" };
+function Field({ id, label, value, onChange, type = "text", placeholder, required, as, options, rows }) {
+  // The generated id ties <label> to its control, which the previous markup
+  // never did — the label was purely visual and announced nothing.
+  const reactId = useId();
+  const controlId = id || `field-${reactId}`;
+  const common = {
+    id: controlId,
+    className: "field__control",
+    value,
+    onChange: e => onChange(e.target.value),
+    required,
+  };
   return (
-    <div style={{ marginBottom: 13 }}>
-      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6B7280", marginBottom: 4, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-        {label}{required && <span style={{ color: "#EF4444" }}> *</span>}
+    <div className="field">
+      <label className="field__label" htmlFor={controlId}>
+        {label}{required && <span className="field__required" aria-hidden="true"> *</span>}
       </label>
       {as === "select" ? (
-        <select value={value} onChange={e => onChange(e.target.value)} style={{ ...base, cursor: "pointer" }}>
+        <select {...common}>
           {options.map(o => <option key={o} value={o}>{o || "— None —"}</option>)}
         </select>
       ) : as === "textarea" ? (
-        <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows || 3} style={{ ...base, resize: "vertical" }} onFocus={e => e.target.style.borderColor = "#1F4E79"} onBlur={e => e.target.style.borderColor = "#E5E7EB"} />
+        <textarea {...common} placeholder={placeholder} rows={rows || 3} />
       ) : (
-        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={base} onFocus={e => e.target.style.borderColor = "#1F4E79"} onBlur={e => e.target.style.borderColor = "#E5E7EB"} />
+        <input {...common} type={type} placeholder={placeholder} />
       )}
     </div>
   );
@@ -198,6 +212,8 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const [storageHealth, setStorageHealth] = useState("ok"); // "ok" | "warn" | "error"
   const [storageBackend, setStorageBackend] = useState("IndexedDB");
   const [storageMessage, setStorageMessage] = useState("Ready");
+  const [importPrompt, setImportPrompt] = useState(null);
+  const { preference: themePreference, resolved: resolvedTheme, cycleTheme } = useTheme();
 
   // `action` renders an inline button in the toast (used for undoing a delete).
   const showToast = useCallback((msg, type = "success", action = null) => {
@@ -474,20 +490,16 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         const existingIds = new Set(apps.map(a => a.id));
         const newApps = withIds.filter(a => !existingIds.has(a.id));
         if (newApps.length === 0) {
-          // No new IDs — user might be restoring from backup, replace all
-          const confirmed = window.confirm(
-            `Replace all ${apps.length} current applications with ${withIds.length} from backup?`
-          );
-          if (!confirmed) return;
-          setApps(withIds);
-          persistToStorage(withIds);
-          showToast(`Restored ${withIds.length} application${withIds.length !== 1 ? "s" : ""} from backup`);
-        } else {
-          const merged = [...newApps, ...apps];
-          setApps(merged);
-          persistToStorage(merged);
-          showToast(`Imported ${newApps.length} new applications (${apps.length} existing kept)`);
+          // Every id already exists, so this is a restore rather than a merge.
+          // Confirming through the app's own dialog keeps focus management and
+          // styling consistent instead of handing off to a blocking native one.
+          setImportPrompt({ apps: withIds, recovered: Boolean(imported.recovered) });
+          return;
         }
+        const merged = [...newApps, ...apps];
+        setApps(merged);
+        persistToStorage(merged);
+        showToast(`Imported ${newApps.length} new application${newApps.length !== 1 ? "s" : ""} (${apps.length} existing kept)`);
         if (imported.recovered) {
           setStorageHealth("warn");
           setStorageMessage("Imported a partially recovered backup.");
@@ -498,6 +510,21 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
       }
     };
     input.click();
+  };
+
+  // Applies a full-backup restore once the user confirms it in-app.
+  const confirmImportRestore = () => {
+    if (!importPrompt) return;
+    const { apps: restored, recovered } = importPrompt;
+    setApps(restored);
+    persistToStorage(restored);
+    setImportPrompt(null);
+    showToast(`Restored ${restored.length} application${restored.length !== 1 ? "s" : ""} from backup`);
+    if (recovered) {
+      setStorageHealth("warn");
+      setStorageMessage("Imported a partially recovered backup.");
+      showToast("Backup was partially recovered during import.", "error");
+    }
   };
 
   const metrics = useMemo(() => buildTrackerMetrics(apps), [apps]);
@@ -521,7 +548,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const filtersActive = filterStatus !== "All" || filterSource !== "All" || onlyNeedsAttention || search.trim() !== "";
   const clearFilters = () => { setFilterStatus("All"); setFilterSource("All"); setOnlyNeedsAttention(false); setSearch(""); };
 
-  const anyModalOpen = modalOpen || detailId !== null || deleteConfirmId !== null || shortcutsOpen;
+  const anyModalOpen = modalOpen || detailId !== null || deleteConfirmId !== null || shortcutsOpen || importPrompt !== null;
 
   // Global shortcuts. Suppressed while typing or while a dialog owns the keyboard.
   useEffect(() => {
