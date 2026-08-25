@@ -1,27 +1,309 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+/* Fonts are preconnected and linked from index.html — an @import here would
+   serialise the font fetch behind the stylesheet and block first paint. */
+
+/* ---------------------------------------------------------------------------
+   Design tokens
+
+   Every colour in the app resolves through this layer. Light is the default
+   set; the dark set is *selected* rather than algorithmically inverted, so
+   each value was chosen against the dark surface it actually renders on.
+
+   Status colours are a fixed semantic scale, never a categorical series
+   palette: each one always ships alongside an emoji and a text label, so
+   meaning never rests on hue alone. The dark steps all clear 3:1 against
+   --surface-chart (#12161d), verified rather than eyeballed.
+   --------------------------------------------------------------------------- */
 
 :root {
   color-scheme: light;
+
+  /* Ink */
   --ink: #0f172a;
   --ink-soft: #26364b;
   --muted: #526072;
   --muted-soft: #7b8796;
+
+  /* Structure */
   --line: rgba(15, 23, 42, 0.1);
   --line-strong: rgba(15, 23, 42, 0.16);
+  --line-faint: rgba(15, 23, 42, 0.06);
   --card: rgba(255, 255, 255, 0.96);
+  --card-solid: #ffffff;
   --surface: #f7f9fc;
   --surface-strong: #eef3f8;
+  --surface-sunken: #f1f5f9;
+  --surface-chart: #ffffff;
+  --field-bg: #fafafa;
+  --field-border: #e5e7eb;
+
+  /* Brand */
   --accent: #1f4e79;
   --accent-strong: #173756;
   --accent-soft: #dbeafe;
+  --accent-ink: #1f4e79;
   --teal: #0f766e;
   --amber: #b45309;
   --rose: #be123c;
   --success: #047857;
   --warning: #b45309;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --danger-border: #fecaca;
+
+  /* Status scale — colour, tint, and edge per state */
+  --status-applied: #3b82f6;
+  --status-applied-bg: #eff6ff;
+  --status-applied-border: #bfdbfe;
+  --status-followup: #b45309;
+  --status-followup-bg: #fffbeb;
+  --status-followup-border: #fde68a;
+  --status-interview: #8b5cf6;
+  --status-interview-bg: #f5f3ff;
+  --status-interview-border: #ddd6fe;
+  --status-offer: #047857;
+  --status-offer-bg: #ecfdf5;
+  --status-offer-border: #a7f3d0;
+  --status-rejected: #dc2626;
+  --status-rejected-bg: #fef2f2;
+  --status-rejected-border: #fecaca;
+  --status-ghosted: #6b7280;
+  --status-ghosted-bg: #f9fafb;
+  --status-ghosted-border: #e5e7eb;
+  --status-withdrawn: #4b5563;
+  --status-withdrawn-bg: #f3f4f6;
+  --status-withdrawn-border: #d1d5db;
+
+  /* Tone washes for advisory panels */
+  --tone-warning-bg: #fffbeb;
+  --tone-warning-border: #fde68a;
+  --tone-warning-ink: #92400e;
+  --tone-interview-bg: #f5f3ff;
+  --tone-interview-border: #ddd6fe;
+  --tone-interview-ink: #6d28d9;
+  --tone-followup-bg: #eff6ff;
+  --tone-followup-border: #bfdbfe;
+  --tone-followup-ink: #1d4ed8;
+  --tone-risk-bg: #fff7ed;
+  --tone-risk-border: #fed7aa;
+  --tone-risk-ink: #c2410c;
+  --tone-neutral-bg: #f8fafc;
+  --tone-neutral-border: #e2e8f0;
+  --tone-neutral-ink: #475569;
+
+  /* Chart chrome */
+  --chart-grid: #e1e5ea;
+  --chart-axis: #94a3b8;
+  --chart-label: #64748b;
+  --chart-track: #eef2f7;
+  --chart-tooltip-bg: #ffffff;
+  --chart-tooltip-border: rgba(15, 23, 42, 0.12);
+  --chart-empty: #e5e7eb;
+  --chart-weekend: #d1d5db;
+
+  /* Ordinal funnel ramp — one hue, light to dark (validated) */
+  --funnel-1: #86b6ef;
+  --funnel-2: #5598e7;
+  --funnel-3: #2a78d6;
+  --funnel-4: #1c5cab;
+  --funnel-5: #104281;
+
   --shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
   --shadow-soft: 0 10px 26px rgba(15, 23, 42, 0.08);
+  --overlay: rgba(15, 23, 42, 0.65);
   --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+}
+
+/* The toggle stamps data-theme on <html>; this block and the media query below
+   carry identical values so an explicit choice wins over the OS in both
+   directions. :where() keeps the media block at zero specificity so it can
+   never outrank the stamp. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ink: #e7ecf3;
+  --ink-soft: #c7d2e0;
+  --muted: #9aa8bd;
+  --muted-soft: #7b8aa0;
+
+  --line: rgba(148, 163, 184, 0.18);
+  --line-strong: rgba(148, 163, 184, 0.3);
+  --line-faint: rgba(148, 163, 184, 0.1);
+  --card: rgba(24, 30, 41, 0.96);
+  --card-solid: #181e29;
+  --surface: #12161d;
+  --surface-strong: #0f131a;
+  --surface-sunken: #1b222e;
+  --surface-chart: #12161d;
+  --field-bg: #1b222e;
+  --field-border: rgba(148, 163, 184, 0.24);
+
+  --accent: #6ba6f5;
+  --accent-strong: #a8c8f8;
+  --accent-soft: rgba(107, 166, 245, 0.16);
+  --accent-ink: #6ba6f5;
+  --teal: #3fbf92;
+  --amber: #e0a33a;
+  --rose: #f07a7a;
+  --success: #3fbf92;
+  --warning: #e0a33a;
+  --danger: #f07a7a;
+  --danger-soft: rgba(240, 122, 122, 0.14);
+  --danger-border: rgba(240, 122, 122, 0.36);
+
+  --status-applied: #6ba6f5;
+  --status-applied-bg: rgba(107, 166, 245, 0.14);
+  --status-applied-border: rgba(107, 166, 245, 0.36);
+  --status-followup: #e0a33a;
+  --status-followup-bg: rgba(224, 163, 58, 0.14);
+  --status-followup-border: rgba(224, 163, 58, 0.36);
+  --status-interview: #a98cec;
+  --status-interview-bg: rgba(169, 140, 236, 0.16);
+  --status-interview-border: rgba(169, 140, 236, 0.38);
+  --status-offer: #3fbf92;
+  --status-offer-bg: rgba(63, 191, 146, 0.14);
+  --status-offer-border: rgba(63, 191, 146, 0.36);
+  --status-rejected: #f07a7a;
+  --status-rejected-bg: rgba(240, 122, 122, 0.14);
+  --status-rejected-border: rgba(240, 122, 122, 0.36);
+  --status-ghosted: #98a1af;
+  --status-ghosted-bg: rgba(152, 161, 175, 0.14);
+  --status-ghosted-border: rgba(152, 161, 175, 0.32);
+  --status-withdrawn: #79839a;
+  --status-withdrawn-bg: rgba(121, 131, 154, 0.16);
+  --status-withdrawn-border: rgba(121, 131, 154, 0.34);
+
+  --tone-warning-bg: rgba(224, 163, 58, 0.12);
+  --tone-warning-border: rgba(224, 163, 58, 0.3);
+  --tone-warning-ink: #e8b75c;
+  --tone-interview-bg: rgba(169, 140, 236, 0.14);
+  --tone-interview-border: rgba(169, 140, 236, 0.32);
+  --tone-interview-ink: #b9a2f0;
+  --tone-followup-bg: rgba(107, 166, 245, 0.12);
+  --tone-followup-border: rgba(107, 166, 245, 0.3);
+  --tone-followup-ink: #8bbaf7;
+  --tone-risk-bg: rgba(236, 131, 90, 0.14);
+  --tone-risk-border: rgba(236, 131, 90, 0.32);
+  --tone-risk-ink: #f0a07d;
+  --tone-neutral-bg: rgba(148, 163, 184, 0.1);
+  --tone-neutral-border: rgba(148, 163, 184, 0.22);
+  --tone-neutral-ink: #a9b6c8;
+
+  --chart-grid: rgba(148, 163, 184, 0.16);
+  --chart-axis: #6b7a90;
+  --chart-label: #9aa8bd;
+  --chart-track: rgba(148, 163, 184, 0.16);
+  --chart-tooltip-bg: #1b222e;
+  --chart-tooltip-border: rgba(148, 163, 184, 0.28);
+  --chart-empty: rgba(148, 163, 184, 0.2);
+  --chart-weekend: rgba(148, 163, 184, 0.3);
+
+  /* Dark funnel ramp stops at step 600 so the darkest stage still clears the
+     surface (2.24:1) instead of dissolving into it. */
+  --funnel-1: #cde2fb;
+  --funnel-2: #9ec5f4;
+  --funnel-3: #6da7ec;
+  --funnel-4: #3987e5;
+  --funnel-5: #184f95;
+
+  --shadow: 0 18px 42px rgba(0, 0, 0, 0.5);
+  --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.38);
+  --overlay: rgba(3, 6, 12, 0.72);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+
+    --ink: #e7ecf3;
+    --ink-soft: #c7d2e0;
+    --muted: #9aa8bd;
+    --muted-soft: #7b8aa0;
+
+    --line: rgba(148, 163, 184, 0.18);
+    --line-strong: rgba(148, 163, 184, 0.3);
+    --line-faint: rgba(148, 163, 184, 0.1);
+    --card: rgba(24, 30, 41, 0.96);
+    --card-solid: #181e29;
+    --surface: #12161d;
+    --surface-strong: #0f131a;
+    --surface-sunken: #1b222e;
+    --surface-chart: #12161d;
+    --field-bg: #1b222e;
+    --field-border: rgba(148, 163, 184, 0.24);
+
+    --accent: #6ba6f5;
+    --accent-strong: #a8c8f8;
+    --accent-soft: rgba(107, 166, 245, 0.16);
+    --accent-ink: #6ba6f5;
+    --teal: #3fbf92;
+    --amber: #e0a33a;
+    --rose: #f07a7a;
+    --success: #3fbf92;
+    --warning: #e0a33a;
+    --danger: #f07a7a;
+    --danger-soft: rgba(240, 122, 122, 0.14);
+    --danger-border: rgba(240, 122, 122, 0.36);
+
+    --status-applied: #6ba6f5;
+    --status-applied-bg: rgba(107, 166, 245, 0.14);
+    --status-applied-border: rgba(107, 166, 245, 0.36);
+    --status-followup: #e0a33a;
+    --status-followup-bg: rgba(224, 163, 58, 0.14);
+    --status-followup-border: rgba(224, 163, 58, 0.36);
+    --status-interview: #a98cec;
+    --status-interview-bg: rgba(169, 140, 236, 0.16);
+    --status-interview-border: rgba(169, 140, 236, 0.38);
+    --status-offer: #3fbf92;
+    --status-offer-bg: rgba(63, 191, 146, 0.14);
+    --status-offer-border: rgba(63, 191, 146, 0.36);
+    --status-rejected: #f07a7a;
+    --status-rejected-bg: rgba(240, 122, 122, 0.14);
+    --status-rejected-border: rgba(240, 122, 122, 0.36);
+    --status-ghosted: #98a1af;
+    --status-ghosted-bg: rgba(152, 161, 175, 0.14);
+    --status-ghosted-border: rgba(152, 161, 175, 0.32);
+    --status-withdrawn: #79839a;
+    --status-withdrawn-bg: rgba(121, 131, 154, 0.16);
+    --status-withdrawn-border: rgba(121, 131, 154, 0.34);
+
+    --tone-warning-bg: rgba(224, 163, 58, 0.12);
+    --tone-warning-border: rgba(224, 163, 58, 0.3);
+    --tone-warning-ink: #e8b75c;
+    --tone-interview-bg: rgba(169, 140, 236, 0.14);
+    --tone-interview-border: rgba(169, 140, 236, 0.32);
+    --tone-interview-ink: #b9a2f0;
+    --tone-followup-bg: rgba(107, 166, 245, 0.12);
+    --tone-followup-border: rgba(107, 166, 245, 0.3);
+    --tone-followup-ink: #8bbaf7;
+    --tone-risk-bg: rgba(236, 131, 90, 0.14);
+    --tone-risk-border: rgba(236, 131, 90, 0.32);
+    --tone-risk-ink: #f0a07d;
+    --tone-neutral-bg: rgba(148, 163, 184, 0.1);
+    --tone-neutral-border: rgba(148, 163, 184, 0.22);
+    --tone-neutral-ink: #a9b6c8;
+
+    --chart-grid: rgba(148, 163, 184, 0.16);
+    --chart-axis: #6b7a90;
+    --chart-label: #9aa8bd;
+    --chart-track: rgba(148, 163, 184, 0.16);
+    --chart-tooltip-bg: #1b222e;
+    --chart-tooltip-border: rgba(148, 163, 184, 0.28);
+    --chart-empty: rgba(148, 163, 184, 0.2);
+    --chart-weekend: rgba(148, 163, 184, 0.3);
+
+    --funnel-1: #cde2fb;
+    --funnel-2: #9ec5f4;
+    --funnel-3: #6da7ec;
+    --funnel-4: #3987e5;
+    --funnel-5: #184f95;
+
+    --shadow: 0 18px 42px rgba(0, 0, 0, 0.5);
+    --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.38);
+    --overlay: rgba(3, 6, 12, 0.72);
+  }
 }
 
 * {
@@ -29,9 +311,28 @@
 }
 
 html {
+  /* Hairline grid over a soft vertical wash. Both layers key off tokens so the
+     texture survives the theme switch instead of being repainted per mode. */
   background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.04) 0 1px, transparent 1px) 0 0 / 32px 32px,
-    linear-gradient(180deg, #fbfdff 0%, #eef3f8 48%, #f8fafc 100%);
+    linear-gradient(135deg, var(--grid-line) 0 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--page-wash);
+}
+
+:root {
+  --grid-line: rgba(15, 23, 42, 0.04);
+  --page-wash: linear-gradient(180deg, #fbfdff 0%, #eef3f8 48%, #f8fafc 100%);
+}
+
+:root[data-theme="dark"] {
+  --grid-line: rgba(148, 163, 184, 0.05);
+  --page-wash: linear-gradient(180deg, #0b0e14 0%, #10151d 48%, #0d1119 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --grid-line: rgba(148, 163, 184, 0.05);
+    --page-wash: linear-gradient(180deg, #0b0e14 0%, #10151d 48%, #0d1119 100%);
+  }
 }
 
 body {
@@ -96,17 +397,49 @@ a:focus-visible {
   min-height: 100vh;
   color: var(--ink);
   background:
-    linear-gradient(180deg, rgba(238, 243, 248, 0.92), rgba(248, 250, 252, 0.98)),
-    linear-gradient(135deg, rgba(15, 23, 42, 0.04) 0 1px, transparent 1px) 0 0 / 30px 30px;
+    var(--shell-wash),
+    linear-gradient(135deg, var(--grid-line) 0 1px, transparent 1px) 0 0 / 30px 30px;
   font-family: "Manrope", "Segoe UI", sans-serif;
+}
+
+:root {
+  --shell-wash: linear-gradient(180deg, rgba(238, 243, 248, 0.92), rgba(248, 250, 252, 0.98));
+  --header-wash: linear-gradient(
+    135deg,
+    rgba(23, 55, 86, 0.98),
+    rgba(18, 83, 80, 0.96) 58%,
+    rgba(73, 45, 92, 0.94)
+  );
+}
+
+:root[data-theme="dark"] {
+  --shell-wash: linear-gradient(180deg, rgba(13, 17, 25, 0.92), rgba(10, 13, 19, 0.98));
+  /* Deepened rather than lightened — the header stays the darkest plane in both
+     themes so the tab strip keeps reading as chrome above the content. */
+  --header-wash: linear-gradient(
+    135deg,
+    rgba(13, 30, 48, 0.98),
+    rgba(10, 46, 45, 0.96) 58%,
+    rgba(42, 25, 54, 0.94)
+  );
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --shell-wash: linear-gradient(180deg, rgba(13, 17, 25, 0.92), rgba(10, 13, 19, 0.98));
+    --header-wash: linear-gradient(
+      135deg,
+      rgba(13, 30, 48, 0.98),
+      rgba(10, 46, 45, 0.96) 58%,
+      rgba(42, 25, 54, 0.94)
+    );
+  }
 }
 
 .tracker-header {
   padding: 22px 28px 0;
   color: #fff;
-  background:
-    linear-gradient(135deg, rgba(23, 55, 86, 0.98), rgba(18, 83, 80, 0.96) 58%, rgba(73, 45, 92, 0.94)),
-    #173756;
+  background: var(--header-wash), #173756;
   box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22);
 }
 
