@@ -1012,29 +1012,29 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                   onClick={()=>setDetailId(app.id)}
                   onKeyDown={e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); setDetailId(app.id); } }}
                   className="application-card"
-                  style={{ background:"#fff", borderRadius:13, padding:"14px 18px", marginBottom:9, border:`1.5px solid ${isOverdue?"#FDE68A":warningSoon?"#FED7AA":"#E5E7EB"}`, boxShadow:"0 1px 4px rgba(0,0,0,0.05)", cursor:"pointer", transition:"box-shadow 0.15s ease, transform 0.15s ease" }}>
-                  <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
-                    <div style={{ flex:1 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
-                        <span style={{ fontWeight:700, fontSize:15, color:"#111827", fontFamily:"Georgia,serif" }}>{app.company}</span>
+                  data-flag={isOverdue ? "overdue" : warningSoon ? "ghost-risk" : undefined}>
+                  <div className="application-card__top">
+                    <div className="application-card__main">
+                      <div className="application-card__titles">
+                        <span className="application-card__company">{app.company}</span>
                         <Badge status={app.status} interviewStage={app.interviewStage}/>
-                        {app.interviewStage && !["Rejected","Withdrawn","Ghosted"].includes(app.status) && <span style={{ fontSize:11, color:"#8B5CF6", fontWeight:600, background:"#F5F3FF", padding:"2px 8px", borderRadius:10, border:"1px solid #DDD6FE" }}>{app.interviewStage}</span>}
-                        {isOverdue&&<span style={{ fontSize:10, color:"#F59E0B", fontWeight:700 }}>🔔 FOLLOW-UP DUE</span>}
-                        {isOverdue && app.followUpStatus && (() => { const fs=FOLLOWUP_STATUS[app.followUpStatus]; return <span style={{ fontSize:10, fontWeight:700, color:fs.color, background:fs.bg, border:`1px solid ${fs.border}`, padding:"1px 7px", borderRadius:10 }}>{fs.emoji} {fs.label}</span>; })()}
-                        {warningSoon&&<span style={{ fontSize:10, color:"#EA580C", fontWeight:700 }}>⏳ {dLeft}d to ghost</span>}
-                        {app.autoGhosted&&<span style={{ fontSize:10, color:"#9CA3AF", fontWeight:600 }}>auto-ghosted</span>}
+                        {app.interviewStage && !["Rejected","Withdrawn","Ghosted"].includes(app.status) && <span className="stage-pill">{app.interviewStage}</span>}
+                        {isOverdue&&<span className="inline-flag inline-flag--overdue"><span aria-hidden="true">🔔 </span>FOLLOW-UP DUE</span>}
+                        {isOverdue && app.followUpStatus && (() => { const fs=FOLLOWUP_STATUS[app.followUpStatus]; return <span className="status-badge" data-status={fs.statusToken}><span aria-hidden="true">{fs.emoji}</span> {fs.label}</span>; })()}
+                        {warningSoon&&<span className="inline-flag inline-flag--risk"><span aria-hidden="true">⏳ </span>{dLeft}d to ghost</span>}
+                        {app.autoGhosted&&<span className="inline-flag inline-flag--muted">auto-ghosted</span>}
                       </div>
-                      <p style={{ margin:"3px 0 0", fontSize:12, color:"#6B7280" }}>{app.role}{app.location?` · ${app.location}`:""}{app.source?` · ${app.source}`:""} · Applied {app.dateApplied}{app.hiringManager?` · ${app.hiringManager}`:""}</p>
+                      <p className="application-card__meta">{app.role}{app.location?` · ${app.location}`:""}{app.source?` · ${app.source}`:""} · Applied {app.dateApplied}{app.hiringManager?` · ${app.hiringManager}`:""}</p>
                     </div>
-                    <div style={{ display:"flex", gap:6 }} onClick={e=>e.stopPropagation()}>
-                      <select value={app.status} onChange={e=>handleStatusChange(app.id,e.target.value)} style={{ padding:"5px 8px", border:"1.5px solid #E5E7EB", borderRadius:7, fontSize:11, cursor:"pointer", fontFamily:"inherit", background:"#F9FAFB" }}>
+                    <div className="application-card__actions" onClick={e=>e.stopPropagation()}>
+                      <select className="status-select" aria-label={`Change status for ${app.company}`} value={app.status} onChange={e=>handleStatusChange(app.id,e.target.value)}>
                         {Object.keys(STATUS_CONFIG).map(s=><option key={s} value={s}>{s}</option>)}
                       </select>
-                      <button onClick={()=>openEdit(app.id)} style={{ padding:"5px 11px", background:"#EFF6FF", color:"#1F4E79", border:"1.5px solid #BFDBFE", borderRadius:7, cursor:"pointer", fontSize:11, fontWeight:700 }}>Edit</button>
-                      <button onClick={()=>setDeleteConfirmId(app.id)} style={{ padding:"5px 11px", background:"#FEF2F2", color:"#EF4444", border:"1.5px solid #FECACA", borderRadius:7, cursor:"pointer", fontSize:11, fontWeight:700 }}>✕</button>
+                      <button type="button" className="chip-button chip-button--accent" onClick={()=>openEdit(app.id)}>Edit</button>
+                      <button type="button" className="chip-button chip-button--danger" aria-label={`Remove ${app.company}`} onClick={()=>setDeleteConfirmId(app.id)}>Remove</button>
                     </div>
                   </div>
-                  {app.notes&&<p style={{ margin:"7px 0 0", fontSize:11, color:"#9CA3AF", fontStyle:"italic", borderTop:"1px solid #F3F4F6", paddingTop:6 }}>📝 {app.notes}</p>}
+                  {app.notes&&<p className="application-card__notes"><span aria-hidden="true">📝 </span>{app.notes}</p>}
                 </div>
               );
             })}
