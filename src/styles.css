@@ -2563,3 +2563,800 @@ a:focus-visible {
   flex-wrap: wrap;
   align-items: center;
 }
+
+/* ---------------------------------------------------------------------------
+   Modal
+   --------------------------------------------------------------------------- */
+
+.modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--overlay);
+  backdrop-filter: blur(6px);
+  animation: modalFade 0.16s ease;
+}
+
+.modal-panel {
+  width: 100%;
+  max-width: 660px;
+  max-height: 92vh;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--card-solid);
+  box-shadow: var(--shadow);
+  outline: none;
+  animation: modalRise 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.modal-header {
+  padding: 20px 26px 12px;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.modal-header__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.modal-title {
+  margin: 0;
+  color: var(--accent-strong);
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.modal-subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.modal-warning {
+  margin: 6px 0 0;
+  color: var(--tone-risk-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 16px 26px;
+}
+
+.modal-body--flush {
+  padding: 16px 26px 0;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 12px 26px 20px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 8px 26px 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.kv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+}
+
+.kv-item--full {
+  grid-column: 1 / -1;
+}
+
+.kv-label {
+  margin-bottom: 2px;
+  color: var(--muted-soft);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.kv-value {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kv-link {
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kv-note {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.history-item {
+  padding: 8px 10px;
+  border: 1px solid var(--tone-neutral-border);
+  border-radius: var(--radius);
+  background: var(--tone-neutral-bg);
+}
+
+.history-item__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.history-item__date {
+  color: var(--muted);
+}
+
+.history-item__note {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Form field primitives — focus styling lives here rather than in JS event
+   handlers, so it responds to keyboard focus correctly. */
+.field {
+  margin-bottom: 13px;
+}
+
+.field__label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.field__required {
+  color: var(--danger);
+}
+
+.field__control {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius);
+  background: var(--field-bg);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 140ms ease;
+}
+
+.field__control:focus {
+  border-color: var(--accent);
+}
+
+.field__control:disabled {
+  background: var(--surface-sunken);
+  color: var(--muted-soft);
+}
+
+select.field__control {
+  cursor: pointer;
+}
+
+textarea.field__control {
+  resize: vertical;
+}
+
+.field__split {
+  display: flex;
+  gap: 6px;
+}
+
+.field__split select {
+  flex-shrink: 0;
+  width: auto;
+}
+
+.form-error {
+  margin-top: 4px;
+  padding: 9px 14px;
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.modal-button {
+  padding: 9px 20px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.modal-button--primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(31, 78, 121, 0.3);
+}
+
+.modal-button--secondary {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--status-applied-border);
+}
+
+.modal-button--neutral {
+  background: var(--surface-sunken);
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.modal-button--danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  background: var(--tone-neutral-bg);
+}
+
+.shortcut-row span {
+  color: var(--tone-neutral-ink);
+  font-size: 13px;
+}
+
+.shortcut-row kbd {
+  padding: 3px 9px;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--card-solid);
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+   Toast
+   --------------------------------------------------------------------------- */
+
+.toast-region {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  background: var(--accent-strong);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.2s ease;
+}
+
+.toast--error {
+  background: var(--danger);
+}
+
+.toast__action {
+  padding: 4px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.toast__action:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.tracker-footer {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 0 16px 20px;
+  color: var(--muted-soft);
+  font-size: 12px;
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modalFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Analytics primitives
+   --------------------------------------------------------------------------- */
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.metric-tile {
+  padding: 16px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+}
+
+.metric-tile__icon {
+  font-size: 20px;
+}
+
+.metric-tile__value {
+  margin: 4px 0 2px;
+  color: var(--m-ink, var(--accent));
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.metric-tile__label {
+  color: var(--muted-soft);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.health-tile {
+  padding: 12px 14px;
+  border: 1px solid var(--tone-neutral-border);
+  border-radius: var(--radius);
+  background: var(--tone-neutral-bg);
+}
+
+.health-tile__value {
+  color: var(--m-ink, var(--accent));
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.health-tile__label {
+  margin-top: 2px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.health-tile__note {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.score-value {
+  color: var(--m-ink, var(--accent));
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.score-max {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Meter rows — the repeated "label / value / track" pattern in analytics. */
+.meter {
+  margin-bottom: 10px;
+}
+
+.meter__head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.meter__label {
+  color: var(--ink-soft);
+}
+
+.meter__value {
+  color: var(--m-ink, var(--accent));
+}
+
+.meter__track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--chart-track);
+}
+
+.meter__fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--m-ink, var(--accent));
+  transition: width 240ms ease;
+}
+
+.meter__track--tall {
+  height: 10px;
+  border-radius: var(--radius-pill);
+}
+
+.meter__track--tall .meter__fill {
+  border-radius: var(--radius-pill);
+}
+
+.rank-row {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.rank-row__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.rank-row__label {
+  color: var(--ink-soft);
+}
+
+.rank-row__total {
+  color: var(--accent-ink);
+}
+
+.rank-row__stats {
+  margin-top: 5px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.gap-group {
+  margin-bottom: 12px;
+}
+
+.gap-group__head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  color: var(--m-ink, var(--accent));
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.gap-group__item {
+  padding: 5px 0;
+  border-top: 1px solid var(--line-faint);
+  color: var(--tone-neutral-ink);
+  font-size: 12px;
+}
+
+.chart-empty {
+  padding-top: 40px;
+  color: var(--muted-soft);
+  font-size: 12px;
+  text-align: center;
+}
+
+.suspense-fallback {
+  padding: 40px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.loading-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+}
+
+.loading-shell p {
+  color: var(--muted);
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 15px;
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive
+
+   The dashboard previously had no breakpoints at all: the split grids held two
+   columns down to 320px and the header actions never wrapped. These collapse
+   the layout in stages rather than all at once, so tablet widths keep the
+   two-column reading that makes the dashboard scannable.
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 1024px) {
+  .dash-grid--split,
+  .dash-grid--lead {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tracker-header {
+    padding: 18px 20px 0;
+  }
+
+  .tracker-main {
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tracker-header__top {
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .tracker-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* The tab strip becomes a horizontal scroller rather than wrapping to two
+     rows, which would push content below the fold on a phone. */
+  .tracker-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tracker-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tracker-tab {
+    flex: 0 0 auto;
+  }
+
+  .form-grid,
+  .kv-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-body--flush {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .modal-footer,
+  .modal-actions {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .toast-region {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+  }
+
+  .toast {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .tracker-title {
+    font-size: 1.42rem;
+  }
+
+  .tracker-main {
+    padding: 16px 12px;
+  }
+
+  .dash-grid,
+  .dash-grid--auto,
+  .dash-grid--wide,
+  .dash-grid--tight {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .status-filter-grid {
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  }
+
+  .search-toolbar {
+    flex-direction: column;
+  }
+
+  .search-input,
+  .search-select {
+    width: 100%;
+  }
+
+  /* Row actions move under the record instead of squeezing beside it. */
+  .application-card__top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .application-card__actions {
+    justify-content: flex-start;
+  }
+
+  .status-select {
+    flex: 1;
+  }
+
+  .rank-row__stats {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .modal-footer,
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .modal-button {
+    width: 100%;
+  }
+
+  .section-card {
+    padding: 15px;
+  }
+
+  .banner {
+    padding: 12px 14px;
+  }
+}
+
+/* Honour the OS motion setting across every animated surface, not just cards. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .application-card:hover,
+  .action-tile:hover,
+  .app-button:hover,
+  .icon-button:hover,
+  .theme-toggle:hover,
+  .tracker-tab:hover {
+    transform: none;
+  }
+}
+
+/* Forced-colors (Windows high contrast): let the OS palette through and keep
+   selected states legible, since our tinted backgrounds are dropped there. */
+@media (forced-colors: active) {
+  .status-badge,
+  .chip-button,
+  .status-filter,
+  .action-tile,
+  .application-card {
+    border: 1px solid CanvasText;
+  }
+
+  .status-filter[aria-pressed="true"],
+  .chip-button[aria-pressed="true"],
+  .filter-toggle[aria-pressed="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+  }
+}
+
+@media print {
+  .tracker-header,
+  .tracker-actions,
+  .toast-region,
+  .application-card__actions,
+  .search-toolbar,
+  .filter-row {
+    display: none !important;
+  }
+
+  .tracker-shell,
+  html {
+    background: #fff;
+  }
+
+  .section-card,
+  .application-card {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+}
