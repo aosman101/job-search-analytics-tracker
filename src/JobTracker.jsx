@@ -605,8 +605,14 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const interviewQueue = metrics.interviewQueue;
   const atRiskApps = metrics.atRiskApps;
   const freshThisWeek = metrics.freshThisWeek;
-  const appliedToday = apps.filter(a => a.dateApplied === today).length;
   const activeTabMeta = TABS.find(tab => tab.id === activeTab) || TABS[0];
+
+  // Follow-ups the user hasn't cleared from the banner this session. Derived
+  // once because four separate call sites were recomputing the same filter.
+  const visibleFollowUps = useMemo(
+    () => dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)),
+    [dueFollowUps, dismissedFollowUps],
+  );
   const countTopValues = (key) => Object.entries(apps.reduce((acc, app) => {
     const value = app[key]?.trim();
     if (!value) return acc;
@@ -621,11 +627,9 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     : interviewQueue.length > 0
       ? `You have ${interviewQueue.length} active interview or late-stage application${interviewQueue.length !== 1 ? "s" : ""} in play.`
       : `You have ${activeApplications} active application${activeApplications !== 1 ? "s" : ""} in motion. Keep the pipeline current at a pace that works for you.`;
-  const todayBannerTone = todayIsWeekend
-    ? { background: "#F3F4F6", border: "#E5E7EB", text: "#6B7280", badgeBackground: "#FFFFFF", badgeColor: "#6B7280", badgeBorder: "#E5E7EB" }
-    : todayCount > 0
-      ? { background: "#EFF6FF", border: "#BFDBFE", text: "#1E40AF", badgeBackground: "#DBEAFE", badgeColor: "#1D4ED8", badgeBorder: "#93C5FD" }
-      : { background: "#F8FAFC", border: "#E2E8F0", text: "#475569", badgeBackground: "#FFFFFF", badgeColor: "#64748B", badgeBorder: "#CBD5E1" };
+  // "active" only when there is genuine activity to reflect; the weekend and
+  // idle states both stay neutral so the banner never nags.
+  const todayBannerTone = !todayIsWeekend && todayCount > 0 ? "active" : "neutral";
   const todayBannerMessage = todayIsWeekend
     ? (todayCount > 0
       ? `Weekend check-in: ${todayCount} application${todayCount !== 1 ? "s" : ""} logged today.`
@@ -644,9 +648,13 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const detailApp = detailId !== null ? appById(detailId) : null;
   const deleteApp = deleteConfirmId !== null ? appById(deleteConfirmId) : null;
 
-  if (loading) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F0F4F8"}}><p style={{color:"#6B7280",fontSize:15,fontFamily:"Georgia,serif"}}>Loading your tracker…</p></div>;
+  if (loading) return <div className="loading-shell"><p>Loading your tracker…</p></div>;
 
   const StorageIcon = storageHealth === "error" ? AlertTriangle : storageHealth === "warn" ? Database : CheckCircle2;
+  // The control reflects the stored preference, so "system" stays visible as a
+  // distinct state rather than masquerading as whichever theme it resolved to.
+  const ThemeIcon = themePreference === "light" ? Sun : themePreference === "dark" ? Moon : MonitorIcon;
+  const themeLabel = themePreference === "system" ? `System (${resolvedTheme})` : themePreference === "light" ? "Light" : "Dark";
 
   return (
     <div className="tracker-shell">
@@ -670,7 +678,10 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                   Lock
                 </button>
               )}
-              <div
+              {/* Was a div with onClick — unreachable by keyboard despite being
+                  the quickest route to a backup. */}
+              <button
+                type="button"
                 className={`storage-pill storage-pill--${storageHealth}`}
                 onClick={handleExport}
                 title={`${storageBackend} · ${storageMessage}. Click to export backup.`}
@@ -679,11 +690,20 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 <span>
                   {storageBackend} · {storageMessage}
                 </span>
-              </div>
+              </button>
               <div className="icon-button-group">
                 <button className="icon-button" onClick={handleExport} title="Export backup" aria-label="Export backup"><Download size={16} aria-hidden="true" /></button>
                 <button className="icon-button" onClick={handleImport} title="Import backup" aria-label="Import backup"><Upload size={16} aria-hidden="true" /></button>
                 <button className="icon-button" onClick={()=>setShortcutsOpen(true)} title="Keyboard shortcuts (press ?)" aria-label="Show keyboard shortcuts"><Keyboard size={16} aria-hidden="true" /></button>
+                <button
+                  type="button"
+                  className="theme-toggle"
+                  onClick={cycleTheme}
+                  title={`Theme: ${themeLabel}. Click to change.`}
+                  aria-label={`Change theme. Current setting: ${themeLabel}`}
+                >
+                  <ThemeIcon size={16} aria-hidden="true" />
+                </button>
               </div>
               <button onClick={openNewApplication} className="app-button app-button--primary">
                 <Plus size={16} aria-hidden="true" />
@@ -726,26 +746,20 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         className="tracker-main"
       >
 
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(260px, 0.8fr)", gap: 14, marginBottom: 16 }}>
-          <SectionCard
-            title={activeTabMeta.label}
-            subtitle={activeTabMeta.description}
-            style={{ background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)" }}
-          >
-            <p style={{ margin: 0, color: "#475569", fontSize: 13, lineHeight: 1.7 }}>
-              {homeInsight}
-            </p>
+        <div className="dash-grid dash-grid--split">
+          <SectionCard title={activeTabMeta.label} subtitle={activeTabMeta.description}>
+            <p className="section-lede">{homeInsight}</p>
           </SectionCard>
           <SectionCard title="Today" subtitle="Quick pulse on the search">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            <div className="pulse-grid">
               {[
-                { label: "Applied", value: appliedToday, color: "#3B82F6" },
-                { label: "Due", value: dueFollowUps.length, color: "#F59E0B" },
-                { label: "Interviews", value: interviewQueue.length, color: "#8B5CF6" },
+                { label: "Applied", value: todayCount, token: "var(--status-applied)" },
+                { label: "Due", value: dueFollowUps.length, token: "var(--status-followup)" },
+                { label: "Interviews", value: interviewQueue.length, token: "var(--status-interview)" },
               ].map((item) => (
-                <div key={item.label} style={{ background: "#F8FAFC", borderRadius: 12, padding: "10px 8px", textAlign: "center" }}>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: item.color, fontFamily: "Georgia,serif" }}>{item.value}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", letterSpacing: "0.06em" }}>{item.label.toUpperCase()}</div>
+                <div key={item.label} className="pulse-item" style={{ "--pulse-ink": item.token }}>
+                  <div className="pulse-item__value">{item.value}</div>
+                  <div className="pulse-item__label">{item.label}</div>
                 </div>
               ))}
             </div>
@@ -753,50 +767,40 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         </div>
 
         {ghostedBanner.length > 0 && (
-          <div style={{ background: "#F9FAFB", border: "1.5px solid #E5E7EB", borderRadius: 12, padding: "12px 18px", marginBottom: 14 }}>
-            <p style={{ margin: 0, fontWeight: 700, color: "#6B7280", fontSize: 13 }}>👻 {ghostedBanner.length} application{ghostedBanner.length>1?"s have":" has"} been auto-marked as Ghosted (no response after {GHOST_DAYS} days):</p>
-            {ghostedBanner.map((a,i) => <p key={a.id || i} style={{ margin:"3px 0 0", color:"#9CA3AF", fontSize:12 }}>→ <strong>{a.company}</strong> — {a.role} (applied {a.dateApplied})</p>)}
-            <button onClick={() => setGhostedBanner([])} style={{ marginTop:8, fontSize:11, color:"#9CA3AF", background:"none", border:"none", cursor:"pointer", padding:0 }}>Dismiss</button>
+          <div className="banner">
+            <div>
+              <p className="banner__title">
+                <span aria-hidden="true">👻 </span>
+                {ghostedBanner.length} application{ghostedBanner.length !== 1 ? "s have" : " has"} been auto-marked as Ghosted (no response after {GHOST_DAYS} days):
+              </p>
+              {ghostedBanner.map((a, i) => (
+                <p key={a.id || i} className="banner__line">→ <strong>{a.company}</strong> — {a.role} (applied {a.dateApplied})</p>
+              ))}
+              <button type="button" className="banner__dismiss" onClick={() => setGhostedBanner([])}>Dismiss</button>
+            </div>
           </div>
         )}
 
-        {dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).length > 0 && activeTab !== "Pipeline" && (
-          <div style={{ background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 12, padding: "12px 18px", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <p style={{ margin: 0, fontWeight: 700, color: "#92400E", fontSize: 13 }}>
-              🔔 {dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).length} follow-up{dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)).length > 1 ? "s are" : " is"} due.
+        {visibleFollowUps.length > 0 && activeTab !== "Pipeline" && (
+          <div className="banner" data-tone="warning">
+            <p className="banner__title">
+              <span aria-hidden="true">🔔 </span>
+              {visibleFollowUps.length} follow-up{visibleFollowUps.length !== 1 ? "s are" : " is"} due.
             </p>
-            <button onClick={() => setActiveTab("Pipeline")} style={{ padding: "8px 14px", background: "#fff", color: "#92400E", border: "1.5px solid #FDE68A", borderRadius: 9, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+            <button type="button" className="banner__count" onClick={() => setActiveTab("Pipeline")}>
               Open Pipeline
             </button>
           </div>
         )}
 
-        <div style={{
-          background: todayBannerTone.background,
-          border: `1.5px solid ${todayBannerTone.border}`,
-          borderRadius:12, padding:"12px 18px", marginBottom:18,
-          display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12
-        }}>
+        <div className="banner" data-tone={todayBannerTone}>
           <div>
-            <p style={{ margin:0, fontWeight:700, color:todayBannerTone.text, fontSize:13 }}>
-              <span style={{ marginRight: 8 }} aria-hidden="true">{todayIsWeekend ? "🛋️" : "📆"}</span>{todayBannerMessage}
+            <p className="banner__title">
+              <span aria-hidden="true">{todayIsWeekend ? "🛋️ " : "📆 "}</span>{todayBannerMessage}
             </p>
-            <p style={{ margin:"4px 0 0", color:"#64748B", fontSize:12 }}>
-              {todayBannerHelper}
-            </p>
+            <p className="banner__helper">{todayBannerHelper}</p>
           </div>
-          <div style={{
-            padding:"7px 12px",
-            borderRadius:999,
-            background: todayBannerTone.badgeBackground,
-            border: `1px solid ${todayBannerTone.badgeBorder}`,
-            color: todayBannerTone.badgeColor,
-            fontSize:12,
-            fontWeight:700,
-            whiteSpace:"nowrap",
-          }}>
-            {todayCount} logged today
-          </div>
+          <div className="banner__count">{todayCount} logged today</div>
         </div>
 
         {activeTab === "Home" && (
