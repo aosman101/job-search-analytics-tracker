@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <meta name="theme-color" content="#173756" />
+    <meta name="color-scheme" content="light dark" />
     <meta
       name="description"
       content="Job Tracker Analytics: a local-first React dashboard for applications, follow-ups, pipeline management, and analytics."
@@ -19,10 +20,46 @@
     <meta name="twitter:title" content="Job Tracker Analytics" />
     <meta name="twitter:description" content="A personal dashboard for applications, pipeline management, and analytics." />
     <meta name="twitter:image" content="https://aosman101.github.io/job-search-analytics-tracker/social-preview.png" />
+
+    <!-- Fonts fetched in parallel with the stylesheet. An @import inside the CSS
+         would queue the font request behind it and delay first paint. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+    />
+
     <title>Job Tracker Analytics</title>
+
+    <!-- Resolves the theme before first paint so a dark-mode user never sees a
+         white flash. Mirrors resolveTheme() in src/theme.js; kept inline and
+         dependency-free because it must run ahead of the bundle. -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("adil-job-tracker-theme");
+          var pref = stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+          var resolved =
+            pref === "system"
+              ? window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light"
+              : pref;
+          document.documentElement.setAttribute("data-theme", resolved);
+          document.documentElement.style.colorScheme = resolved;
+          if (resolved === "dark") {
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute("content", "#0b0e14");
+          }
+        } catch (e) {
+          /* Blocked storage just means we fall through to the CSS default. */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
-  </html>
+</html>
