@@ -1223,55 +1223,63 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
           const dLeft=daysUntilGhost(a);
           return (
             <>
-              <div style={{padding:"20px 26px 12px",borderBottom:"1px solid #F3F4F6"}}>
-                <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                  <h2 style={{margin:0,fontSize:18,color:"#1F4E79",fontFamily:"Georgia,serif"}}>{a.company}</h2>
+              <div className="modal-header">
+                <div className="modal-header__row">
+                  <h2 className="modal-title">{a.company}</h2>
                   <Badge status={a.status} interviewStage={a.interviewStage}/>
-                  {a.interviewStage && !["Rejected","Withdrawn","Ghosted"].includes(a.status) && <span style={{fontSize:11,color:"#8B5CF6",fontWeight:600,background:"#F5F3FF",padding:"2px 8px",borderRadius:10,border:"1px solid #DDD6FE"}}>{a.interviewStage}</span>}
+                  {a.interviewStage && !["Rejected","Withdrawn","Ghosted"].includes(a.status) && <span className="stage-pill">{a.interviewStage}</span>}
                 </div>
-                <p style={{margin:"4px 0 0",color:"#6B7280",fontSize:13}}>{a.role}{a.location?` · ${a.location}`:""}</p>
-                {dLeft!==null&&dLeft<=7&&dLeft>0&&<p style={{margin:"6px 0 0",fontSize:12,color:"#EA580C",fontWeight:600}}>⏳ Auto-ghosted in {dLeft} day{dLeft!==1?"s":""} if no update</p>}
+                <p className="modal-subtitle">{a.role}{a.location?` · ${a.location}`:""}</p>
+                {dLeft!==null&&dLeft<=7&&dLeft>0&&<p className="modal-warning"><span aria-hidden="true">⏳ </span>Auto-ghosted in {dLeft} day{dLeft!==1?"s":""} if no update</p>}
               </div>
-              <div style={{padding:"16px 26px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 24px"}}>
+              <div className="modal-body kv-grid">
                 {[["Date Applied",a.dateApplied],["Source",a.source||"—"],["Follow-Up",a.followUpDate||"—"],["Hiring Manager",a.hiringManager||"—"],["Days Since Applied",daysSince(a.dateApplied)+" days"]].map(([l,v])=>(
                   <div key={l}>
-                    <div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:"0.06em",marginBottom:2}}>{l.toUpperCase()}</div>
-                    <div style={{fontSize:13,color:"#111827",fontWeight:600}}>{v}</div>
+                    <div className="kv-label">{l}</div>
+                    <div className="kv-value">{v}</div>
                   </div>
                 ))}
-                {a.jobUrl&&<div style={{gridColumn:"1/-1"}}><div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:"0.06em",marginBottom:2}}>JOB POSTING</div><a href={a.jobUrl} target="_blank" rel="noreferrer" style={{fontSize:13,color:"#1F4E79",fontWeight:600}}>Open ↗</a></div>}
-                {a.hmLinkedIn&&<div style={{gridColumn:"1/-1"}}><div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:"0.06em",marginBottom:2}}>HM LINKEDIN</div><a href={a.hmLinkedIn} target="_blank" rel="noreferrer" style={{fontSize:13,color:"#1F4E79",fontWeight:600}}>Open LinkedIn ↗</a></div>}
-                {a.followUpDate&&<div style={{gridColumn:"1/-1"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:"0.06em",marginBottom:6}}>FOLLOW-UP STATUS</div>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {a.jobUrl&&<div className="kv-item--full"><div className="kv-label">Job Posting</div><a href={a.jobUrl} target="_blank" rel="noreferrer" className="kv-link">Open ↗</a></div>}
+                {a.hmLinkedIn&&<div className="kv-item--full"><div className="kv-label">HM LinkedIn</div><a href={a.hmLinkedIn} target="_blank" rel="noreferrer" className="kv-link">Open LinkedIn ↗</a></div>}
+                {a.followUpDate&&<div className="kv-item--full">
+                  <div className="kv-label">Follow-Up Status</div>
+                  <div className="chip-row">
                     {Object.entries(FOLLOWUP_STATUS).filter(([k])=>k!=="").map(([k,fs])=>(
-                      <button key={k} onClick={()=>handleFollowUpStatus(a.id,k)} style={{padding:"5px 12px",background:a.followUpStatus===k?fs.color:fs.bg,color:a.followUpStatus===k?"#fff":fs.color,border:`1.5px solid ${fs.border}`,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700}}>
-                        {fs.emoji} {fs.label}
+                      <button
+                        key={k}
+                        type="button"
+                        className="chip-button"
+                        data-status={fs.statusToken}
+                        style={{ "--c-ink": "var(--s-ink)", "--c-bg": "var(--s-bg)", "--c-border": "var(--s-border)" }}
+                        aria-pressed={a.followUpStatus===k}
+                        onClick={()=>handleFollowUpStatus(a.id,k)}
+                      >
+                        <span aria-hidden="true">{fs.emoji}</span> {fs.label}
                       </button>
                     ))}
                   </div>
                 </div>}
                 {Array.isArray(a.followUpHistory) && a.followUpHistory.length > 0 && (
-                  <div style={{gridColumn:"1/-1"}}>
-                    <div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:"0.06em",marginBottom:6}}>FOLLOW-UP HISTORY</div>
-                    <div style={{display:"grid",gap:6}}>
+                  <div className="kv-item--full">
+                    <div className="kv-label">Follow-Up History</div>
+                    <div className="stack">
                       {a.followUpHistory.slice(0, 5).map((item) => (
-                        <div key={item.id || `${item.date}-${item.method}`} style={{background:"#F8FAFC",border:"1px solid #E2E8F0",borderRadius:8,padding:"8px 10px"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap",fontSize:12,fontWeight:700,color:"#334155"}}>
+                        <div key={item.id || `${item.date}-${item.method}`} className="history-item">
+                          <div className="history-item__head">
                             <span>{item.method || "Follow-up"} · {item.outcome || "Recorded"}</span>
-                            <span style={{color:"#64748B"}}>{item.date}</span>
+                            <span className="history-item__date">{item.date}</span>
                           </div>
-                          {item.note && <div style={{marginTop:4,fontSize:12,color:"#64748B",lineHeight:1.5}}>{item.note}</div>}
+                          {item.note && <div className="history-item__note">{item.note}</div>}
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-                {a.notes&&<div style={{gridColumn:"1/-1"}}><div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",letterSpacing:"0.06em",marginBottom:4}}>NOTES</div><div style={{fontSize:13,color:"#374151",lineHeight:1.6,background:"#F9FAFB",borderRadius:8,padding:"10px 12px"}}>{a.notes}</div></div>}
+                {a.notes&&<div className="kv-item--full"><div className="kv-label">Notes</div><div className="kv-note">{a.notes}</div></div>}
               </div>
-              <div style={{padding:"8px 26px 20px",display:"flex",gap:10,justifyContent:"flex-end"}}>
-                <button onClick={()=>{setDetailId(null);openEdit(a.id);}} style={{padding:"9px 20px",background:"#EFF6FF",color:"#1F4E79",border:"1.5px solid #BFDBFE",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>Edit</button>
-                <button onClick={()=>setDetailId(null)} style={{padding:"9px 20px",background:"#1F4E79",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>Close</button>
+              <div className="modal-actions">
+                <button type="button" className="modal-button modal-button--secondary" onClick={()=>{setDetailId(null);openEdit(a.id);}}>Edit</button>
+                <button type="button" className="modal-button modal-button--primary" onClick={()=>setDetailId(null)}>Close</button>
               </div>
             </>
           );
@@ -1279,27 +1287,37 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
       </Modal>
 
       <Modal label="Confirm removal" open={deleteApp!==null} onClose={()=>setDeleteConfirmId(null)}>
-        <div style={{padding:26}}>
-          <h3 style={{margin:"0 0 10px",fontFamily:"Georgia,serif",color:"#111827"}}>Remove Application?</h3>
-          <p style={{margin:"0 0 20px",color:"#6B7280",fontSize:14}}>Permanently delete <strong>{deleteApp?.company}</strong>? This cannot be undone.</p>
-          <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
-            <button onClick={()=>setDeleteConfirmId(null)} style={{padding:"9px 20px",background:"#F3F4F6",color:"#374151",border:"none",borderRadius:9,cursor:"pointer",fontWeight:600,fontSize:13}}>Cancel</button>
-            <button onClick={()=>{ if (deleteConfirmId !== null) handleDelete(deleteConfirmId); }} style={{padding:"9px 20px",background:"#EF4444",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>Delete</button>
-          </div>
+        <div className="modal-header">
+          <h2 className="modal-title">Remove Application?</h2>
+          <p className="modal-subtitle">Permanently delete <strong>{deleteApp?.company}</strong>? You can undo this from the toast straight afterwards.</p>
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="modal-button modal-button--neutral" onClick={()=>setDeleteConfirmId(null)}>Cancel</button>
+          <button type="button" className="modal-button modal-button--danger" onClick={()=>{ if (deleteConfirmId !== null) handleDelete(deleteConfirmId); }}>Delete</button>
+        </div>
+      </Modal>
+
+      <Modal label="Confirm backup restore" open={importPrompt!==null} onClose={()=>setImportPrompt(null)}>
+        <div className="modal-header">
+          <h2 className="modal-title">Restore From Backup?</h2>
+          <p className="modal-subtitle">
+            This backup contains {importPrompt?.apps.length} application{importPrompt?.apps.length !== 1 ? "s" : ""} that all match records you already have.
+            Restoring replaces your current {apps.length} application{apps.length !== 1 ? "s" : ""}.
+          </p>
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="modal-button modal-button--neutral" onClick={()=>setImportPrompt(null)}>Cancel</button>
+          <button type="button" className="modal-button modal-button--primary" onClick={confirmImportRestore}>Replace All</button>
         </div>
       </Modal>
 
       {/* Live region stays mounted so screen readers reliably announce updates. */}
-      <div role="status" aria-live="polite" aria-atomic="true" style={{position:"fixed",bottom:24,right:24,zIndex:100}}>
+      <div role="status" aria-live="polite" aria-atomic="true" className="toast-region">
         {toast && (
-          <div style={{display:"flex",alignItems:"center",gap:14,background:toast.type==="error"?"#EF4444":"#1F4E79",color:"#fff",padding:"12px 20px",borderRadius:10,fontSize:13,fontWeight:600,boxShadow:"0 8px 24px rgba(0,0,0,0.2)",animation:"fadeIn 0.2s ease"}}>
-            <span>{toast.type==="error"?"⚠️ ":"✅ "}{toast.msg}</span>
+          <div className={`toast${toast.type==="error"?" toast--error":""}`}>
+            <span><span aria-hidden="true">{toast.type==="error"?"⚠️ ":"✅ "}</span>{toast.msg}</span>
             {toast.action && (
-              <button
-                type="button"
-                onClick={()=>{ toast.action.run(); }}
-                style={{background:"rgba(255,255,255,0.16)",color:"#fff",border:"1px solid rgba(255,255,255,0.35)",borderRadius:7,padding:"4px 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}
-              >
+              <button type="button" className="toast__action" onClick={()=>{ toast.action.run(); }}>
                 {toast.action.label}
               </button>
             )}
@@ -1308,10 +1326,10 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
       </div>
 
       <Modal label="Keyboard shortcuts" open={shortcutsOpen} onClose={()=>setShortcutsOpen(false)}>
-        <div style={{padding:"22px 26px 12px",borderBottom:"1px solid #F3F4F6"}}>
-          <h2 style={{margin:0,fontSize:18,color:"#1F4E79",fontFamily:"Georgia,serif"}}>⌨️ Keyboard Shortcuts</h2>
+        <div className="modal-header">
+          <h2 className="modal-title">Keyboard Shortcuts</h2>
         </div>
-        <div style={{padding:"16px 26px",display:"grid",gap:8}}>
+        <div className="modal-body stack">
           {[
             ["/", "Jump to search"],
             ["N", "New application"],
@@ -1320,28 +1338,16 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
             ["Esc", "Close a dialog, or clear active filters"],
             ["?", "Show this list"],
           ].map(([keys, description]) => (
-            <div key={keys} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,padding:"9px 12px",background:"#F8FAFC",borderRadius:9}}>
-              <span style={{fontSize:13,color:"#475569"}}>{description}</span>
-              <kbd style={{fontFamily:"ui-monospace, SFMono-Regular, Menlo, monospace",fontSize:12,fontWeight:700,color:"#0F172A",background:"#fff",border:"1.5px solid #E2E8F0",borderBottomWidth:3,borderRadius:6,padding:"3px 9px",whiteSpace:"nowrap"}}>{keys}</kbd>
+            <div key={keys} className="shortcut-row">
+              <span>{description}</span>
+              <kbd>{keys}</kbd>
             </div>
           ))}
         </div>
-        <div style={{padding:"4px 26px 20px",display:"flex",justifyContent:"flex-end"}}>
-          <button type="button" onClick={()=>setShortcutsOpen(false)} style={{padding:"9px 20px",background:"#1F4E79",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontWeight:700,fontSize:13}}>Close</button>
+        <div className="modal-actions">
+          <button type="button" className="modal-button modal-button--primary" onClick={()=>setShortcutsOpen(false)}>Close</button>
         </div>
       </Modal>
-
-      <style>{`
-        @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes modalFade{from{opacity:0}to{opacity:1}}
-        @keyframes modalRise{from{opacity:0;transform:translateY(12px) scale(0.985)}to{opacity:1;transform:translateY(0) scale(1)}}
-        .application-card:hover{box-shadow:0 6px 20px rgba(0,0,0,0.1) !important;transform:translateY(-1px)}
-        .application-card:focus-visible{outline:2px solid #1F4E79;outline-offset:2px}
-        @media (prefers-reduced-motion: reduce){
-          .application-card,[role="dialog"]{transition:none !important;animation:none !important}
-          .application-card:hover{transform:none}
-        }
-      `}</style>
     </div>
   );
 }
