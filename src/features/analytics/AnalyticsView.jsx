@@ -294,23 +294,23 @@ export default function AnalyticsView({ apps, theme }) {
         </SectionCard>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 14 }}>
+      <div className="dash-grid dash-grid--auto">
         <SectionCard title="Rejection by Stage" subtitle="Where rejections happen after application or interview.">
           {metrics.rejectedApps.length === 0 ? (
-            <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>No rejections logged yet.</p>
+            <p className="muted-note">No rejections logged yet.</p>
           ) : stageOrder.map((stage) => {
             const count = metrics.rejectionsByStage[stage] || 0;
             if (count === 0) return null;
             const pct = Math.round((count / metrics.rejectedApps.length) * 100);
-            const color = stage === "No Interview" ? "#9CA3AF" : "#EF4444";
+            const ink = stage === "No Interview" ? "var(--status-ghosted)" : "var(--status-rejected)";
             return (
-              <div key={stage} style={{ marginBottom: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                  <span style={{ color: "#374151" }}>{stage}</span>
-                  <span style={{ color }}>{count} ({pct}%)</span>
+              <div key={stage} className="meter" style={{ "--m-ink": ink }}>
+                <div className="meter__head">
+                  <span className="meter__label">{stage}</span>
+                  <span className="meter__value">{count} ({pct}%)</span>
                 </div>
-                <div style={{ background: "#F3F4F6", borderRadius: 6, height: 8, overflow: "hidden" }}>
-                  <div style={{ background: color, height: "100%", width: `${pct}%`, borderRadius: 6 }} />
+                <div className="meter__track">
+                  <div className="meter__fill" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             );
@@ -321,13 +321,13 @@ export default function AnalyticsView({ apps, theme }) {
           {agingBuckets.map((bucket) => {
             const pct = openApps.length > 0 ? Math.round((bucket.count / openApps.length) * 100) : 0;
             return (
-              <div key={bucket.label} style={{ marginBottom: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                  <span style={{ color: "#374151" }}>{bucket.label}</span>
-                  <span style={{ color: bucket.color }}>{bucket.count} ({pct}%)</span>
+              <div key={bucket.label} className="meter" style={{ "--m-ink": bucket.color }}>
+                <div className="meter__head">
+                  <span className="meter__label">{bucket.label}</span>
+                  <span className="meter__value">{bucket.count} ({pct}%)</span>
                 </div>
-                <div style={{ background: "#F3F4F6", borderRadius: 6, height: 8, overflow: "hidden" }}>
-                  <div style={{ background: bucket.color, height: "100%", width: `${pct}%`, borderRadius: 6 }} />
+                <div className="meter__track">
+                  <div className="meter__fill" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             );
@@ -335,70 +335,70 @@ export default function AnalyticsView({ apps, theme }) {
         </SectionCard>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 14 }}>
+      <div className="dash-grid dash-grid--auto">
         <SectionCard title="Role Outcome Quality" subtitle="Which role families are generating interviews, not just volume.">
           {metrics.roleOutcomes.length > 0 ? metrics.roleOutcomes.map((item) => (
-            <div key={item.label} style={{ borderBottom: "1px solid #F1F5F9", padding: "9px 0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13, fontWeight: 800 }}>
-                <span style={{ color: "#334155" }}>{item.label}</span>
-                <span style={{ color: "#1F4E79" }}>{item.total}</span>
+            <div key={item.label} className="rank-row">
+              <div className="rank-row__head">
+                <span className="rank-row__label">{item.label}</span>
+                <span className="rank-row__total">{item.total}</span>
               </div>
-              <div style={{ marginTop: 5, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, fontSize: 11, color: "#64748B" }}>
+              <div className="rank-row__stats">
                 <span>{item.responseRate}% response</span>
                 <span>{item.interviewRate}% interview</span>
                 <span>{item.active} active</span>
               </div>
             </div>
-          )) : <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>No role outcome data yet.</p>}
+          )) : <p className="muted-note">No role outcome data yet.</p>}
         </SectionCard>
 
         <SectionCard title="Location Outcome Quality" subtitle="Where the search is producing signal.">
           {metrics.locationOutcomes.length > 0 ? metrics.locationOutcomes.map((item) => (
-            <div key={item.label} style={{ borderBottom: "1px solid #F1F5F9", padding: "9px 0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13, fontWeight: 800 }}>
-                <span style={{ color: "#334155" }}>{item.label}</span>
-                <span style={{ color: "#1F4E79" }}>{item.total}</span>
+            <div key={item.label} className="rank-row">
+              <div className="rank-row__head">
+                <span className="rank-row__label">{item.label}</span>
+                <span className="rank-row__total">{item.total}</span>
               </div>
-              <div style={{ marginTop: 5, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, fontSize: 11, color: "#64748B" }}>
+              <div className="rank-row__stats">
                 <span>{item.responseRate}% response</span>
                 <span>{item.interviewRate}% interview</span>
                 <span>{item.active} active</span>
               </div>
             </div>
-          )) : <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>No location outcome data yet.</p>}
+          )) : <p className="muted-note">No location outcome data yet.</p>}
         </SectionCard>
 
         <SectionCard title="Source Outcome Quality" subtitle="Which application channels are worth doubling down on.">
           {metrics.sourceOutcomes.length > 0 ? metrics.sourceOutcomes.map((item) => (
-            <div key={item.label} style={{ borderBottom: "1px solid #F1F5F9", padding: "9px 0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13, fontWeight: 800 }}>
-                <span style={{ color: "#334155" }}>{item.label}</span>
-                <span style={{ color: "#1F4E79" }}>{item.total}</span>
+            <div key={item.label} className="rank-row">
+              <div className="rank-row__head">
+                <span className="rank-row__label">{item.label}</span>
+                <span className="rank-row__total">{item.total}</span>
               </div>
-              <div style={{ marginTop: 5, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, fontSize: 11, color: "#64748B" }}>
+              <div className="rank-row__stats">
                 <span>{item.responseRate}% response</span>
                 <span>{item.interviewRate}% interview</span>
                 <span>{item.active} active</span>
               </div>
             </div>
-          )) : <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>Add sources on applications to compare channels.</p>}
+          )) : <p className="muted-note">Add sources on applications to compare channels.</p>}
         </SectionCard>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 14 }}>
+      <div className="dash-grid dash-grid--auto">
         <SectionCard title="Workflow Gaps" subtitle="Open records that need housekeeping.">
           {[
-            { label: "No follow-up date", count: metrics.unscheduledFollowUps.length, color: "#3B82F6", items: metrics.unscheduledFollowUps },
-            { label: "Stale records", count: metrics.staleApps.length, color: "#64748B", items: metrics.staleApps },
-            { label: "Stalled interviews", count: metrics.stalledInterviews.length, color: "#8B5CF6", items: metrics.stalledInterviews },
+            { label: "No follow-up date", count: metrics.unscheduledFollowUps.length, ink: "var(--status-applied)", items: metrics.unscheduledFollowUps },
+            { label: "Stale records", count: metrics.staleApps.length, ink: "var(--muted)", items: metrics.staleApps },
+            { label: "Stalled interviews", count: metrics.stalledInterviews.length, ink: "var(--status-interview)", items: metrics.stalledInterviews },
           ].map((group) => (
-            <div key={group.label} style={{ marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 800, color: group.color, marginBottom: 6 }}>
+            <div key={group.label} className="gap-group" style={{ "--m-ink": group.ink }}>
+              <div className="gap-group__head">
                 <span>{group.label}</span>
                 <span>{group.count}</span>
               </div>
               {group.items.slice(0, 3).map((app) => (
-                <div key={app.id} style={{ fontSize: 12, color: "#475569", padding: "5px 0", borderTop: "1px solid #F1F5F9" }}>
+                <div key={app.id} className="gap-group__item">
                   <strong>{app.company}</strong> · {app.role}
                 </div>
               ))}
@@ -408,14 +408,14 @@ export default function AnalyticsView({ apps, theme }) {
 
         <SectionCard title="Follow-Up Effectiveness" subtitle="Completed follow-ups by channel.">
           {followUpByMethod.length === 0 ? (
-            <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>No follow-up history logged yet.</p>
+            <p className="muted-note">No follow-up history logged yet.</p>
           ) : (
             <ResponsiveContainer width="100%" height={190}>
               <BarChart data={followUpByMethod} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="method" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#F59E0B" radius={[5, 5, 0, 0]} name="Follow-ups" />
+                <XAxis dataKey="method" {...axisProps(t)} />
+                <YAxis {...axisProps(t)} allowDecimals={false} />
+                <Tooltip {...tooltipProps(t)} />
+                <Bar dataKey="count" fill={t["--status-followup"]} radius={[4, 4, 0, 0]} name="Follow-ups" />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -423,20 +423,20 @@ export default function AnalyticsView({ apps, theme }) {
 
         <SectionCard title="Role Concentration" subtitle="Where most applications are going.">
           {roleFocus.length > 0 ? roleFocus.map(([role, count]) => (
-            <div key={role} style={{ display: "flex", justifyContent: "space-between", gap: 12, borderBottom: "1px solid #F1F5F9", padding: "9px 0", fontSize: 13 }}>
-              <span style={{ color: "#334155", fontWeight: 700 }}>{role}</span>
-              <span style={{ color: "#1F4E79", fontWeight: 800 }}>{count}</span>
+            <div key={role} className="rank-row rank-row__head">
+              <span className="rank-row__label">{role}</span>
+              <span className="rank-row__total">{count}</span>
             </div>
-          )) : <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>No role data yet.</p>}
+          )) : <p className="muted-note">No role data yet.</p>}
         </SectionCard>
 
         <SectionCard title="Location Concentration" subtitle="Useful for spotting search-market focus.">
           {locationFocus.length > 0 ? locationFocus.map(([location, count]) => (
-            <div key={location} style={{ display: "flex", justifyContent: "space-between", gap: 12, borderBottom: "1px solid #F1F5F9", padding: "9px 0", fontSize: 13 }}>
-              <span style={{ color: "#334155", fontWeight: 700 }}>{location}</span>
-              <span style={{ color: "#1F4E79", fontWeight: 800 }}>{count}</span>
+            <div key={location} className="rank-row rank-row__head">
+              <span className="rank-row__label">{location}</span>
+              <span className="rank-row__total">{count}</span>
             </div>
-          )) : <p style={{ margin: 0, color: "#9CA3AF", fontSize: 13 }}>No location data yet.</p>}
+          )) : <p className="muted-note">No location data yet.</p>}
         </SectionCard>
       </div>
 
@@ -446,13 +446,13 @@ export default function AnalyticsView({ apps, theme }) {
           const pct = apps.length > 0 ? (count / apps.length) * 100 : 0;
           const cfg = STATUS_CONFIG[status];
           return (
-            <div key={status} style={{ marginBottom: 10 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                <span style={{ color: "#374151" }}>{cfg.emoji} {status}</span>
-                <span style={{ color: cfg.color }}>{count} ({Math.round(pct)}%)</span>
+            <div key={status} className="meter" data-status={status} style={{ "--m-ink": "var(--s-ink)" }}>
+              <div className="meter__head">
+                <span className="meter__label"><span aria-hidden="true">{cfg.emoji}</span> {status}</span>
+                <span className="meter__value">{count} ({Math.round(pct)}%)</span>
               </div>
-              <div style={{ background: "#F3F4F6", borderRadius: 6, height: 8, overflow: "hidden" }}>
-                <div style={{ background: cfg.color, height: "100%", width: `${pct}%`, borderRadius: 6 }} />
+              <div className="meter__track">
+                <div className="meter__fill" style={{ width: `${pct}%` }} />
               </div>
             </div>
           );
