@@ -101,6 +101,20 @@ function Modal({ open, onClose, label, children }) {
     };
   }, [open]);
 
+  // Escape must work even when focus has fallen out of the panel (e.g. the
+  // focused button became disabled), so it is caught at the document too.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDocKeyDown = (event) => {
+      if (event.key !== "Escape" || panelRef.current?.contains(event.target)) return;
+      onCloseRef.current();
+    };
+    document.addEventListener("keydown", onDocKeyDown);
+    return () => document.removeEventListener("keydown", onDocKeyDown);
+  }, [open]);
+
   // Escape closes; Tab cycles within the dialog instead of escaping to the page.
   const handleKeyDown = (event) => {
     if (event.key === "Escape") {

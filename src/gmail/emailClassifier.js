@@ -172,6 +172,23 @@ function firstMatch(patterns, texts, clean) {
 }
 
 /**
+ * LinkedIn confirmations lay the job out as a card: a "sent to <Company>"
+ * line, then the title, then "<Company> · <Location>".
+ */
+function parseLinkedInCard(text, company) {
+  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
+  const start = lines.findIndex((line) => /application was sent to/i.test(line));
+  if (start === -1) return {};
+  const role = cleanRole(lines[start + 1] || "");
+  const locationLine = lines.slice(start + 1, start + 4).find((line) => line.includes("·"));
+  const location = locationLine ? tidy(locationLine.split("·").slice(1).join("·")) : "";
+  return {
+    role: role && normalizeCompany(role) !== normalizeCompany(company) && !role.includes("·") ? role : "",
+    location,
+  };
+}
+
+/**
  * @param {{ id: string, subject: string, from: string, date: string, body: string, snippet?: string }} email
  * @returns {null | { type: "applied"|"rejected"|"interview", company: string, role: string, source: string, date: string, messageId: string, subject: string }}
  */
@@ -206,10 +223,13 @@ export function classifyEmail(email) {
 
   if (!company) return null;
 
+  const linkedIn = sender.domain.endsWith("linkedin.com") ? parseLinkedInCard(bodyHead, company) : {};
+
   return {
     type,
     company,
-    role,
+    role: role || linkedIn.role || "",
+    location: linkedIn.location || "",
     source: detectSource(sender.domain),
     date: email.date,
     messageId: email.id,

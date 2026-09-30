@@ -129,7 +129,7 @@ function createFromEvent(event, status, makeId, today) {
     id: makeId(),
     company: event.company,
     role: event.role || "Role not detected",
-    location: "",
+    location: event.location || "",
     source: event.source || "",
     dateApplied,
     status: "Applied",

@@ -3457,3 +3457,197 @@ textarea.field__control {
 .theme-toggle--onlight:hover {
   background: var(--accent-soft);
 }
+
+/* ---------------------------------------------------------------------------
+   Gmail sync
+   --------------------------------------------------------------------------- */
+
+.soft-button--icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.soft-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Status dot on the header mail button: green when connected, pulsing while
+   a sync runs. Paired with the tooltip and aria-label, never colour alone. */
+.gmail-button {
+  position: relative;
+}
+
+.gmail-button::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.35);
+}
+
+.gmail-button[data-state="on"]::after {
+  background: #4ade80;
+}
+
+.gmail-button[data-state="syncing"]::after {
+  background: #fbbf24;
+  animation: gmail-pulse 1s ease-in-out infinite;
+}
+
+@keyframes gmail-pulse {
+  50% { opacity: 0.35; }
+}
+
+.gmail-state {
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--status-ghosted);
+  background: var(--status-ghosted-bg);
+  border: 1px solid var(--status-ghosted-border);
+}
+
+.gmail-state[data-state="on"] {
+  color: var(--status-offer);
+  background: var(--status-offer-bg);
+  border-color: var(--status-offer-border);
+}
+
+.gmail-setup {
+  display: grid;
+  gap: 12px;
+}
+
+.gmail-setup__title {
+  margin: 0;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.gmail-setup__steps {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.gmail-setup__steps code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.gmail-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.gmail-sync-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gmail-sync-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.gmail-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gmail-toggle input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+
+.gmail-summary {
+  margin: 0;
+}
+
+.gmail-log {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.gmail-log__link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.gmail-log__link:hover {
+  border-color: var(--line-strong);
+}
+
+.gmail-log__text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gmail-log__when {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.inline-flag--email {
+  color: var(--tone-followup-ink);
+  font-weight: 700;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin,
+  .gmail-button[data-state="syncing"]::after {
+    animation: none;
+  }
+}

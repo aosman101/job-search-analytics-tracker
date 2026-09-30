@@ -10,7 +10,7 @@ describe("classifyEmail", () => {
       from: "LinkedIn <jobs-noreply@linkedin.com>",
       body: "Your application was sent to Monzo\nData Analyst\nMonzo · London",
     }));
-    expect(result).toMatchObject({ type: "applied", company: "Monzo", source: "LinkedIn" });
+    expect(result).toMatchObject({ type: "applied", company: "Monzo", role: "Data Analyst", location: "London", source: "LinkedIn" });
   });
 
   it("reads an Indeed confirmation", () => {
