@@ -90,8 +90,10 @@ export function applyEmailEvents(apps, events, { makeId, today }) {
     }
 
     const target = STATUS_FOR_EVENT[event.type];
+    // Prefer an application still in play; fall back to a closed one so a
+    // second email about an already-rejected role doesn't spawn a duplicate.
     const existing = findMatchingApplication(next, event, { openOnly: true })
-      || (event.type === "rejected" ? null : findMatchingApplication(next, event));
+      || findMatchingApplication(next, event);
 
     if (!existing) {
       // An email about an application we never logged is still worth
