@@ -739,7 +739,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 <button className="icon-button" onClick={handleImport} title="Import backup" aria-label="Import backup"><Upload size={16} aria-hidden="true" /></button>
                 <button
                   className="icon-button gmail-button"
-                  data-state={gmail.syncing ? "syncing" : gmail.settings.connected ? "on" : "off"}
+                  data-state={gmail.syncing ? "syncing" : gmail.settings.connected || gmail.bridgeReady ? "on" : "off"}
                   onClick={()=>setGmailOpen(true)}
                   title={gmail.settings.connected ? `Gmail sync · ${gmail.settings.email || "connected"} (press G)` : "Connect Gmail (press G)"}
                   aria-label={gmail.settings.connected ? "Gmail sync settings" : "Connect Gmail"}
@@ -810,11 +810,11 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 type="button"
                 className="soft-button soft-button--icon"
                 disabled={gmail.syncing}
-                onClick={() => (gmail.settings.connected && gmail.settings.clientId ? gmail.sync({ interactive: true }) : setGmailOpen(true))}
+                onClick={() => ((gmail.settings.connected && gmail.settings.clientId) || gmail.bridgeReady ? gmail.sync({ interactive: true }) : setGmailOpen(true))}
                 title={gmail.settings.connected ? "Check Gmail for new confirmations and rejections" : "Connect Gmail to log applications automatically"}
               >
                 <Mail size={14} aria-hidden="true" />
-                {gmail.syncing ? "Syncing…" : gmail.settings.connected ? "Sync Gmail" : "Connect Gmail"}
+                {gmail.syncing ? "Syncing…" : gmail.settings.connected || gmail.bridgeReady ? "Sync Gmail" : "Connect Gmail"}
               </button>
             }
           >

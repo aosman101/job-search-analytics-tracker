@@ -48,7 +48,12 @@ export default function GmailPanel({ gmail, onClose, onOpenApp }) {
     ? progress ? `Reading ${progress.done}/${progress.total}…` : "Checking inbox…"
     : connected ? "Sync now" : "Connect Gmail";
 
+  // Persist the key the moment it leaves this dialog, so closing before the
+  // URL is pasted can't strand a deployed script with a forgotten key.
+  const rememberKey = (key) => setBridge(settings.bridgeUrl, key);
+
   const copyScript = async () => {
+    rememberKey(bridgeKey);
     try {
       await navigator.clipboard.writeText(script);
       setCopied(true);
@@ -151,7 +156,7 @@ export default function GmailPanel({ gmail, onClose, onOpenApp }) {
                   <button type="button" className="modal-button modal-button--primary" disabled={!isBridgeUrl(urlDraft) || syncing} onClick={saveBridge}>
                     Save and sync
                   </button>
-                  <button type="button" className="modal-button modal-button--neutral" onClick={() => setBridgeKey(generateBridgeKey())}>
+                  <button type="button" className="modal-button modal-button--neutral" onClick={() => { const key = generateBridgeKey(); setBridgeKey(key); rememberKey(key); }}>
                     New key
                   </button>
                   {configured && (
