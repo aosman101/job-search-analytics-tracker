@@ -993,6 +993,22 @@ a:focus-visible {
   transform: translateY(-1px);
 }
 
+/* White label on this wash must clear 4.5:1 in both themes, so dark mode gets
+   deeper stops rather than reusing its brighter accent tokens. */
+:root {
+  --auth-button-wash: linear-gradient(135deg, #1f4e79, #0f766e);
+}
+
+:root[data-theme="dark"] {
+  --auth-button-wash: linear-gradient(135deg, #1d5aa6, #146b57);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --auth-button-wash: linear-gradient(135deg, #1d5aa6, #146b57);
+  }
+}
+
 .auth-button {
   margin-top: 18px;
   border: 0;
@@ -1001,7 +1017,7 @@ a:focus-visible {
   font-weight: 800;
   color: #fff;
   cursor: pointer;
-  background: linear-gradient(135deg, var(--accent), var(--teal));
+  background: var(--auth-button-wash);
   box-shadow: 0 16px 32px rgba(15, 118, 110, 0.22);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
