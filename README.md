@@ -49,7 +49,20 @@ npm run build
 
 ## Gmail Sync
 
-Click the mail icon in the header, or press `G`.
+Click the mail icon in the header, or press `G`. There are two ways to connect:
+
+### Always-on (recommended): Apps Script
+
+A small script ([`src/gmail/appsScriptBridge.gs`](src/gmail/appsScriptBridge.gs)) runs in your own Google account. The tracker calls it whenever it's open, so there is no hourly sign-in.
+
+1. In the Gmail Sync dialog, choose **Always-on** and click **Copy script**. The copied script already includes your private key.
+2. At [script.google.com](https://script.google.com), create a new project and paste the script over the sample code.
+3. Go to **Deploy → New deployment → Web app**, with *Execute as: Me* and *Who has access: Anyone*. Google asks for broad Gmail permission because Apps Script can't request read-only access, but the script only searches and reads job emails.
+4. Paste the Web app URL (ending in `/exec`) into the dialog and click **Save and sync**.
+
+Only someone with both the URL and the key can read the emails, and both are stored only in your browser. If either leaks, click **New key** and redeploy the script.
+
+### Google sign-in (OAuth)
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), create a project and enable the **Gmail API**.
 2. Under **Google Auth Platform → Audience**, leave the app in *Testing* and add your Gmail address as a test user.
@@ -61,8 +74,9 @@ How it works:
 - Access is read-only (`gmail.readonly`). Emails are fetched and classified inside your browser, and nothing goes to any other server.
 - The first sync looks back 30 days to 1 year (you choose). Later syncs only read new mail, and emails already processed are never applied twice.
 - Rejection emails move the matching application to **Rejected**, interview invites move it to **Interview**, and confirmations for untracked roles are added as **Applied**. Matching uses the company name, with the role as a tie-breaker.
+- Applications from email that don't name the role are tagged "add role", kept out of role analytics, and listed in the Priority Queue for review.
 - Records added from email get a "from Gmail" flag. The details view links each email back to Gmail. Every sync can be undone from the toast.
-- Google's browser tokens last one hour. While a token is valid, the tracker syncs when opened and every 15 minutes. After that, click **Sync now** (Google won't ask again once you've approved it). A static site cannot sync while the tab is closed.
+- With Google sign-in, the browser token lasts one hour. While a token is valid, the tracker syncs when opened and every 15 minutes. After that, click **Sync now** (Google won't ask again once you've approved it). A static site cannot sync while the tab is closed.
 
 ## Deploy
 
