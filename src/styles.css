@@ -993,6 +993,26 @@ a:focus-visible {
   transform: translateY(-1px);
 }
 
+/* Solid fill for anything carrying a white label (primary buttons, toast,
+   selected chips). The dark theme's --accent is tuned as text on dark
+   surfaces and is far too light to sit under white text. */
+:root {
+  --accent-fill: #1f4e79;
+  --danger-fill: #dc2626;
+}
+
+:root[data-theme="dark"] {
+  --accent-fill: #2b62a8;
+  --danger-fill: #b8322f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --accent-fill: #2b62a8;
+    --danger-fill: #b8322f;
+  }
+}
+
 /* White label on this wash must clear 4.5:1 in both themes, so dark mode gets
    deeper stops rather than reusing its brighter accent tokens. */
 :root {
@@ -1115,7 +1135,7 @@ a:focus-visible {
 }
 
 .prep-nav__item[aria-selected="true"] {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: #fff;
   box-shadow: var(--shadow-soft);
 }
@@ -1231,8 +1251,8 @@ a:focus-visible {
 }
 
 .prep-chip[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
   color: #fff;
 }
 
@@ -2826,7 +2846,7 @@ textarea.field__control {
 }
 
 .modal-button--primary {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: #fff;
   box-shadow: 0 4px 12px rgba(31, 78, 121, 0.3);
 }
@@ -2844,7 +2864,7 @@ textarea.field__control {
 }
 
 .modal-button--danger {
-  background: var(--danger);
+  background: var(--danger-fill);
   color: #fff;
 }
 
@@ -2893,7 +2913,7 @@ textarea.field__control {
   gap: 14px;
   padding: 12px 20px;
   border-radius: var(--radius);
-  background: var(--accent-strong);
+  background: var(--accent-fill);
   color: #fff;
   font-size: 13px;
   font-weight: 600;

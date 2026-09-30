@@ -5,3 +5,6 @@ dist
 # Raw personal exports should stay local
 job-tracker-backup.json
 job-tracker-backup-json.rtf
+
+.env
+.env.local
