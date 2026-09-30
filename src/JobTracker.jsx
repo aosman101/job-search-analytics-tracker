@@ -7,6 +7,7 @@ import {
   Home as HomeIcon,
   LogOut,
   Keyboard,
+  Mail,
   Monitor as MonitorIcon,
   Moon,
   Plus,
@@ -34,6 +35,8 @@ import { applyStatusTransition, autoGhost, findNewlyGhosted, normalizeApplicatio
 import { filterApplications, needsAttention, sortApplications } from "./utils/applicationFilters";
 import { buildTrackerMetrics, daysUntilGhost } from "./utils/applicationMetrics";
 import { addDays, daysSince, isWeekend, todayISO } from "./utils/dates";
+import { summarizeChanges, useGmailSync } from "./gmail/useGmailSync";
+import GmailPanel from "./gmail/GmailPanel";
 
 const InterviewPrep = lazy(() => import("./InterviewPrep"));
 const AnalyticsView = lazy(() => import("./features/analytics/AnalyticsView"));
@@ -213,6 +216,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const [storageBackend, setStorageBackend] = useState("IndexedDB");
   const [storageMessage, setStorageMessage] = useState("Ready");
   const [importPrompt, setImportPrompt] = useState(null);
+  const [gmailOpen, setGmailOpen] = useState(false);
   const { preference: themePreference, resolved: resolvedTheme, cycleTheme } = useTheme();
 
   // `action` renders an inline button in the toast (used for undoing a delete).
@@ -262,6 +266,33 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     const data = JSON.stringify(exportPayload(updated));
     saveQueueRef.current(data);
   }, []);
+
+  // Gmail syncs are async, so they read and write through a ref rather than
+  // closing over a possibly stale `apps`.
+  const appsRef = useRef(apps);
+  appsRef.current = apps;
+  const getApps = useCallback(() => appsRef.current, []);
+  const commitApps = useCallback((next) => {
+    appsRef.current = next;
+    setApps(next);
+    persistToStorage(next);
+  }, [persistToStorage]);
+  const handleGmailResult = useCallback(({ changes, before, scanned, error, interactive }) => {
+    if (error) {
+      showToast(error, "error");
+      return;
+    }
+    if (changes.length === 0) {
+      if (interactive) showToast(`Gmail checked (${scanned} email${scanned !== 1 ? "s" : ""}): no new updates.`);
+      return;
+    }
+    const undo = () => {
+      commitApps(before);
+      showToast("Gmail changes undone.");
+    };
+    showToast(`Gmail: ${summarizeChanges(changes)}.`, "success", { label: "Undo", run: undo });
+  }, [commitApps, showToast]);
+  const gmail = useGmailSync({ getApps, commitApps, onResult: handleGmailResult });
 
   // Load on mount — with migration, recovery, and validation
   useEffect(() => {
@@ -548,7 +579,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const filtersActive = filterStatus !== "All" || filterSource !== "All" || onlyNeedsAttention || search.trim() !== "";
   const clearFilters = () => { setFilterStatus("All"); setFilterSource("All"); setOnlyNeedsAttention(false); setSearch(""); };
 
-  const anyModalOpen = modalOpen || detailId !== null || deleteConfirmId !== null || shortcutsOpen || importPrompt !== null;
+  const anyModalOpen = modalOpen || detailId !== null || deleteConfirmId !== null || shortcutsOpen || importPrompt !== null || gmailOpen;
 
   // Global shortcuts. Suppressed while typing or while a dialog owns the keyboard.
   useEffect(() => {
@@ -571,6 +602,9 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
       } else if (event.key === "n" || event.key === "N") {
         event.preventDefault();
         openNewApplication();
+      } else if (event.key === "g" || event.key === "G") {
+        event.preventDefault();
+        setGmailOpen(true);
       } else if (event.key === "?") {
         event.preventDefault();
         setShortcutsOpen(true);
@@ -689,6 +723,15 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               <div className="icon-button-group">
                 <button className="icon-button" onClick={handleExport} title="Export backup" aria-label="Export backup"><Download size={16} aria-hidden="true" /></button>
                 <button className="icon-button" onClick={handleImport} title="Import backup" aria-label="Import backup"><Upload size={16} aria-hidden="true" /></button>
+                <button
+                  className="icon-button gmail-button"
+                  data-state={gmail.syncing ? "syncing" : gmail.settings.connected ? "on" : "off"}
+                  onClick={()=>setGmailOpen(true)}
+                  title={gmail.settings.connected ? `Gmail sync · ${gmail.settings.email || "connected"} (press G)` : "Connect Gmail (press G)"}
+                  aria-label={gmail.settings.connected ? "Gmail sync settings" : "Connect Gmail"}
+                >
+                  <Mail size={16} aria-hidden="true" />
+                </button>
                 <button className="icon-button" onClick={()=>setShortcutsOpen(true)} title="Keyboard shortcuts (press ?)" aria-label="Show keyboard shortcuts"><Keyboard size={16} aria-hidden="true" /></button>
                 <button
                   type="button"
@@ -745,7 +788,22 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
           <SectionCard title={activeTabMeta.label} subtitle={activeTabMeta.description}>
             <p className="section-lede">{homeInsight}</p>
           </SectionCard>
-          <SectionCard title="Today" subtitle="Quick pulse on the search">
+          <SectionCard
+            title="Today"
+            subtitle="Quick pulse on the search"
+            actions={
+              <button
+                type="button"
+                className="soft-button soft-button--icon"
+                disabled={gmail.syncing}
+                onClick={() => (gmail.settings.connected && gmail.settings.clientId ? gmail.sync({ interactive: true }) : setGmailOpen(true))}
+                title={gmail.settings.connected ? "Check Gmail for new confirmations and rejections" : "Connect Gmail to log applications automatically"}
+              >
+                <Mail size={14} aria-hidden="true" />
+                {gmail.syncing ? "Syncing…" : gmail.settings.connected ? "Sync Gmail" : "Connect Gmail"}
+              </button>
+            }
+          >
             <div className="pulse-grid">
               {[
                 { label: "Applied", value: todayCount, token: "var(--status-applied)" },
@@ -1023,6 +1081,8 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                         {isOverdue && app.followUpStatus && (() => { const fs=FOLLOWUP_STATUS[app.followUpStatus]; return <span className="status-badge" data-status={fs.statusToken}><span aria-hidden="true">{fs.emoji}</span> {fs.label}</span>; })()}
                         {warningSoon&&<span className="inline-flag inline-flag--risk"><span aria-hidden="true">⏳ </span>{dLeft}d to ghost</span>}
                         {app.autoGhosted&&<span className="inline-flag inline-flag--muted">auto-ghosted</span>}
+                        {app.fromEmail&&<span className="inline-flag inline-flag--email" title="Added automatically from Gmail. Check the details."><span aria-hidden="true">📧 </span>from Gmail</span>}
+                        {!app.fromEmail&&app.emailUpdated&&<span className="inline-flag inline-flag--email" title="Status updated from an email"><span aria-hidden="true">📧 </span>email update</span>}
                       </div>
                       <p className="application-card__meta">{app.role}{app.location?` · ${app.location}`:""}{app.source?` · ${app.source}`:""} · Applied {app.dateApplied}{app.hiringManager?` · ${app.hiringManager}`:""}</p>
                     </div>
@@ -1275,6 +1335,22 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                     </div>
                   </div>
                 )}
+                {Array.isArray(a.emailLog) && a.emailLog.length > 0 && (
+                  <div className="kv-item--full">
+                    <div className="kv-label">Email Activity</div>
+                    <div className="stack">
+                      {a.emailLog.slice(0, 5).map((item) => (
+                        <div key={item.messageId} className="history-item">
+                          <div className="history-item__head">
+                            <span>{item.type === "rejected" ? "Rejection" : item.type === "interview" ? "Interview invite" : "Application confirmation"}</span>
+                            <a className="history-item__date kv-link" href={`https://mail.google.com/mail/u/0/#all/${item.messageId}`} target="_blank" rel="noreferrer">{item.date} ↗</a>
+                          </div>
+                          {item.subject && <div className="history-item__note">{item.subject}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {a.notes&&<div className="kv-item--full"><div className="kv-label">Notes</div><div className="kv-note">{a.notes}</div></div>}
               </div>
               <div className="modal-actions">
@@ -1311,6 +1387,14 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         </div>
       </Modal>
 
+      <Modal label="Gmail sync" open={gmailOpen} onClose={()=>setGmailOpen(false)}>
+        <GmailPanel
+          gmail={gmail}
+          onClose={()=>setGmailOpen(false)}
+          onOpenApp={(id)=>{ if (appById(id)) { setGmailOpen(false); setDetailId(id); } }}
+        />
+      </Modal>
+
       {/* Live region stays mounted so screen readers reliably announce updates. */}
       <div role="status" aria-live="polite" aria-atomic="true" className="toast-region">
         {toast && (
@@ -1336,6 +1420,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
             ["1 – 5", "Switch between tabs"],
             ["← →", "Move across tabs when one is focused"],
             ["Esc", "Close a dialog, or clear active filters"],
+            ["G", "Gmail sync"],
             ["?", "Show this list"],
           ].map(([keys, description]) => (
             <div key={keys} className="shortcut-row">

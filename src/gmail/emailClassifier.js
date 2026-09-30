@@ -102,6 +102,8 @@ function cleanCompany(value) {
 function cleanRole(value) {
   const cleaned = tidy(
     (value || "")
+      // "applying for the Data Analyst" — keep only what follows the last "for".
+      .replace(/^.*\b(applying|applied|application|interest|thanks|thank you)\b.*?\bfor (the |our |a |an )?/i, "")
       .replace(/\s*[([].*?(req|job|id|ref)[^)\]]*[)\]]/gi, "")
       .replace(/\b(position|role|vacancy|opening|job)\b\s*$/i, ""),
   );
