@@ -1,4 +1,4 @@
-import { CLOSED_STATUSES } from "../constants";
+import { CLOSED_STATUSES, UNKNOWN_ROLE } from "../constants";
 import { applyStatusTransition, normalizeApplication } from "../utils/applicationLifecycle";
 import { daysBetween } from "../utils/dates";
 import { normalizeCompany } from "./emailClassifier";
@@ -79,7 +79,7 @@ export function applyEmailEvents(apps, events, { makeId, today }) {
       const existing = findMatchingApplication(next, event);
       const sameApplication = existing
         && (!existing.dateApplied || Math.abs(daysBetween(existing.dateApplied, eventDate)) <= DUPLICATE_WINDOW_DAYS)
-        && (!event.role || !existing.role || roleOverlap(existing.role, event.role) > 0 || existing.role.startsWith("Role not"));
+        && (!event.role || !existing.role || roleOverlap(existing.role, event.role) > 0 || existing.role === UNKNOWN_ROLE);
       if (sameApplication) {
         next = next.map((app) => (app.id === existing.id ? withEmail(app, event) : app));
         continue;
@@ -128,7 +128,7 @@ function createFromEvent(event, status, makeId, today) {
   const base = {
     id: makeId(),
     company: event.company,
-    role: event.role || "Role not detected",
+    role: event.role || UNKNOWN_ROLE,
     location: event.location || "",
     source: event.source || "",
     dateApplied,

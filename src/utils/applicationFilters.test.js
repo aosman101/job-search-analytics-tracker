@@ -169,3 +169,14 @@ describe("sortApplications", () => {
     expect(sortApplications(apps, "nope").map((a) => a.id)).toEqual([1, 2, 3]);
   });
 });
+
+describe("search scope", () => {
+  it("matches text in notes and hiring manager", () => {
+    const apps = [
+      { id: 1, company: "A", role: "x", status: "Applied", notes: "Referred by Sam" },
+      { id: 2, company: "B", role: "y", status: "Applied", hiringManager: "Priya Shah" },
+    ];
+    expect(filterApplications(apps, { search: "referred" }).map((a) => a.id)).toEqual([1]);
+    expect(filterApplications(apps, { search: "priya" }).map((a) => a.id)).toEqual([2]);
+  });
+});

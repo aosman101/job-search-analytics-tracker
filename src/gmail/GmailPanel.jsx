@@ -124,7 +124,7 @@ export default function GmailPanel({ gmail, onClose, onOpenApp }) {
                 <ol className="gmail-setup__steps">
                   <li>Open <strong>script.google.com</strong> and click <strong>New project</strong>.</li>
                   <li>Delete the sample code, then paste the script below (it already includes your private key).</li>
-                  <li>Click <strong>Deploy → New deployment</strong>, choose type <strong>Web app</strong>, set <em>Execute as: Me</em> and <em>Who has access: Anyone</em>, then click <strong>Deploy</strong> and approve the Gmail permission.</li>
+                  <li>Click <strong>Deploy → New deployment</strong>, choose type <strong>Web app</strong>, set <em>Execute as: Me</em> and <em>Who has access: Anyone</em>, then click <strong>Deploy</strong>. Google will ask for broad Gmail access, because Apps Script can't request read-only access, but the script only searches and reads job emails. On the "unverified app" screen, click Advanced → Go to project.</li>
                   <li>Copy the <strong>Web app URL</strong> (ends in <code>/exec</code>) and paste it below.</li>
                 </ol>
                 <div className="gmail-code">

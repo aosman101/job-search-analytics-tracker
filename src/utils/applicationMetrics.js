@@ -1,4 +1,4 @@
-import { GHOST_DAYS, STATUS_CONFIG } from "../constants";
+import { GHOST_DAYS, STATUS_CONFIG, hasKnownRole } from "../constants";
 import { daysBetween, daysSince, isWeekend, isWithinPastDays, todayISO } from "./dates";
 
 export const STAGE_DEPTH = {
@@ -28,7 +28,7 @@ function average(values) {
 function rankWithOutcomes(apps, key, limit = 5) {
   return Object.entries(apps.reduce((acc, app) => {
     const value = app[key]?.trim();
-    if (!value) return acc;
+    if (!value || (key === "role" && !hasKnownRole(app))) return acc;
     if (!acc[value]) {
       acc[value] = { label: value, total: 0, responses: 0, interviews: 0, offers: 0, active: 0 };
     }
@@ -134,6 +134,8 @@ export function buildTrackerMetrics(apps, options = {}) {
     ),
   );
 
+  const needsReview = apps.filter((app) => !hasKnownRole(app) && app.fromEmail);
+
   return {
     today,
     sorted,
@@ -180,7 +182,14 @@ export function buildTrackerMetrics(apps, options = {}) {
     sourceOutcomes: rankWithOutcomes(apps, "source"),
     freshThisWeek,
     pipelineScore,
+    needsReview,
     nextActions: [
+      needsReview.length > 0 && {
+        id: "review-email",
+        tone: "followup",
+        label: "Review email-added applications",
+        detail: `${needsReview.length} application${needsReview.length !== 1 ? "s" : ""} from Gmail need${needsReview.length !== 1 ? "" : "s"} a role filled in.`,
+      },
       dueFollowUps.length > 0 && {
         tone: "warning",
         label: "Clear due follow-ups",

@@ -2,7 +2,7 @@ import { CLOSED_STATUSES } from "../constants";
 import { daysUntilGhost } from "./applicationMetrics";
 import { todayISO } from "./dates";
 
-const SEARCHABLE_FIELDS = ["company", "role", "location", "source"];
+const SEARCHABLE_FIELDS = ["company", "role", "location", "source", "notes", "hiringManager"];
 
 // An application needs attention when a follow-up has come due without being
 // actioned, or when it is within a week of being auto-ghosted.

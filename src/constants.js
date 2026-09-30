@@ -1,6 +1,17 @@
 export const GHOST_DAYS = 21;
 
 /**
+ * Placeholder role for applications added from an email that never named the
+ * job. Kept out of role analytics and surfaced as a review task instead.
+ */
+export const UNKNOWN_ROLE = "Role not detected";
+
+export function hasKnownRole(app) {
+  const role = app.role?.trim();
+  return Boolean(role) && role !== UNKNOWN_ROLE;
+}
+
+/**
  * Status metadata.
  *
  * Colour deliberately lives in CSS, not here. Each status carries the name of

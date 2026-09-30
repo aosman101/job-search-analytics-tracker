@@ -40,3 +40,15 @@ describe("application metrics", () => {
     expect(metrics.nextActions.map((action) => action.label)).toContain("Schedule missing follow-ups");
   });
 });
+
+describe("email-added applications", () => {
+  it("keeps the unknown-role placeholder out of role analytics and asks for a review", () => {
+    const metrics = buildTrackerMetrics([
+      { id: 1, company: "A", role: "Data Analyst", status: "Applied", dateApplied: "2026-09-20" },
+      { id: 2, company: "B", role: "Role not detected", status: "Applied", dateApplied: "2026-09-21", fromEmail: true },
+    ]);
+    expect(metrics.roleOutcomes.map((item) => item.label)).toEqual(["Data Analyst"]);
+    expect(metrics.needsReview.map((app) => app.id)).toEqual([2]);
+    expect(metrics.nextActions[0]).toMatchObject({ id: "review-email" });
+  });
+});

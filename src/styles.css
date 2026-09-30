@@ -3279,6 +3279,28 @@ textarea.field__control {
     font-size: 1.42rem;
   }
 
+  /* The storage state collapses to its icon so every header action fits on
+     one row; the full text stays in the tooltip and accessible name. */
+  .storage-pill__text {
+    display: none;
+  }
+
+  .storage-pill {
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .tracker-actions {
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .tracker-actions .app-button--primary {
+    width: 100%;
+    justify-content: center;
+  }
+
   .tracker-main {
     padding: 16px 12px;
   }

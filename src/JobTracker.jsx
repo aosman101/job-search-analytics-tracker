@@ -19,7 +19,7 @@ import {
   BarChart3 as BarChartIcon,
 } from "lucide-react";
 import { useTheme } from "./useTheme";
-import { APPLICATION_SOURCES, EMPTY_FORM, FOLLOWUP_METHODS, FOLLOWUP_STATUS, GHOST_DAYS, INTERVIEW_STAGES, STATUS_CONFIG } from "./constants";
+import { APPLICATION_SOURCES, EMPTY_FORM, UNKNOWN_ROLE, hasKnownRole, FOLLOWUP_METHODS, FOLLOWUP_STATUS, GHOST_DAYS, INTERVIEW_STAGES, STATUS_CONFIG } from "./constants";
 import {
   STORAGE_KEY,
   createSaveQueue,
@@ -663,7 +663,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   );
   const countTopValues = (key) => Object.entries(apps.reduce((acc, app) => {
     const value = app[key]?.trim();
-    if (!value) return acc;
+    if (!value || (key === "role" && !hasKnownRole(app))) return acc;
     acc[value] = (acc[value] || 0) + 1;
     return acc;
   }, {})).sort((a, b) => b[1] - a[1]).slice(0, 4);
@@ -689,6 +689,14 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     ? `${dueFollowUps.length} follow-up${dueFollowUps.length !== 1 ? "s still need" : " still needs"} attention.`
     : "A quick update here keeps your pipeline accurate.";
   const detailApp = detailId !== null ? appById(detailId) : null;
+
+  // Due follow-ups in the tab title, so a pinned tab shows what's waiting.
+  const dueCount = dueFollowUps.length;
+  useEffect(() => {
+    const base = "Job Tracker Analytics";
+    document.title = dueCount > 0 ? `(${dueCount}) ${base}` : base;
+    return () => { document.title = base; };
+  }, [dueCount]);
   const deleteApp = deleteConfirmId !== null ? appById(deleteConfirmId) : null;
 
   if (loading) return <div className="loading-shell"><p>Loading your tracker…</p></div>;
@@ -728,9 +736,10 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 className={`storage-pill storage-pill--${storageHealth}`}
                 onClick={handleExport}
                 title={`${storageBackend} · ${storageMessage}. Click to export backup.`}
+                aria-label={`Storage: ${storageBackend}, ${storageMessage}. Export backup.`}
               >
                 <StorageIcon size={15} aria-hidden="true" />
-                <span>
+                <span className="storage-pill__text" aria-hidden="true">
                   {storageBackend} · {storageMessage}
                 </span>
               </button>
@@ -901,7 +910,14 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                       type="button"
                       className="action-tile"
                       data-tone={action.tone}
-                      onClick={() => setActiveTab(action.tone === "interview" ? "Interview Prep" : action.tone === "risk" || action.tone === "warning" ? "Pipeline" : "Job Search")}
+                      onClick={() => {
+                        if (action.id === "review-email") {
+                          setFilterStatus("All"); setFilterSource("All"); setOnlyNeedsAttention(false); setSearch(UNKNOWN_ROLE);
+                          setActiveTab("Job Search");
+                          return;
+                        }
+                        setActiveTab(action.tone === "interview" ? "Interview Prep" : action.tone === "risk" || action.tone === "warning" ? "Pipeline" : "Job Search");
+                      }}
                     >
                       <div className="action-tile__label">{action.label}</div>
                       <div className="action-tile__detail">{action.detail}</div>
@@ -1027,8 +1043,8 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 ref={searchInputRef}
                 type="search"
                 className="search-input"
-                aria-label="Search applications by company, role, location or source"
-                placeholder="Search company, role, location or source…  (press /)"
+                aria-label="Search applications by company, role, location, source, notes or hiring manager"
+                placeholder="Search company, role, location, notes…  (press /)"
                 value={search}
                 onChange={e=>setSearch(e.target.value)}
               />
@@ -1095,7 +1111,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                         {isOverdue && app.followUpStatus && (() => { const fs=FOLLOWUP_STATUS[app.followUpStatus]; return <span className="status-badge" data-status={fs.statusToken}><span aria-hidden="true">{fs.emoji}</span> {fs.label}</span>; })()}
                         {warningSoon&&<span className="inline-flag inline-flag--risk"><span aria-hidden="true">⏳ </span>{dLeft}d to ghost</span>}
                         {app.autoGhosted&&<span className="inline-flag inline-flag--muted">auto-ghosted</span>}
-                        {app.fromEmail&&<span className="inline-flag inline-flag--email" title="Added automatically from Gmail. Check the details."><span aria-hidden="true">📧 </span>from Gmail</span>}
+                        {app.fromEmail&&<span className="inline-flag inline-flag--email" title="Added automatically from Gmail. Check the details."><span aria-hidden="true">📧 </span>from Gmail{!hasKnownRole(app)?" · add role":""}</span>}
                         {!app.fromEmail&&app.emailUpdated&&<span className="inline-flag inline-flag--email" title="Status updated from an email"><span aria-hidden="true">📧 </span>email update</span>}
                       </div>
                       <p className="application-card__meta">{app.role}{app.location?` · ${app.location}`:""}{app.source?` · ${app.source}`:""} · Applied {app.dateApplied}{app.hiringManager?` · ${app.hiringManager}`:""}</p>

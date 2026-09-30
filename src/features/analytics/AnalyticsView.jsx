@@ -1,5 +1,5 @@
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { GHOST_DAYS, STATUS_CONFIG } from "../../constants";
+import { GHOST_DAYS, STATUS_CONFIG, hasKnownRole } from "../../constants";
 import { STAGE_DEPTH, buildTrackerMetrics } from "../../utils/applicationMetrics";
 import { daysSince } from "../../utils/dates";
 import { useChartTokens } from "../../useChartTokens";
@@ -115,7 +115,7 @@ function SankeyFunnel({ apps, tokens }) {
 function rankBy(apps, key) {
   return Object.entries(apps.reduce((acc, app) => {
     const value = app[key]?.trim();
-    if (!value) return acc;
+    if (!value || (key === "role" && !hasKnownRole(app))) return acc;
     acc[value] = (acc[value] || 0) + 1;
     return acc;
   }, {})).sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -272,7 +272,7 @@ export default function AnalyticsView({ apps, theme }) {
         <SectionCard title="Status Breakdown">
           <ResponsiveContainer width="100%" height={210}>
             <PieChart>
-              <Pie data={metrics.statusCounts} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} labelLine={false} label={({ name, value }) => value > 0 ? `${name} (${value})` : ""}>
+              <Pie data={metrics.statusCounts} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} animationBegin={0} animationDuration={600} labelLine={false} label={({ name, value }) => value > 0 ? `${name} (${value})` : ""}>
                 {metrics.statusCounts.map((entry, index) => <Cell key={index} fill={t[entry.cssVar]} stroke={t["--surface-chart"]} strokeWidth={2} />)}
               </Pie>
               <Tooltip {...tooltipProps(t)} />
