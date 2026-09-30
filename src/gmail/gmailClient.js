@@ -38,11 +38,13 @@ export function readGmailSettings() {
       email: stored.email || "",
       lastSyncAt: stored.lastSyncAt || null,
       autoSync: stored.autoSync !== false,
+      bridgeUrl: stored.bridgeUrl || "",
+      bridgeKey: stored.bridgeKey || "",
       processedIds: Array.isArray(stored.processedIds) ? stored.processedIds : [],
       log: Array.isArray(stored.log) ? stored.log : [],
     };
   } catch (_) {
-    return { clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || "", connected: false, email: "", lastSyncAt: null, autoSync: true, processedIds: [], log: [] };
+    return { clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || "", connected: false, email: "", lastSyncAt: null, autoSync: true, bridgeUrl: "", bridgeKey: "", processedIds: [], log: [] };
   }
 }
 
@@ -220,4 +222,45 @@ export async function fetchJobEmails(token, { sinceMs, skipIds = new Set(), onPr
     onProgress?.(Math.min(i + 8, selected.length), selected.length);
   }
   return emails;
+}
+
+// ---------------------------------------------------------------------------
+// Apps Script bridge — always-on alternative to the browser token flow
+// ---------------------------------------------------------------------------
+
+export function generateBridgeKey() {
+  const bytes = crypto.getRandomValues(new Uint8Array(24));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export function isBridgeUrl(value) {
+  return /^https:\/\/script\.google(usercontent)?\.com\/macros\/s\/[\w-]+\/exec$/.test((value || "").trim());
+}
+
+/**
+ * Fetch job emails through the user's own Apps Script deployment. A plain
+ * GET with no custom headers, so it needs no CORS preflight; Apps Script
+ * answers via a redirect that allows any origin.
+ */
+export async function fetchViaBridge(url, key, { sinceMs, skipIds = new Set() } = {}) {
+  let response;
+  try {
+    response = await fetch(`${url.trim()}?key=${encodeURIComponent(key)}&since=${Math.floor(sinceMs)}`);
+  } catch (_) {
+    throw new Error("Could not reach your Apps Script. Check the deployment URL and that access is set to \"Anyone\".");
+  }
+  const text = await response.text();
+  let payload;
+  try { payload = JSON.parse(text); } catch (_) {
+    throw new Error("Apps Script didn't return data. Redeploy it as a Web app with access set to \"Anyone\".");
+  }
+  if (!payload.ok) {
+    throw new Error(payload.error === "unauthorized"
+      ? "Apps Script rejected the key. Copy the script again from this dialog and redeploy it."
+      : payload.error || "Apps Script sync failed.");
+  }
+  return {
+    account: payload.account || "",
+    emails: (payload.emails || []).filter((email) => !skipIds.has(email.id)),
+  };
 }
