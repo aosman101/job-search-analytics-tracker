@@ -706,9 +706,9 @@ a:focus-visible {
   justify-content: center;
   border-radius: 999px;
   padding: 6px 10px;
-  color: var(--success);
-  background: rgba(236, 253, 245, 0.9);
-  border: 1px solid rgba(16, 185, 129, 0.22);
+  color: var(--status-offer);
+  background: var(--status-offer-bg);
+  border: 1px solid var(--status-offer-border);
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -777,14 +777,15 @@ a:focus-visible {
 .info-card {
   padding: 15px 16px;
   border-radius: var(--radius);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
-  border: 1px solid rgba(31, 78, 121, 0.08);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
 }
 
 .info-card strong {
   display: block;
   margin-top: 6px;
   font-size: 1rem;
+  color: var(--ink);
 }
 
 .info-label {
@@ -806,13 +807,13 @@ a:focus-visible {
 .metric-strip div {
   padding: 14px 15px;
   border-radius: var(--radius);
-  background: rgba(248, 250, 252, 0.95);
-  border: 1px solid rgba(31, 78, 121, 0.08);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
   transition: border-color 160ms ease, transform 160ms ease;
 }
 
 .metric-strip div:hover {
-  border-color: rgba(31, 78, 121, 0.2);
+  border-color: var(--line-strong);
   transform: translateY(-1px);
 }
 
@@ -844,7 +845,7 @@ a:focus-visible {
 .operations-panel {
   margin-top: 22px;
   padding-top: 20px;
-  border-top: 1px solid rgba(31, 78, 121, 0.1);
+  border-top: 1px solid var(--line);
   position: relative;
   z-index: 1;
 }
@@ -877,7 +878,7 @@ a:focus-visible {
 .operation-item {
   padding: 13px 14px;
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--card-solid);
   border: 1px solid var(--line);
   min-height: 104px;
 }
@@ -928,9 +929,9 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(31, 78, 121, 0.1);
+  background: var(--accent-soft);
   color: var(--accent);
-  border: 1px solid rgba(31, 78, 121, 0.12);
+  border: 1px solid var(--line);
   font-size: 20px;
   font-weight: 800;
 }
@@ -944,7 +945,7 @@ a:focus-visible {
 .auth-summary div {
   padding: 11px 12px;
   border-radius: var(--radius);
-  background: rgba(248, 250, 252, 0.96);
+  background: var(--surface-sunken);
   border: 1px solid var(--line);
 }
 
@@ -977,17 +978,18 @@ a:focus-visible {
 
 .auth-input {
   width: 100%;
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  border: 1px solid var(--field-border);
   border-radius: var(--radius);
   padding: 14px 16px;
-  background: rgba(248, 250, 252, 0.92);
+  color: var(--ink);
+  background: var(--field-bg);
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .auth-input:focus {
   outline: none;
-  border-color: rgba(31, 78, 121, 0.46);
-  box-shadow: 0 0 0 4px rgba(31, 78, 121, 0.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
   transform: translateY(-1px);
 }
 
@@ -1018,9 +1020,9 @@ a:focus-visible {
   margin: 14px 0 0;
   padding: 12px 14px;
   border-radius: var(--radius);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  background: rgba(254, 242, 242, 0.95);
-  color: #b91c1c;
+  border: 1px solid var(--danger-border);
+  background: var(--danger-soft);
+  color: var(--danger);
   font-size: 14px;
   font-weight: 700;
 }
