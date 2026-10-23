@@ -15,6 +15,7 @@ const TOKEN_NAMES = [
   "--status-followup",
   "--status-interview",
   "--status-offer",
+  "--status-secured",
   "--status-rejected",
   "--status-ghosted",
   "--status-withdrawn",

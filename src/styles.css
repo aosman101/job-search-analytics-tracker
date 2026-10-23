@@ -66,6 +66,9 @@
   --status-offer: #047857;
   --status-offer-bg: #ecfdf5;
   --status-offer-border: #a7f3d0;
+  --status-secured: #0e7490;
+  --status-secured-bg: #ecfeff;
+  --status-secured-border: #a5f3fc;
   --status-rejected: #dc2626;
   --status-rejected-bg: #fef2f2;
   --status-rejected-border: #fecaca;
@@ -168,6 +171,9 @@
   --status-offer: #3fbf92;
   --status-offer-bg: rgba(63, 191, 146, 0.14);
   --status-offer-border: rgba(63, 191, 146, 0.36);
+  --status-secured: #4cc3d9;
+  --status-secured-bg: rgba(76, 195, 217, 0.14);
+  --status-secured-border: rgba(76, 195, 217, 0.36);
   --status-rejected: #f07a7a;
   --status-rejected-bg: rgba(240, 122, 122, 0.14);
   --status-rejected-border: rgba(240, 122, 122, 0.36);
@@ -262,6 +268,9 @@
     --status-offer: #3fbf92;
     --status-offer-bg: rgba(63, 191, 146, 0.14);
     --status-offer-border: rgba(63, 191, 146, 0.36);
+    --status-secured: #4cc3d9;
+    --status-secured-bg: rgba(76, 195, 217, 0.14);
+    --status-secured-border: rgba(76, 195, 217, 0.36);
     --status-rejected: #f07a7a;
     --status-rejected-bg: rgba(240, 122, 122, 0.14);
     --status-rejected-border: rgba(240, 122, 122, 0.36);
@@ -1872,6 +1881,11 @@ a:focus-visible {
   --s-bg: var(--status-offer-bg);
   --s-border: var(--status-offer-border);
 }
+[data-status="Job Secured"] {
+  --s-ink: var(--status-secured);
+  --s-bg: var(--status-secured-bg);
+  --s-border: var(--status-secured-border);
+}
 [data-status="Rejected"] {
   --s-ink: var(--status-rejected);
   --s-bg: var(--status-rejected-bg);
@@ -1966,6 +1980,12 @@ a:focus-visible {
   --c-ink: var(--status-offer);
   --c-bg: var(--status-offer-bg);
   --c-border: var(--status-offer-border);
+}
+
+.chip-button--secured {
+  --c-ink: var(--status-secured);
+  --c-bg: var(--status-secured-bg);
+  --c-border: var(--status-secured-border);
 }
 
 .chip-button--violet {
@@ -2225,6 +2245,11 @@ a:focus-visible {
   --a-bg: var(--tone-followup-bg);
   --a-border: var(--tone-followup-border);
   --a-ink: var(--tone-followup-ink);
+}
+.action-tile[data-tone="success"] {
+  --a-bg: var(--status-secured-bg);
+  --a-border: var(--status-secured-border);
+  --a-ink: var(--status-secured);
 }
 .action-tile[data-tone="risk"] {
   --a-bg: var(--tone-risk-bg);
@@ -2768,6 +2793,40 @@ a:focus-visible {
    handlers, so it responds to keyboard focus correctly. */
 .field {
   margin-bottom: 13px;
+}
+
+.field__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.field__check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--status-secured);
+}
+
+.employment-panel {
+  margin-bottom: 13px;
+  padding: 12px 14px 0;
+  border: 1px solid var(--status-secured-border);
+  border-radius: var(--radius);
+  background: var(--status-secured-bg);
+}
+
+.employment-panel__title {
+  margin: 0 0 10px;
+  color: var(--status-secured);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .field__label {

@@ -1,7 +1,8 @@
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { GHOST_DAYS, STATUS_CONFIG, hasKnownRole } from "../../constants";
+import { CLOSED_STATUSES, GHOST_DAYS, SECURED_STATUS, STATUS_CONFIG, hasKnownRole, reachedOffer } from "../../constants";
 import { STAGE_DEPTH, buildTrackerMetrics } from "../../utils/applicationMetrics";
 import { daysSince } from "../../utils/dates";
+import { buildEmploymentMetrics, formatTenure } from "../../utils/employment";
 import { useChartTokens } from "../../useChartTokens";
 
 function SectionCard({ title, subtitle, actions = null, children, className = "" }) {
@@ -52,7 +53,7 @@ function SankeyFunnel({ apps, tokens }) {
   const reachedAtLeast = (depth) => apps.filter((app) => {
     const ownDepth = STAGE_DEPTH[app.interviewStage] || 0;
     if (ownDepth >= depth) return true;
-    if (app.status === "Offer" && depth <= 5) return true;
+    if (reachedOffer(app) && depth <= 5) return true;
     if (app.status === "Interview" && depth <= 1) return true;
     return false;
   }).length;
@@ -61,13 +62,14 @@ function SankeyFunnel({ apps, tokens }) {
     { label: "1st Interview", count: reachedAtLeast(1), color: tokens["--funnel-2"] },
     { label: "2nd+ Interview", count: reachedAtLeast(2), color: tokens["--funnel-3"] },
     { label: "Final Round", count: reachedAtLeast(4), color: tokens["--funnel-4"] },
-    { label: "Offer", count: apps.filter((app) => app.status === "Offer").length, color: tokens["--funnel-5"] },
+    { label: "Offer", count: apps.filter(reachedOffer).length, color: tokens["--funnel-5"] },
+    { label: "Secured", count: apps.filter((app) => app.status === SECURED_STATUS).length, color: tokens["--status-secured"] },
   ];
   const maxCount = stages[0].count || 1;
   const width = 600;
   const height = 220;
   const padX = 60;
-  const barWidth = 60;
+  const barWidth = 56;
   const gap = (width - padX * 2 - barWidth * stages.length) / (stages.length - 1);
   return (
     <div className="funnel-scroll">
@@ -134,7 +136,9 @@ export default function AnalyticsView({ apps, theme }) {
     acc[method] = (acc[method] || 0) + 1;
     return acc;
   }, {})).map(([method, count]) => ({ method, count }));
-  const openApps = apps.filter((app) => !["Rejected", "Withdrawn", "Ghosted", "Offer"].includes(app.status));
+  const openApps = apps.filter((app) => !CLOSED_STATUSES.includes(app.status));
+  const employment = buildEmploymentMetrics(apps);
+  const longestTenure = employment.longestTenure?.tenure || 0;
   // Age buckets are ordinal, so they read as a green→red severity progression
   // rather than four unrelated hues.
   const agingBuckets = [
@@ -165,6 +169,8 @@ export default function AnalyticsView({ apps, theme }) {
           { label: "Interview Rate", value: `${metrics.interviewRate}%`, ink: "var(--status-applied)", emoji: "🗣️" },
           { label: "Reached Interview", value: metrics.everInterviewedCount, ink: "var(--rose)", emoji: "🎯" },
           { label: "Offer Rate", value: `${metrics.offerRate}%`, ink: "var(--status-offer)", emoji: "🎉" },
+          { label: "Jobs Secured", value: employment.secured.length, ink: "var(--status-secured)", emoji: "🏆" },
+          { label: "Avg Time Worked", value: employment.avgTenureDays === null ? "—" : formatTenure(employment.avgTenureDays), ink: "var(--status-secured)", emoji: "⌛" },
           { label: "Avg Rejection Time", value: metrics.avgDaysToRejection === null ? "—" : `${metrics.avgDaysToRejection}d`, ink: "var(--status-rejected)", emoji: "⏱️" },
           { label: "Avg To Interview", value: metrics.avgDaysToInterview === null ? "—" : `${metrics.avgDaysToInterview}d`, ink: "var(--teal)", emoji: "⚡" },
           { label: "Avg Open Age", value: metrics.avgOpenAge === null ? "—" : `${metrics.avgOpenAge}d`, ink: "var(--muted)", emoji: "📌" },
@@ -268,6 +274,48 @@ export default function AnalyticsView({ apps, theme }) {
         <SankeyFunnel apps={apps} tokens={t} />
       </SectionCard>
 
+      {employment.secured.length > 0 && (
+        <SectionCard
+          title="Employment History"
+          subtitle="Jobs you secured and how long you worked at each. Average time worked counts finished jobs only."
+          className="section-card--spaced"
+        >
+          <div className="dash-grid dash-grid--tight">
+            {[
+              { label: "Current job", value: employment.current[0]?.company || "—", note: employment.current[0] ? `${formatTenure(employment.current[0].tenure)} so far` : employment.upcoming[0] ? `Next: ${employment.upcoming[0].company} from ${employment.upcoming[0].startDate}` : "Not currently in a tracked job." },
+              { label: "Total time worked", value: formatTenure(employment.totalTenureDays), note: `Across ${employment.datedCount} job${employment.datedCount !== 1 ? "s" : ""} with dates.` },
+              { label: "Avg time worked", value: formatTenure(employment.avgTenureDays), note: `${employment.finished.length} finished job${employment.finished.length !== 1 ? "s" : ""}.` },
+              { label: "Avg search to secure", value: employment.avgDaysToSecure === null ? "—" : `${employment.avgDaysToSecure}d`, note: "From applying to securing the job." },
+            ].map((item) => (
+              <div key={item.label} className="health-tile" style={{ "--m-ink": "var(--status-secured)" }}>
+                <div className="health-tile__value">{item.value}</div>
+                <div className="health-tile__label">{item.label}</div>
+                <div className="health-tile__note">{item.note}</div>
+              </div>
+            ))}
+          </div>
+          <div className="stack">
+            {employment.secured.map((app) => {
+              const pct = longestTenure > 0 && app.tenure !== null ? Math.max(2, Math.round((app.tenure / longestTenure) * 100)) : 0;
+              const when = app.employment === "current" ? `since ${app.startDate}`
+                : app.employment === "finished" ? `${app.startDate} → ${app.endDate}`
+                : app.employment === "upcoming" ? `starts ${app.startDate}` : "add a start date";
+              return (
+                <div key={app.id} className="meter" style={{ "--m-ink": "var(--status-secured)" }}>
+                  <div className="meter__head">
+                    <span className="meter__label">{app.company}{app.role ? ` · ${app.role}` : ""}{app.employment === "current" ? " (current)" : ""}</span>
+                    <span className="meter__value">{app.tenure === null ? "—" : formatTenure(app.tenure)} · {when}</span>
+                  </div>
+                  <div className="meter__track">
+                    <div className="meter__fill" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </SectionCard>
+      )}
+
       <div className="dash-grid dash-grid--auto">
         <SectionCard title="Status Breakdown">
           <ResponsiveContainer width="100%" height={210}>
@@ -346,6 +394,7 @@ export default function AnalyticsView({ apps, theme }) {
               <div className="rank-row__stats">
                 <span>{item.responseRate}% response</span>
                 <span>{item.interviewRate}% interview</span>
+                {item.offers > 0 && <span>{item.offers} offer{item.offers !== 1 ? "s" : ""}</span>}
                 <span>{item.active} active</span>
               </div>
             </div>
@@ -362,6 +411,7 @@ export default function AnalyticsView({ apps, theme }) {
               <div className="rank-row__stats">
                 <span>{item.responseRate}% response</span>
                 <span>{item.interviewRate}% interview</span>
+                {item.offers > 0 && <span>{item.offers} offer{item.offers !== 1 ? "s" : ""}</span>}
                 <span>{item.active} active</span>
               </div>
             </div>
@@ -378,6 +428,7 @@ export default function AnalyticsView({ apps, theme }) {
               <div className="rank-row__stats">
                 <span>{item.responseRate}% response</span>
                 <span>{item.interviewRate}% interview</span>
+                {item.offers > 0 && <span>{item.offers} offer{item.offers !== 1 ? "s" : ""}</span>}
                 <span>{item.active} active</span>
               </div>
             </div>

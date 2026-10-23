@@ -18,3 +18,9 @@ describe("date helpers", () => {
     expect(addDays("2026-05-13", 7)).toBe("2026-05-20");
   });
 });
+
+describe("daysBetween across daylight saving", () => {
+  it("does not lose a day when the clocks go forward", () => {
+    expect(daysBetween("2025-03-01", "2025-04-01")).toBe(31);
+  });
+});

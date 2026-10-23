@@ -78,6 +78,7 @@ export function buildEmploymentMetrics(apps, today = todayISO()) {
     missingStart: secured.filter((app) => app.employment === "unknown"),
     // Only completed jobs give a fair average; a current job's tenure is still growing.
     avgTenureDays: average(finished.map((app) => app.tenure)),
+    datedCount: withTenure.length,
     totalTenureDays: withTenure.reduce((sum, app) => sum + app.tenure, 0),
     longestTenure: withTenure.reduce((best, app) => (best === null || app.tenure > best.tenure ? app : best), null),
     avgDaysToSecure: average(secureDurations),

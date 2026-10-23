@@ -34,5 +34,9 @@ export function sortApplications(apps, sortBy) {
   if (sortBy === "date") return copy.sort((a, b) => (b.dateApplied || "").localeCompare(a.dateApplied || ""));
   if (sortBy === "company") return copy.sort((a, b) => (a.company || "").localeCompare(b.company || ""));
   if (sortBy === "status") return copy.sort((a, b) => (a.status || "").localeCompare(b.status || ""));
+  if (sortBy === "updated") {
+    const touched = (app) => app.updatedAt || app.statusUpdatedAt || app.dateApplied || "";
+    return copy.sort((a, b) => touched(b).localeCompare(touched(a)));
+  }
   return copy;
 }

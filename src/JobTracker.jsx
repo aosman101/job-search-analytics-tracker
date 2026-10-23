@@ -19,7 +19,7 @@ import {
   BarChart3 as BarChartIcon,
 } from "lucide-react";
 import { useTheme } from "./useTheme";
-import { APPLICATION_SOURCES, EMPTY_FORM, UNKNOWN_ROLE, hasKnownRole, FOLLOWUP_METHODS, FOLLOWUP_STATUS, GHOST_DAYS, INTERVIEW_STAGES, STATUS_CONFIG } from "./constants";
+import { APPLICATION_SOURCES, CLOSED_STATUSES, EMPTY_FORM, SECURED_STATUS, UNKNOWN_ROLE, hasKnownRole, FOLLOWUP_METHODS, FOLLOWUP_STATUS, GHOST_DAYS, INTERVIEW_STAGES, STATUS_CONFIG } from "./constants";
 import {
   STORAGE_KEY,
   createSaveQueue,
@@ -35,6 +35,7 @@ import { applyStatusTransition, autoGhost, findNewlyGhosted, normalizeApplicatio
 import { filterApplications, needsAttention, sortApplications } from "./utils/applicationFilters";
 import { buildTrackerMetrics, daysUntilGhost } from "./utils/applicationMetrics";
 import { addDays, daysSince, isWeekend, todayISO } from "./utils/dates";
+import { employmentState, formatTenure, tenureDays, validateEmploymentDates } from "./utils/employment";
 import { summarizeChanges, useGmailSync } from "./gmail/useGmailSync";
 import GmailPanel from "./gmail/GmailPanel";
 
@@ -63,6 +64,15 @@ function ensureIds(apps) {
     maxId += 1;
     return { ...a, id: maxId };
   });
+}
+
+// One-line employment summary for a secured job, e.g. "Worked 1 yr 3 mo · finished 2026-01-31".
+function employmentSummary(app, today = todayISO()) {
+  const state = employmentState(app, today);
+  if (state === "unknown") return "Start date not set";
+  if (state === "upcoming") return `Starts ${app.startDate}`;
+  const tenure = formatTenure(tenureDays(app, today));
+  return state === "finished" ? `Worked ${tenure} · finished ${app.endDate}` : `${tenure} so far · started ${app.startDate}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -231,6 +241,8 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const [storageMessage, setStorageMessage] = useState("Ready");
   const [importPrompt, setImportPrompt] = useState(null);
   const [gmailOpen, setGmailOpen] = useState(false);
+  // Captures start/finish dates when an application moves to Job Secured.
+  const [securedPrompt, setSecuredPrompt] = useState(null);
   const { preference: themePreference, resolved: resolvedTheme, cycleTheme } = useTheme();
 
   // `action` renders an inline button in the toast (used for undoing a delete).
@@ -410,6 +422,13 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
       setFormError("Please fill in Company, Role and Date Applied before saving.");
       return;
     }
+    if (form.status === SECURED_STATUS) {
+      const employmentError = validateEmploymentDates(form);
+      if (employmentError) {
+        setFormError(employmentError);
+        return;
+      }
+    }
     setFormError("");
     const isEdit = editId !== null;
     const now = todayISO();
@@ -467,7 +486,40 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     };
     showToast(`Removed ${removed?.company || "application"}.`, "success", removed ? { label: "Undo", run: undo } : null);
   };
+  const openSecuredPrompt = (id) => {
+    const a = appById(id);
+    if (!a) return;
+    setSecuredPrompt({ id, startDate: a.startDate || todayISO(), endDate: a.endDate || "", stillWorking: !a.endDate, error: "" });
+  };
+  const confirmSecured = () => {
+    if (!securedPrompt) return;
+    const { id, startDate, stillWorking } = securedPrompt;
+    const endDate = stillWorking ? "" : securedPrompt.endDate;
+    const error = validateEmploymentDates({ startDate, endDate }) || (!stillWorking && !endDate ? "Add the date you finished, or tick that you still work there." : "");
+    if (error) {
+      setSecuredPrompt(p => ({ ...p, error }));
+      return;
+    }
+    const now = todayISO();
+    const existing = appById(id);
+    const wasSecured = existing?.status === SECURED_STATUS;
+    const updated = apps.map(a => {
+      if (a.id !== id) return a;
+      const moved = a.status === SECURED_STATUS ? { ...a, updatedAt: now } : applyStatusTransition(a, SECURED_STATUS, now);
+      return { ...moved, startDate, endDate };
+    });
+    const company = existing?.company || "this job";
+    setApps(updated);
+    persistToStorage(updated);
+    setSecuredPrompt(null);
+    showToast(wasSecured ? `Employment dates updated for ${company}` : `Congratulations on ${company}! Job secured.`);
+  };
   const handleStatusChange = (id, status) => {
+    // Securing a job needs dates for tenure analytics, so ask for them first.
+    if (status === SECURED_STATUS) {
+      openSecuredPrompt(id);
+      return;
+    }
     const updated = apps.map(a => a.id === id ? applyStatusTransition(a, status, todayISO()) : a);
     setApps(updated);
     showToast(`Moved to ${status}`);
@@ -593,7 +645,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const filtersActive = filterStatus !== "All" || filterSource !== "All" || onlyNeedsAttention || search.trim() !== "";
   const clearFilters = () => { setFilterStatus("All"); setFilterSource("All"); setOnlyNeedsAttention(false); setSearch(""); };
 
-  const anyModalOpen = modalOpen || detailId !== null || deleteConfirmId !== null || shortcutsOpen || importPrompt !== null || gmailOpen;
+  const anyModalOpen = modalOpen || detailId !== null || deleteConfirmId !== null || shortcutsOpen || importPrompt !== null || gmailOpen || securedPrompt !== null;
 
   // Global shortcuts. Suppressed while typing or while a dialog owns the keyboard.
   useEffect(() => {
@@ -670,7 +722,10 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const roleFocus = useMemo(() => countTopValues("role"), [apps]); // eslint-disable-line react-hooks/exhaustive-deps
   const locationFocus = useMemo(() => countTopValues("location"), [apps]); // eslint-disable-line react-hooks/exhaustive-deps
   const latestApplications = sorted.filter(a => a.dateApplied).slice(0, 3);
-  const homeInsight = dueFollowUps.length > 0
+  const currentJob = apps.find(a => a.status === SECURED_STATUS && employmentState(a, today) === "current");
+  const homeInsight = currentJob
+    ? `You're working at ${currentJob.company} (${formatTenure(tenureDays(currentJob, today))} so far). ${activeApplications > 0 ? `${activeApplications} other application${activeApplications !== 1 ? "s are" : " is"} still open.` : "Nice work closing out the search."}`
+    : dueFollowUps.length > 0
     ? `You have ${dueFollowUps.length} follow-up${dueFollowUps.length !== 1 ? "s" : ""} due. The fastest win is to clear those first.`
     : interviewQueue.length > 0
       ? `You have ${interviewQueue.length} active interview or late-stage application${interviewQueue.length !== 1 ? "s" : ""} in play.`
@@ -911,6 +966,15 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                       className="action-tile"
                       data-tone={action.tone}
                       onClick={() => {
+                        if (action.id === "secured-dates") {
+                          clearFilters(); setFilterStatus(SECURED_STATUS);
+                          setActiveTab("Job Search");
+                          return;
+                        }
+                        if (action.id === "close-offers") {
+                          setActiveTab("Pipeline");
+                          return;
+                        }
                         if (action.id === "review-email") {
                           setFilterStatus("All"); setFilterSource("All"); setOnlyNeedsAttention(false); setSearch(UNKNOWN_ROLE);
                           setActiveTab("Job Search");
@@ -1056,6 +1120,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 <option value="date">Sort: Date</option>
                 <option value="company">Sort: Company</option>
                 <option value="status">Sort: Status</option>
+                <option value="updated">Sort: Last updated</option>
               </select>
             </div>
 
@@ -1089,7 +1154,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 )}
               </div>
             ) : filtered.map(app => {
-              const isOverdue = app.followUpDate && app.followUpDate<=today && !["Rejected","Withdrawn","Offer","Ghosted"].includes(app.status);
+              const isOverdue = app.followUpDate && app.followUpDate<=today && !CLOSED_STATUSES.includes(app.status);
               const dLeft = daysUntilGhost(app);
               const warningSoon = dLeft!==null && dLeft<=5 && dLeft>0;
               return (
@@ -1115,6 +1180,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                         {!app.fromEmail&&app.emailUpdated&&<span className="inline-flag inline-flag--email" title="Status updated from an email"><span aria-hidden="true">📧 </span>email update</span>}
                       </div>
                       <p className="application-card__meta">{app.role}{app.location?` · ${app.location}`:""}{app.source?` · ${app.source}`:""} · Applied {app.dateApplied}{app.hiringManager?` · ${app.hiringManager}`:""}</p>
+                      {app.status===SECURED_STATUS&&<p className="application-card__meta"><span aria-hidden="true">🏆 </span>{employmentSummary(app, today)}</p>}
                     </div>
                     <div className="application-card__actions" onClick={e=>e.stopPropagation()}>
                       <select className="status-select" aria-label={`Change status for ${app.company}`} value={app.status} onChange={e=>handleStatusChange(app.id,e.target.value)}>
@@ -1192,6 +1258,11 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                     </div>
                     <div className="queue-row__actions">
                       <Badge status={app.status} interviewStage={app.interviewStage} />
+                      {app.status === "Offer" && (
+                        <button type="button" className="chip-button chip-button--secured" onClick={() => openSecuredPrompt(app.id)}>
+                          <span aria-hidden="true">🏆</span> Accepted
+                        </button>
+                      )}
                       <button type="button" className="chip-button chip-button--accent" onClick={() => setDetailId(app.id)}>Open</button>
                     </div>
                   </div>
@@ -1294,6 +1365,29 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
               </div>
             </div>
           </div>
+          {form.status === SECURED_STATUS && (
+            <div className="employment-panel" role="group" aria-label="Employment">
+              <p className="employment-panel__title"><span aria-hidden="true">🏆 </span>Employment</p>
+              <div className="form-grid">
+                <Field label="Start Date" value={form.startDate} onChange={f("startDate")} type="date" required/>
+                <div className="field">
+                  <span className="field__label">Still working there?</span>
+                  <label className="field__check">
+                    <input type="checkbox" checked={!form.endDate}
+                      onChange={e=>setForm(p=>({...p,endDate:e.target.checked?"":todayISO()}))}/>
+                    Yes, this is my current job
+                  </label>
+                </div>
+                {form.endDate && <Field label="Finish Date" value={form.endDate} onChange={f("endDate")} type="date"/>}
+                {form.startDate && form.startDate <= todayISO() && (
+                  <div className="field">
+                    <span className="field__label">Time Worked</span>
+                    <div className="field__check">{formatTenure(tenureDays(form))}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <Field label="Notes" value={form.notes} onChange={f("notes")} as="textarea" placeholder="Interview feedback, key contacts, how you found the role…" rows={3}/>
           {formError && (
             <p className="form-error" role="alert">
@@ -1329,6 +1423,14 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                     <div className="kv-value">{v}</div>
                   </div>
                 ))}
+                {a.status===SECURED_STATUS&&<>
+                  <div><div className="kv-label">Started</div><div className="kv-value">{a.startDate||"—"}</div></div>
+                  <div><div className="kv-label">Finished</div><div className="kv-value">{a.endDate||(a.startDate?"Current job":"—")}</div></div>
+                  <div className="kv-item--full">
+                    <div className="kv-label">Time Worked</div>
+                    <div className="kv-value">{employmentSummary(a)}</div>
+                  </div>
+                </>}
                 {a.jobUrl&&<div className="kv-item--full"><div className="kv-label">Job Posting</div><a href={a.jobUrl} target="_blank" rel="noreferrer" className="kv-link">Open ↗</a></div>}
                 {a.hmLinkedIn&&<div className="kv-item--full"><div className="kv-label">HM LinkedIn</div><a href={a.hmLinkedIn} target="_blank" rel="noreferrer" className="kv-link">Open LinkedIn ↗</a></div>}
                 {a.followUpDate&&<div className="kv-item--full">
@@ -1384,6 +1486,11 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 {a.notes&&<div className="kv-item--full"><div className="kv-label">Notes</div><div className="kv-note">{a.notes}</div></div>}
               </div>
               <div className="modal-actions">
+                {(a.status==="Offer"||a.status===SECURED_STATUS)&&(
+                  <button type="button" className="modal-button modal-button--secondary" onClick={()=>{setDetailId(null);openSecuredPrompt(a.id);}}>
+                    {a.status===SECURED_STATUS?(a.endDate?"Edit employment dates":"Record finish date"):"Mark job secured"}
+                  </button>
+                )}
                 <button type="button" className="modal-button modal-button--secondary" onClick={()=>{setDetailId(null);openEdit(a.id);}}>Edit</button>
                 <button type="button" className="modal-button modal-button--primary" onClick={()=>setDetailId(null)}>Close</button>
               </div>
@@ -1415,6 +1522,51 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
           <button type="button" className="modal-button modal-button--neutral" onClick={()=>setImportPrompt(null)}>Cancel</button>
           <button type="button" className="modal-button modal-button--primary" onClick={confirmImportRestore}>Replace All</button>
         </div>
+      </Modal>
+
+      <Modal label="Job secured" open={securedPrompt!==null} onClose={()=>setSecuredPrompt(null)}>
+        {securedPrompt&&(()=>{
+          const target=appById(securedPrompt.id);
+          const p=securedPrompt;
+          const set=(patch)=>setSecuredPrompt(prev=>({...prev,...patch,error:""}));
+          const endDate=p.stillWorking?"":p.endDate;
+          const preview=p.startDate&&p.startDate<=todayISO()?tenureDays({startDate:p.startDate,endDate}):null;
+          return (
+            <>
+              <div className="modal-header">
+                <h2 className="modal-title"><span aria-hidden="true">🏆 </span>{target?.status===SECURED_STATUS?"Employment Details":"Job Secured"}</h2>
+                <p className="modal-subtitle">
+                  {target?.company}{target?.role?` — ${target.role}`:""}. Add your dates so analytics can track how long you worked there.
+                </p>
+              </div>
+              <div className="modal-body--flush">
+                <div className="form-grid">
+                  <Field label="Start Date" value={p.startDate} onChange={v=>set({startDate:v})} type="date" required/>
+                  <div className="field">
+                    <span className="field__label">Still working there?</span>
+                    <label className="field__check">
+                      <input type="checkbox" checked={p.stillWorking}
+                        onChange={e=>set({stillWorking:e.target.checked,endDate:e.target.checked?p.endDate:(p.endDate||todayISO())})}/>
+                      Yes, this is my current job
+                    </label>
+                  </div>
+                  {!p.stillWorking&&<Field label="Finish Date" value={p.endDate} onChange={v=>set({endDate:v})} type="date" required/>}
+                  {preview!==null&&(
+                    <div className="field">
+                      <span className="field__label">Time Worked</span>
+                      <div className="field__check">{formatTenure(preview)}</div>
+                    </div>
+                  )}
+                </div>
+                {p.error&&<p className="form-error" role="alert"><span aria-hidden="true">⚠️ </span>{p.error}</p>}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="modal-button modal-button--neutral" onClick={()=>setSecuredPrompt(null)}>Cancel</button>
+                <button type="button" className="modal-button modal-button--primary" onClick={confirmSecured}>Save</button>
+              </div>
+            </>
+          );
+        })()}
       </Modal>
 
       <Modal label="Gmail sync" open={gmailOpen} onClose={()=>setGmailOpen(false)}>

@@ -21,7 +21,8 @@ export function daysBetween(startISO, endISO = todayISO()) {
   const start = parseLocalDate(startISO);
   const end = parseLocalDate(endISO);
   if (!start || !end) return 0;
-  return Math.floor((end.getTime() - start.getTime()) / DAY_MS);
+  // Round, not floor: a span crossing a clocks-forward change is 23h short.
+  return Math.round((end.getTime() - start.getTime()) / DAY_MS);
 }
 
 export function daysSince(dateISO, now = new Date()) {
