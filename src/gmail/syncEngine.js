@@ -105,8 +105,8 @@ export function applyEmailEvents(apps, events, { makeId, today }) {
     }
 
     const alreadyThere = existing.status === target
-      || (event.type === "interview" && ["Offer", "Rejected", "Withdrawn"].includes(existing.status))
-      || (event.type === "rejected" && ["Offer", "Withdrawn", "Rejected"].includes(existing.status));
+      || (event.type === "interview" && ["Offer", "Job Secured", "Rejected", "Withdrawn"].includes(existing.status))
+      || (event.type === "rejected" && ["Offer", "Job Secured", "Withdrawn", "Rejected"].includes(existing.status));
 
     next = next.map((app) => {
       if (app.id !== existing.id) return app;

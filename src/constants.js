@@ -28,6 +28,7 @@ export const STATUS_CONFIG = {
   "Follow-Up": { emoji: "🔔", cssVar: "--status-followup" },
   Interview: { emoji: "🗣️", cssVar: "--status-interview" },
   Offer: { emoji: "🎉", cssVar: "--status-offer" },
+  "Job Secured": { emoji: "🏆", cssVar: "--status-secured" },
   Rejected: { emoji: "❌", cssVar: "--status-rejected" },
   Ghosted: { emoji: "👻", cssVar: "--status-ghosted" },
   Withdrawn: { emoji: "↩️", cssVar: "--status-withdrawn" },
@@ -67,6 +68,8 @@ export const EMPTY_FORM = {
   followUpHistory: [],
   hmAvailable: true,
   hmLinkedInAvailable: true,
+  startDate: "",
+  endDate: "",
 };
 
 /**
@@ -89,4 +92,14 @@ export const FOLLOWUP_METHODS = {
   email_instead: "Email",
 };
 
-export const CLOSED_STATUSES = ["Rejected", "Withdrawn", "Offer", "Ghosted"];
+export const CLOSED_STATUSES = ["Rejected", "Withdrawn", "Offer", "Job Secured", "Ghosted"];
+
+/**
+ * "Job Secured" is the step after an offer: the offer was accepted and the job
+ * started. It still counts as an offer everywhere offers are measured.
+ */
+export const SECURED_STATUS = "Job Secured";
+
+export function reachedOffer(app) {
+  return app.status === "Offer" || app.status === SECURED_STATUS;
+}

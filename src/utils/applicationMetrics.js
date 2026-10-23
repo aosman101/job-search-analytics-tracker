@@ -1,4 +1,4 @@
-import { GHOST_DAYS, STATUS_CONFIG, hasKnownRole } from "../constants";
+import { CLOSED_STATUSES, GHOST_DAYS, SECURED_STATUS, STATUS_CONFIG, hasKnownRole, reachedOffer } from "../constants";
 import { daysBetween, daysSince, isWeekend, isWithinPastDays, todayISO } from "./dates";
 
 export const STAGE_DEPTH = {
@@ -11,7 +11,7 @@ export const STAGE_DEPTH = {
 };
 
 export function reachedInterview(app) {
-  return ["Interview", "Offer"].includes(app.status) || Boolean(app.interviewStage) || Boolean(app.interviewStartedAt);
+  return ["Interview", "Offer", SECURED_STATUS].includes(app.status) || Boolean(app.interviewStage) || Boolean(app.interviewStartedAt);
 }
 
 export function daysUntilGhost(app, now = new Date()) {
@@ -35,8 +35,8 @@ function rankWithOutcomes(apps, key, limit = 5) {
     acc[value].total += 1;
     if (!["Applied", "Ghosted"].includes(app.status)) acc[value].responses += 1;
     if (reachedInterview(app)) acc[value].interviews += 1;
-    if (app.status === "Offer") acc[value].offers += 1;
-    if (!["Rejected", "Withdrawn", "Ghosted", "Offer"].includes(app.status)) acc[value].active += 1;
+    if (reachedOffer(app)) acc[value].offers += 1;
+    if (!CLOSED_STATUSES.includes(app.status)) acc[value].active += 1;
     return acc;
   }, {}))
     .map(([, item]) => ({
@@ -52,13 +52,12 @@ export function buildTrackerMetrics(apps, options = {}) {
   const now = options.now || new Date();
   const today = options.today || todayISO(now);
   const sorted = [...apps].sort((a, b) => (b.dateApplied || "").localeCompare(a.dateApplied || ""));
-  const closedStatuses = ["Rejected", "Withdrawn", "Offer", "Ghosted"];
-  const openApps = apps.filter((app) => !closedStatuses.includes(app.status));
+  const openApps = apps.filter((app) => !CLOSED_STATUSES.includes(app.status));
   const dueFollowUps = apps.filter(
     (app) =>
       app.followUpDate &&
       app.followUpDate <= today &&
-      !["Rejected", "Withdrawn", "Offer", "Ghosted"].includes(app.status) &&
+      !CLOSED_STATUSES.includes(app.status) &&
       !app.followUpStatus,
   );
   const rejectedApps = apps.filter((app) => app.status === "Rejected");
@@ -117,7 +116,7 @@ export function buildTrackerMetrics(apps, options = {}) {
     .filter((app) => !app.followUpDate && daysSince(app.dateApplied, now) >= 5)
     .slice(0, 8);
   const stalledInterviews = sorted
-    .filter((app) => !closedStatuses.includes(app.status) && (app.status === "Interview" || app.interviewStage))
+    .filter((app) => !CLOSED_STATUSES.includes(app.status) && (app.status === "Interview" || app.interviewStage))
     .filter((app) => daysSince(app.updatedAt || app.statusUpdatedAt || app.interviewStartedAt || app.dateApplied, now) >= 7)
     .slice(0, 8);
   const freshThisWeek = apps.filter((app) => isWithinPastDays(app.dateApplied, 7, now)).length;
@@ -135,6 +134,10 @@ export function buildTrackerMetrics(apps, options = {}) {
   );
 
   const needsReview = apps.filter((app) => !hasKnownRole(app) && app.fromEmail);
+  // Offers are a decision point: until they're accepted (Job Secured) or
+  // declined (Withdrawn), the search outcome is unrecorded.
+  const pendingOffers = sorted.filter((app) => app.status === "Offer");
+  const securedMissingStart = apps.filter((app) => app.status === SECURED_STATUS && !app.startDate);
 
   return {
     today,
@@ -160,11 +163,12 @@ export function buildTrackerMetrics(apps, options = {}) {
     todayCount: apps.filter((app) => app.dateApplied === today).length,
     responseRate: apps.length > 0 ? Math.round((apps.filter((app) => !["Applied", "Ghosted"].includes(app.status)).length / apps.length) * 100) : 0,
     interviewRate: apps.length > 0 ? Math.round((apps.filter(reachedInterview).length / apps.length) * 100) : 0,
-    offerRate: apps.length > 0 ? Math.round((apps.filter((app) => app.status === "Offer").length / apps.length) * 100) : 0,
+    offerRate: apps.length > 0 ? Math.round((apps.filter(reachedOffer).length / apps.length) * 100) : 0,
+    securedRate: apps.length > 0 ? Math.round((apps.filter((app) => app.status === SECURED_STATUS).length / apps.length) * 100) : 0,
     ghostRate: apps.length > 0 ? Math.round((apps.filter((app) => app.status === "Ghosted").length / apps.length) * 100) : 0,
-    activeApplications: apps.filter((app) => !["Rejected", "Ghosted", "Withdrawn"].includes(app.status)).length,
+    activeApplications: apps.filter((app) => !["Rejected", "Ghosted", "Withdrawn", SECURED_STATUS].includes(app.status)).length,
     interviewQueue: sorted
-      .filter((app) => !["Rejected", "Withdrawn", "Ghosted"].includes(app.status) && (app.status === "Interview" || app.status === "Offer" || app.interviewStage))
+      .filter((app) => !["Rejected", "Withdrawn", "Ghosted", SECURED_STATUS].includes(app.status) && (app.status === "Interview" || app.status === "Offer" || app.interviewStage))
       .slice(0, 6),
     rejectedApps,
     rejectionsByStage,
@@ -183,12 +187,26 @@ export function buildTrackerMetrics(apps, options = {}) {
     freshThisWeek,
     pipelineScore,
     needsReview,
+    pendingOffers,
+    securedMissingStart,
     nextActions: [
       needsReview.length > 0 && {
         id: "review-email",
         tone: "followup",
         label: "Review email-added applications",
         detail: `${needsReview.length} application${needsReview.length !== 1 ? "s" : ""} from Gmail need${needsReview.length !== 1 ? "" : "s"} a role filled in.`,
+      },
+      pendingOffers.length > 0 && {
+        id: "close-offers",
+        tone: "success",
+        label: "Record offer decisions",
+        detail: `${pendingOffers.length} offer${pendingOffers.length !== 1 ? "s are" : " is"} waiting. Mark accepted ones as Job Secured, declined ones as Withdrawn.`,
+      },
+      securedMissingStart.length > 0 && {
+        id: "secured-dates",
+        tone: "success",
+        label: "Add job start dates",
+        detail: `${securedMissingStart.length} secured job${securedMissingStart.length !== 1 ? "s have" : " has"} no start date, so time worked can't be measured.`,
       },
       dueFollowUps.length > 0 && {
         tone: "warning",

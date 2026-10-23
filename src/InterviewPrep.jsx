@@ -39,7 +39,7 @@ function detectRoleType(roleTitle) {
 
 function getActiveInterviews(apps) {
   return apps
-    .filter(a => a.status === "Interview" || (a.interviewStage && !["Rejected", "Withdrawn", "Ghosted"].includes(a.status)))
+    .filter(a => a.status === "Interview" || (a.interviewStage && !["Rejected", "Withdrawn", "Ghosted", "Job Secured"].includes(a.status)))
     .map(a => ({ ...a, detectedRole: detectRoleType(a.role) }));
 }
 

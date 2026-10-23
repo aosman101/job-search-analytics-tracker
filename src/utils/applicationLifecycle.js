@@ -26,6 +26,10 @@ export function normalizeApplication(app, nowISO = todayISO()) {
   if (normalized.status === "Offer" && !normalized.offerAt) {
     normalized.offerAt = statusDate;
   }
+  if (normalized.status === "Job Secured") {
+    if (!normalized.securedAt) normalized.securedAt = normalized.startDate || statusDate;
+    if (!normalized.offerAt) normalized.offerAt = normalized.securedAt;
+  }
   if (normalized.status === "Rejected" && !normalized.rejectedAt) {
     normalized.rejectedAt = statusDate;
   }
@@ -60,6 +64,11 @@ export function applyStatusTransition(app, nextStatus, nowISO = todayISO()) {
   }
   if (nextStatus === "Offer") {
     next.offerAt = next.offerAt || nowISO;
+  }
+  if (nextStatus === "Job Secured") {
+    // Securing a job implies the offer came first, even if it was never logged.
+    next.securedAt = next.securedAt || nowISO;
+    next.offerAt = next.offerAt || next.securedAt;
   }
   if (nextStatus === "Rejected") {
     next.rejectedAt = next.rejectedAt || nowISO;
