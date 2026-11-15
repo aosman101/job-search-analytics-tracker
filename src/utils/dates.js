@@ -45,3 +45,20 @@ export function isWithinPastDays(dateISO, days, now = new Date()) {
   const elapsed = daysSince(dateISO, now);
   return elapsed >= 0 && elapsed <= days;
 }
+
+/** "2026-10-01" → "1 Oct 2026". Falls back to the raw value if it isn't a date. */
+export function formatDate(dateISO) {
+  const date = parseLocalDate(dateISO);
+  if (!date) return dateISO || "";
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** Where a date sits relative to today: "today", "tomorrow", "in 3 days", "2 days ago". */
+export function relativeDay(dateISO, today = todayISO()) {
+  if (!parseLocalDate(dateISO)) return "";
+  const diff = daysBetween(today, dateISO);
+  if (diff === 0) return "today";
+  if (diff === 1) return "tomorrow";
+  if (diff === -1) return "yesterday";
+  return diff > 0 ? `in ${diff} days` : `${-diff} days ago`;
+}
