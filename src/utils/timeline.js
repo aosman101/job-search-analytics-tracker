@@ -13,7 +13,8 @@ export function buildTimeline(app) {
     add(entry.date, `Follow-up: ${entry.outcome || entry.method || "recorded"}`, entry.note || "");
   }
   add(app.reopenedAt, "Reopened");
-  add(app.interviewStartedAt, "Interviews started");
+  // Backfilled records share the applied date, which would just repeat it.
+  if (app.interviewStartedAt !== app.dateApplied) add(app.interviewStartedAt, "Interviews started");
   add(app.interviewDate, app.interviewStage || "Interview", "interview date");
   add(app.offerAt, "Offer received");
   add(app.status === "Job Secured" ? app.startDate : "", "Started the job");

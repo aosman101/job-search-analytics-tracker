@@ -1572,7 +1572,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                         <div key={item.id || `${item.date}-${item.method}`} className="history-item">
                           <div className="history-item__head">
                             <span>{item.method || "Follow-up"} · {item.outcome || "Recorded"}</span>
-                            <span className="history-item__date">{item.date}</span>
+                            <span className="history-item__date">{formatDate(item.date)}</span>
                           </div>
                           {item.note && <div className="history-item__note">{item.note}</div>}
                         </div>
@@ -1588,7 +1588,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                         <div key={item.messageId} className="history-item">
                           <div className="history-item__head">
                             <span>{item.type === "rejected" ? "Rejection" : item.type === "interview" ? "Interview invite" : "Application confirmation"}</span>
-                            <a className="history-item__date kv-link" href={`https://mail.google.com/mail/u/0/#all/${item.messageId}`} target="_blank" rel="noreferrer">{item.date} ↗</a>
+                            <a className="history-item__date kv-link" href={`https://mail.google.com/mail/u/0/#all/${item.messageId}`} target="_blank" rel="noreferrer">{formatDate(item.date)} ↗</a>
                           </div>
                           {item.subject && <div className="history-item__note">{item.subject}</div>}
                         </div>
