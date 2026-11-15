@@ -1,5 +1,6 @@
 import { CLOSED_STATUSES, GHOST_DAYS, SECURED_STATUS, STATUS_CONFIG, hasKnownRole, reachedOffer } from "../constants";
-import { daysBetween, daysSince, isWeekend, isWithinPastDays, todayISO } from "./dates";
+import { lastContactDate } from "./applicationLifecycle";
+import { addDays, daysBetween, daysSince, isWeekend, isWithinPastDays, relativeDay, todayISO } from "./dates";
 
 export const STAGE_DEPTH = {
   "": 0,
@@ -16,7 +17,7 @@ export function reachedInterview(app) {
 
 export function daysUntilGhost(app, now = new Date()) {
   if (!["Applied", "Follow-Up"].includes(app.status)) return null;
-  return Math.max(0, GHOST_DAYS - daysSince(app.dateApplied, now));
+  return Math.max(0, GHOST_DAYS - daysSince(lastContactDate(app), now));
 }
 
 function average(values) {
@@ -133,6 +134,16 @@ export function buildTrackerMetrics(apps, options = {}) {
     ),
   );
 
+  // Soonest first; an interview stays listed on the day itself.
+  const upcomingInterviews = apps
+    .filter((app) => app.interviewDate && app.interviewDate >= today && !["Rejected", "Withdrawn", "Ghosted", SECURED_STATUS].includes(app.status))
+    .sort((a, b) => a.interviewDate.localeCompare(b.interviewDate));
+  const nextInterview = upcomingInterviews[0] || null;
+  const interviewsThisWeek = upcomingInterviews.filter((app) => app.interviewDate <= addDays(today, 7));
+  const upcomingFollowUps = apps
+    .filter((app) => app.followUpDate && app.followUpDate > today && app.followUpDate <= addDays(today, 7) && !CLOSED_STATUSES.includes(app.status))
+    .sort((a, b) => a.followUpDate.localeCompare(b.followUpDate));
+
   const needsReview = apps.filter((app) => !hasKnownRole(app) && app.fromEmail);
   // Offers are a decision point: until they're accepted (Job Secured) or
   // declined (Withdrawn), the search outcome is unrecorded.
@@ -169,7 +180,13 @@ export function buildTrackerMetrics(apps, options = {}) {
     activeApplications: apps.filter((app) => !["Rejected", "Ghosted", "Withdrawn", SECURED_STATUS].includes(app.status)).length,
     interviewQueue: sorted
       .filter((app) => !["Rejected", "Withdrawn", "Ghosted", SECURED_STATUS].includes(app.status) && (app.status === "Interview" || app.status === "Offer" || app.interviewStage))
+      // Dated upcoming interviews lead, soonest first; the rest keep newest-applied order.
+      .map((app, index) => ({ app, index, key: app.interviewDate && app.interviewDate >= today ? app.interviewDate : "9999" }))
+      .sort((a, b) => a.key.localeCompare(b.key) || a.index - b.index)
+      .map(({ app }) => app)
       .slice(0, 6),
+    upcomingInterviews,
+    upcomingFollowUps,
     rejectedApps,
     rejectionsByStage,
     everInterviewedCount: apps.filter(reachedInterview).length,
@@ -190,6 +207,14 @@ export function buildTrackerMetrics(apps, options = {}) {
     pendingOffers,
     securedMissingStart,
     nextActions: [
+      interviewsThisWeek.length > 0 && {
+        id: "upcoming-interview",
+        tone: "interview",
+        label: interviewsThisWeek.length === 1 ? `Prepare for ${nextInterview.company}` : "Prepare for interviews",
+        detail: interviewsThisWeek.length === 1
+          ? `Your interview is ${relativeDay(nextInterview.interviewDate, today)}.`
+          : `${interviewsThisWeek.length} interviews this week. Next: ${nextInterview.company}, ${relativeDay(nextInterview.interviewDate, today)}.`,
+      },
       needsReview.length > 0 && {
         id: "review-email",
         tone: "followup",

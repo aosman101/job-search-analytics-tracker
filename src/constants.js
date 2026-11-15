@@ -62,6 +62,8 @@ export const EMPTY_FORM = {
   followUpDate: "",
   notes: "",
   interviewStage: "",
+  interviewDate: "",
+  salary: "",
   followUpStatus: "",
   followUpOutcome: "",
   followUpNote: "",

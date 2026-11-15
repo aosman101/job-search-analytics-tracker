@@ -1,8 +1,24 @@
 import { CLOSED_STATUSES, GHOST_DAYS } from "../constants";
-import { daysSince, todayISO } from "./dates";
+import { daysBetween, todayISO } from "./dates";
 
 function timestampForExistingStatus(app) {
   return app.statusUpdatedAt || app.updatedAt || app.createdAt || app.dateApplied || todayISO();
+}
+
+// Follow-up methods that mean a message actually reached the employer.
+const CONTACT_METHODS = ["LinkedIn message", "Email"];
+
+/**
+ * The date the ghost clock counts from: the latest of applying, a follow-up
+ * that was actually sent, or manually reopening a ghosted application. Without
+ * this, chasing a role on day 20 still ghosted it on day 21.
+ */
+export function lastContactDate(app) {
+  const dates = [app.dateApplied, app.reopenedAt];
+  for (const entry of Array.isArray(app.followUpHistory) ? app.followUpHistory : []) {
+    if (CONTACT_METHODS.includes(entry?.method)) dates.push(entry.date);
+  }
+  return dates.filter((value) => typeof value === "string" && value).sort().pop() || "";
 }
 
 export function normalizeApplication(app, nowISO = todayISO()) {
@@ -59,6 +75,10 @@ export function applyStatusTransition(app, nextStatus, nowISO = todayISO()) {
   if (previousStatus !== nextStatus) {
     next.statusUpdatedAt = nowISO;
   }
+  if (previousStatus === "Ghosted" && ["Applied", "Follow-Up"].includes(nextStatus)) {
+    // Reopening restarts the ghost clock, otherwise the next load re-ghosts it.
+    next.reopenedAt = nowISO;
+  }
   if (nextStatus === "Interview" && !next.interviewStartedAt) {
     next.interviewStartedAt = nowISO;
   }
@@ -85,7 +105,8 @@ export function applyStatusTransition(app, nextStatus, nowISO = todayISO()) {
 
 export function autoGhost(apps, nowISO = todayISO()) {
   return apps.map((app) => {
-    if (!["Applied", "Follow-Up"].includes(app.status) || daysSince(app.dateApplied) < GHOST_DAYS) {
+    const lastContact = lastContactDate(app);
+    if (!["Applied", "Follow-Up"].includes(app.status) || !lastContact || daysBetween(lastContact, nowISO) < GHOST_DAYS) {
       return app;
     }
     return {

@@ -2,7 +2,7 @@ import { CLOSED_STATUSES } from "../constants";
 import { daysUntilGhost } from "./applicationMetrics";
 import { todayISO } from "./dates";
 
-const SEARCHABLE_FIELDS = ["company", "role", "location", "source", "notes", "hiringManager"];
+const SEARCHABLE_FIELDS = ["company", "role", "location", "source", "notes", "hiringManager", "salary"];
 
 // An application needs attention when a follow-up has come due without being
 // actioned, or when it is within a week of being auto-ghosted.
@@ -39,4 +39,20 @@ export function sortApplications(apps, sortBy) {
     return copy.sort((a, b) => touched(b).localeCompare(touched(a)));
   }
   return copy;
+}
+
+const normalizeName = (value) => (value || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+/**
+ * Existing applications at the same company, so a repeat application is a
+ * deliberate choice rather than an accident. Same-role matches come first.
+ */
+export function findDuplicates(apps, { company, role }, excludeId = null) {
+  const name = normalizeName(company);
+  if (!name) return [];
+  const targetRole = normalizeName(role);
+  return apps
+    .filter((app) => app.id !== excludeId && normalizeName(app.company) === name)
+    .map((app) => ({ app, sameRole: Boolean(targetRole) && normalizeName(app.role) === targetRole }))
+    .sort((a, b) => Number(b.sameRole) - Number(a.sameRole) || (b.app.dateApplied || "").localeCompare(a.app.dateApplied || ""));
 }
