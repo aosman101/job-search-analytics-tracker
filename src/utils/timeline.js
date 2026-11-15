@@ -14,7 +14,7 @@ export function buildTimeline(app) {
   }
   add(app.reopenedAt, "Reopened");
   add(app.interviewStartedAt, "Interviews started");
-  add(app.interviewDate, app.interviewStage || "Interview", "scheduled");
+  add(app.interviewDate, app.interviewStage || "Interview", "interview date");
   add(app.offerAt, "Offer received");
   add(app.status === "Job Secured" ? app.startDate : "", "Started the job");
   add(app.status === "Job Secured" ? app.endDate : "", "Finished the job");

@@ -32,9 +32,11 @@ import {
   storeCorruptPayload,
 } from "./storage";
 import { applyStatusTransition, autoGhost, findNewlyGhosted, normalizeApplications } from "./utils/applicationLifecycle";
-import { filterApplications, needsAttention, sortApplications } from "./utils/applicationFilters";
+import { filterApplications, findDuplicates, needsAttention, sortApplications } from "./utils/applicationFilters";
 import { buildTrackerMetrics, daysUntilGhost } from "./utils/applicationMetrics";
-import { addDays, daysSince, isWeekend, todayISO } from "./utils/dates";
+import { addDays, daysSince, formatDate, isWeekend, relativeDay, todayISO } from "./utils/dates";
+import { toCSV } from "./utils/exportCsv";
+import { buildTimeline } from "./utils/timeline";
 import { employmentState, formatTenure, tenureDays, validateEmploymentDates } from "./utils/employment";
 import { summarizeChanges, useGmailSync } from "./gmail/useGmailSync";
 import GmailPanel from "./gmail/GmailPanel";
@@ -460,7 +462,9 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   };
 
   const openNewApplication = () => {
-    setForm(EMPTY_FORM);
+    // Most applications are logged the day they're sent, and a follow-up a
+    // week later is the usual next step, so start from those.
+    setForm({ ...EMPTY_FORM, dateApplied: todayISO(), followUpDate: addDays(todayISO(), 7) });
     setEditId(null);
     setFormError("");
     setModalOpen(true);
@@ -520,10 +524,27 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
       openSecuredPrompt(id);
       return;
     }
+    const previous = appById(id);
+    if (!previous || previous.status === status) return;
     const updated = apps.map(a => a.id === id ? applyStatusTransition(a, status, todayISO()) : a);
     setApps(updated);
-    showToast(`Moved to ${status}`);
     persistToStorage(updated);
+    // Undo restores just this application, so edits made elsewhere meanwhile survive.
+    const undo = () => {
+      commitApps(appsRef.current.map(a => a.id === id ? previous : a));
+      showToast(`${previous.company} is back to ${previous.status}.`);
+    };
+    showToast(`${previous.company} moved to ${status}`, "success", { label: "Undo", run: undo });
+  };
+  // Sets the next follow-up reminder a number of days from today, for one or
+  // many applications (snoozing a due one, or scheduling ones that have none).
+  const setFollowUpIn = (ids, days, message) => {
+    const now = todayISO();
+    const targets = new Set(ids);
+    const updated = apps.map(a => targets.has(a.id) ? { ...a, followUpDate: addDays(now, days), followUpStatus: "", updatedAt: now } : a);
+    setApps(updated);
+    persistToStorage(updated);
+    showToast(message);
   };
   const handleFollowUpStatus = (id, followUpStatus) => {
     const now = todayISO();
@@ -565,6 +586,19 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
     a.click();
     URL.revokeObjectURL(url);
     showToast(`Exported ${apps.length} application${apps.length !== 1 ? "s" : ""}`);
+  };
+
+  // Spreadsheet export of whatever the Job Search list is currently showing.
+  const handleExportCsv = () => {
+    // The BOM makes Excel read the file as UTF-8 instead of mangling accents.
+    const blob = new Blob(["\uFEFF" + toCSV(filtered)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `job-applications-${todayISO()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Exported ${filtered.length} application${filtered.length !== 1 ? "s" : ""} to CSV`);
   };
 
   // Import data from JSON file
@@ -640,6 +674,14 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const availableSources = useMemo(
     () => Array.from(new Set(apps.map(a => a.source).filter(Boolean))).sort(),
     [apps],
+  );
+
+  // Other applications at the company being typed into the form.
+  const formCompany = form.company;
+  const formRole = form.role;
+  const duplicates = useMemo(
+    () => (modalOpen ? findDuplicates(apps, { company: formCompany, role: formRole }, editId) : []),
+    [modalOpen, apps, formCompany, formRole, editId],
   );
 
   const filtersActive = filterStatus !== "All" || filterSource !== "All" || onlyNeedsAttention || search.trim() !== "";
@@ -905,7 +947,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 {ghostedBanner.length} application{ghostedBanner.length !== 1 ? "s have" : " has"} been auto-marked as Ghosted (no response after {GHOST_DAYS} days):
               </p>
               {ghostedBanner.map((a, i) => (
-                <p key={a.id || i} className="banner__line">→ <strong>{a.company}</strong> — {a.role} (applied {a.dateApplied})</p>
+                <p key={a.id || i} className="banner__line">→ <strong>{a.company}</strong> — {a.role} (applied {formatDate(a.dateApplied)})</p>
               ))}
               <button type="button" className="banner__dismiss" onClick={() => setGhostedBanner([])}>Dismiss</button>
             </div>
@@ -1046,7 +1088,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                   <div key={app.id} className="queue-row">
                     <div>
                       <div className="queue-row__name">{app.company}</div>
-                      <div className="queue-row__detail">{app.role} · {app.dateApplied}</div>
+                      <div className="queue-row__detail">{app.role} · {formatDate(app.dateApplied)}</div>
                     </div>
                     <Badge status={app.status} interviewStage={app.interviewStage} />
                   </div>
@@ -1141,6 +1183,11 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                   Clear filters <span className="hint">(Esc)</span>
                 </button>
               )}
+              {filtered.length > 0 && (
+                <button type="button" className="clear-filters filter-row__end" onClick={handleExportCsv} title="Download the applications shown below as a spreadsheet">
+                  <Download size={13} aria-hidden="true" /> Export CSV
+                </button>
+              )}
             </div>
 
             {filtered.length===0 ? (
@@ -1172,6 +1219,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                         <span className="application-card__company">{app.company}</span>
                         <Badge status={app.status} interviewStage={app.interviewStage}/>
                         {app.interviewStage && !["Rejected","Withdrawn","Ghosted"].includes(app.status) && <span className="stage-pill">{app.interviewStage}</span>}
+                        {app.interviewDate && app.interviewDate>=today && !["Rejected","Withdrawn","Ghosted",SECURED_STATUS].includes(app.status) && <span className="inline-flag inline-flag--interview"><span aria-hidden="true">🗓️ </span>Interview {relativeDay(app.interviewDate, today)}</span>}
                         {isOverdue&&<span className="inline-flag inline-flag--overdue"><span aria-hidden="true">🔔 </span>FOLLOW-UP DUE</span>}
                         {isOverdue && app.followUpStatus && (() => { const fs=FOLLOWUP_STATUS[app.followUpStatus]; return <span className="status-badge" data-status={fs.statusToken}><span aria-hidden="true">{fs.emoji}</span> {fs.label}</span>; })()}
                         {warningSoon&&<span className="inline-flag inline-flag--risk"><span aria-hidden="true">⏳ </span>{dLeft}d to ghost</span>}
@@ -1179,7 +1227,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                         {app.fromEmail&&<span className="inline-flag inline-flag--email" title="Added automatically from Gmail. Check the details."><span aria-hidden="true">📧 </span>from Gmail{!hasKnownRole(app)?" · add role":""}</span>}
                         {!app.fromEmail&&app.emailUpdated&&<span className="inline-flag inline-flag--email" title="Status updated from an email"><span aria-hidden="true">📧 </span>email update</span>}
                       </div>
-                      <p className="application-card__meta">{app.role}{app.location?` · ${app.location}`:""}{app.source?` · ${app.source}`:""} · Applied {app.dateApplied}{app.hiringManager?` · ${app.hiringManager}`:""}</p>
+                      <p className="application-card__meta">{app.role}{app.location?` · ${app.location}`:""}{app.source?` · ${app.source}`:""} · Applied {formatDate(app.dateApplied)}{app.salary?` · ${app.salary}`:""}{app.hiringManager&&app.hiringManager!=="Not Available"?` · ${app.hiringManager}`:""}</p>
                       {app.status===SECURED_STATUS&&<p className="application-card__meta"><span aria-hidden="true">🏆 </span>{employmentSummary(app, today)}</p>}
                     </div>
                     <div className="application-card__actions" onClick={e=>e.stopPropagation()}>
@@ -1215,7 +1263,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                       <div className="followup-card__top">
                         <div className="followup-card__ident">
                           <span className="followup-card__company">{a.company}</span>
-                          <span className="followup-card__role">— {a.role} · due {a.followUpDate}</span>
+                          <span className="followup-card__role">— {a.role} · due {a.followUpDate === today ? "today" : `${formatDate(a.followUpDate)} (${relativeDay(a.followUpDate, today)})`}</span>
                           <span className="status-badge" data-status={fs.statusToken}><span aria-hidden="true">{fs.emoji}</span> {fs.label}</span>
                         </div>
                         <div className="followup-card__actions">
@@ -1233,6 +1281,14 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                               <span aria-hidden="true">{FOLLOWUP_STATUS[m.key].emoji}</span> {m.label}
                             </button>
                           ))}
+                          <button
+                            type="button"
+                            className="chip-button"
+                            title="Not ready to chase yet? Move this reminder three days out."
+                            onClick={() => setFollowUpIn([a.id], 3, `${a.company} follow-up snoozed for 3 days`)}
+                          >
+                            <span aria-hidden="true">💤</span> Snooze 3d
+                          </button>
                           {hasAnswered && (
                             <button
                               type="button"
@@ -1247,6 +1303,20 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                     </div>
                   );
                 }) : <p className="muted-note">No overdue follow-ups. Good.</p>}
+                {metrics.upcomingFollowUps.length > 0 && (
+                  <>
+                    <div className="field-group__label subsection-label">Coming up this week</div>
+                    {metrics.upcomingFollowUps.map((app) => (
+                      <div key={app.id} className="queue-row">
+                        <div>
+                          <div className="queue-row__name">{app.company}</div>
+                          <div className="queue-row__detail">{app.role} · {formatDate(app.followUpDate)} ({relativeDay(app.followUpDate, today)})</div>
+                        </div>
+                        <button type="button" className="chip-button chip-button--accent" onClick={() => setDetailId(app.id)}>Open</button>
+                      </div>
+                    ))}
+                  </>
+                )}
               </SectionCard>
 
               <SectionCard title="Interview & Offer Queue" subtitle="Roles that need close attention.">
@@ -1255,6 +1325,9 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                     <div>
                       <div className="queue-row__name">{app.company}</div>
                       <div className="queue-row__detail">{app.role}{app.interviewStage ? ` · ${app.interviewStage}` : ""}</div>
+                      {app.interviewDate && app.interviewDate >= today
+                        ? <div className="queue-row__detail queue-row__detail--strong"><span aria-hidden="true">🗓️ </span>{formatDate(app.interviewDate)} ({relativeDay(app.interviewDate, today)})</div>
+                        : app.status === "Interview" && <div className="queue-row__detail">No interview date set</div>}
                     </div>
                     <div className="queue-row__actions">
                       <Badge status={app.status} interviewStage={app.interviewStage} />
@@ -1285,6 +1358,35 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                   );
                 }) : <p className="muted-note">No ghost-risk applications this week.</p>}
               </SectionCard>
+
+              {metrics.unscheduledFollowUps.length > 0 && (
+                <SectionCard
+                  title="No Follow-Up Planned"
+                  subtitle="Applied five or more days ago with no reminder set."
+                  actions={metrics.unscheduledFollowUps.length > 1 && (
+                    <button
+                      type="button"
+                      className="soft-button"
+                      onClick={() => setFollowUpIn(metrics.unscheduledFollowUps.map(a => a.id), 2, `Follow-ups set for ${formatDate(addDays(today, 2))} on ${metrics.unscheduledFollowUps.length} applications`)}
+                    >
+                      Remind me on all in 2 days
+                    </button>
+                  )}
+                >
+                  {metrics.unscheduledFollowUps.map((app) => (
+                    <div key={app.id} className="queue-row">
+                      <div>
+                        <div className="queue-row__name">{app.company}</div>
+                        <div className="queue-row__detail">{app.role} · applied {relativeDay(app.dateApplied, today)}</div>
+                      </div>
+                      <div className="queue-row__actions">
+                        <button type="button" className="chip-button chip-button--accent" onClick={() => setFollowUpIn([app.id], 2, `Follow-up for ${app.company} set for ${formatDate(addDays(today, 2))}`)}>Remind in 2 days</button>
+                        <button type="button" className="chip-button" onClick={() => setDetailId(app.id)}>Open</button>
+                      </div>
+                    </div>
+                  ))}
+                </SectionCard>
+              )}
 
               <SectionCard title="Pipeline Notes" subtitle="Useful reminders for keeping the process disciplined.">
                 <div className="stack">
@@ -1331,6 +1433,8 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
             <Field label="Date Applied" value={form.dateApplied} onChange={f("dateApplied")} type="date" required/>
             <Field label="Status" value={form.status} onChange={f("status")} as="select" options={Object.keys(STATUS_CONFIG)}/>
             <Field label="Interview Stage" value={form.interviewStage} onChange={f("interviewStage")} as="select" options={INTERVIEW_STAGES}/>
+            <Field label="Interview Date" value={form.interviewDate} onChange={f("interviewDate")} type="date"/>
+            <Field label="Salary" value={form.salary} onChange={f("salary")} placeholder="e.g. £55k–£65k"/>
             <Field label="Job URL" value={form.jobUrl} onChange={f("jobUrl")} placeholder="https://..."/>
             <Field label="Follow-Up Date" value={form.followUpDate} onChange={f("followUpDate")} type="date"/>
             <Field label="Follow-Up Note" value={form.followUpNote} onChange={f("followUpNote")} placeholder="What should you mention next?"/>
@@ -1389,6 +1493,15 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
             </div>
           )}
           <Field label="Notes" value={form.notes} onChange={f("notes")} as="textarea" placeholder="Interview feedback, key contacts, how you found the role…" rows={3}/>
+          {duplicates.length > 0 && (
+            <p className="form-notice" role="status">
+              <span aria-hidden="true">👀 </span>
+              You already have {duplicates.length} application{duplicates.length !== 1 ? "s" : ""} at {duplicates[0].app.company}
+              {duplicates.some(d => d.sameRole) ? ", including this role" : ""}:{" "}
+              {duplicates.slice(0, 3).map(d => `${d.app.role} (${d.app.status}, applied ${formatDate(d.app.dateApplied)})`).join("; ")}
+              {duplicates.length > 3 ? "…" : ""}
+            </p>
+          )}
           {formError && (
             <p className="form-error" role="alert">
               <span aria-hidden="true">⚠️ </span>{formError}
@@ -1417,7 +1530,7 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                 {dLeft!==null&&dLeft<=7&&dLeft>0&&<p className="modal-warning"><span aria-hidden="true">⏳ </span>Auto-ghosted in {dLeft} day{dLeft!==1?"s":""} if no update</p>}
               </div>
               <div className="modal-body kv-grid">
-                {[["Date Applied",a.dateApplied],["Source",a.source||"—"],["Follow-Up",a.followUpDate||"—"],["Hiring Manager",a.hiringManager||"—"],["Days Since Applied",daysSince(a.dateApplied)+" days"]].map(([l,v])=>(
+                {[["Date Applied",formatDate(a.dateApplied)],["Days Since Applied",daysSince(a.dateApplied)+" days"],["Source",a.source||"—"],["Salary",a.salary||"—"],["Follow-Up",a.followUpDate?`${formatDate(a.followUpDate)} (${relativeDay(a.followUpDate)})`:"—"],["Interview Date",a.interviewDate?`${formatDate(a.interviewDate)} (${relativeDay(a.interviewDate)})`:"—"],["Hiring Manager",a.hiringManager||"—"]].map(([l,v])=>(
                   <div key={l}>
                     <div className="kv-label">{l}</div>
                     <div className="kv-value">{v}</div>
@@ -1484,6 +1597,17 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
                   </div>
                 )}
                 {a.notes&&<div className="kv-item--full"><div className="kv-label">Notes</div><div className="kv-note">{a.notes}</div></div>}
+                <div className="kv-item--full">
+                  <div className="kv-label">Timeline</div>
+                  <ol className="timeline">
+                    {buildTimeline(a).map((event, i) => (
+                      <li key={`${event.date}-${event.label}-${i}`} className="timeline__item">
+                        <span className="timeline__date">{formatDate(event.date)}</span>
+                        <span className="timeline__label">{event.label}{event.detail ? <span className="timeline__detail"> · {event.detail}</span> : null}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               </div>
               <div className="modal-actions">
                 {(a.status==="Offer"||a.status===SECURED_STATUS)&&(
