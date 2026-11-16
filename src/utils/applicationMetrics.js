@@ -15,6 +15,14 @@ export function reachedInterview(app) {
   return ["Interview", "Offer", SECURED_STATUS].includes(app.status) || Boolean(app.interviewStage) || Boolean(app.interviewStartedAt);
 }
 
+/**
+ * True once the employer has answered in any form. Sending a follow-up or
+ * withdrawing is the applicant's move, so neither counts as a reply.
+ */
+export function heardBack(app) {
+  return app.status === "Rejected" || reachedInterview(app) || reachedOffer(app);
+}
+
 export function daysUntilGhost(app, now = new Date()) {
   if (!["Applied", "Follow-Up"].includes(app.status)) return null;
   return Math.max(0, GHOST_DAYS - daysSince(lastContactDate(app), now));
@@ -34,7 +42,7 @@ function rankWithOutcomes(apps, key, limit = 5) {
       acc[value] = { label: value, total: 0, responses: 0, interviews: 0, offers: 0, active: 0 };
     }
     acc[value].total += 1;
-    if (!["Applied", "Ghosted"].includes(app.status)) acc[value].responses += 1;
+    if (heardBack(app)) acc[value].responses += 1;
     if (reachedInterview(app)) acc[value].interviews += 1;
     if (reachedOffer(app)) acc[value].offers += 1;
     if (!CLOSED_STATUSES.includes(app.status)) acc[value].active += 1;
@@ -100,7 +108,7 @@ export function buildTrackerMetrics(apps, options = {}) {
       applied: apps.filter((app) => app.dateApplied >= startISO && app.dateApplied <= endISO).length,
       responses: apps.filter((app) => {
         const statusDate = app.statusUpdatedAt || app.updatedAt || "";
-        return statusDate >= startISO && statusDate <= endISO && !["Applied", "Ghosted"].includes(app.status);
+        return statusDate >= startISO && statusDate <= endISO && heardBack(app);
       }).length,
     };
   });
@@ -172,7 +180,7 @@ export function buildTrackerMetrics(apps, options = {}) {
     }),
     last28,
     todayCount: apps.filter((app) => app.dateApplied === today).length,
-    responseRate: apps.length > 0 ? Math.round((apps.filter((app) => !["Applied", "Ghosted"].includes(app.status)).length / apps.length) * 100) : 0,
+    responseRate: apps.length > 0 ? Math.round((apps.filter(heardBack).length / apps.length) * 100) : 0,
     interviewRate: apps.length > 0 ? Math.round((apps.filter(reachedInterview).length / apps.length) * 100) : 0,
     offerRate: apps.length > 0 ? Math.round((apps.filter(reachedOffer).length / apps.length) * 100) : 0,
     securedRate: apps.length > 0 ? Math.round((apps.filter((app) => app.status === SECURED_STATUS).length / apps.length) * 100) : 0,

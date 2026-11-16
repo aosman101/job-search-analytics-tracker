@@ -40,6 +40,7 @@ import { buildTimeline } from "./utils/timeline";
 import { employmentState, formatTenure, tenureDays, validateEmploymentDates } from "./utils/employment";
 import { summarizeChanges, useGmailSync } from "./gmail/useGmailSync";
 import GmailPanel from "./gmail/GmailPanel";
+import PipelineView from "./features/pipeline/PipelineView";
 
 const InterviewPrep = lazy(() => import("./InterviewPrep"));
 const AnalyticsView = lazy(() => import("./features/analytics/AnalyticsView"));
@@ -237,7 +238,6 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [sortBy, setSortBy] = useState("date");
   const [ghostedBanner, setGhostedBanner] = useState([]);
-  const [dismissedFollowUps, setDismissedFollowUps] = useState(new Set());
   const [storageHealth, setStorageHealth] = useState("ok"); // "ok" | "warn" | "error"
   const [storageBackend, setStorageBackend] = useState("IndexedDB");
   const [storageMessage, setStorageMessage] = useState("Ready");
@@ -749,12 +749,6 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const freshThisWeek = metrics.freshThisWeek;
   const activeTabMeta = TABS.find(tab => tab.id === activeTab) || TABS[0];
 
-  // Follow-ups the user hasn't cleared from the banner this session. Derived
-  // once because four separate call sites were recomputing the same filter.
-  const visibleFollowUps = useMemo(
-    () => dueFollowUps.filter(a => !dismissedFollowUps.has(a.id)),
-    [dueFollowUps, dismissedFollowUps],
-  );
   const countTopValues = (key) => Object.entries(apps.reduce((acc, app) => {
     const value = app[key]?.trim();
     if (!value || (key === "role" && !hasKnownRole(app))) return acc;
@@ -954,11 +948,11 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
           </div>
         )}
 
-        {visibleFollowUps.length > 0 && activeTab !== "Pipeline" && (
+        {dueFollowUps.length > 0 && activeTab !== "Pipeline" && (
           <div className="banner" data-tone="warning">
             <p className="banner__title">
               <span aria-hidden="true">🔔 </span>
-              {visibleFollowUps.length} follow-up{visibleFollowUps.length !== 1 ? "s are" : " is"} due.
+              {dueFollowUps.length} follow-up{dueFollowUps.length !== 1 ? "s are" : " is"} due.
             </p>
             <button type="button" className="banner__count" onClick={() => setActiveTab("Pipeline")}>
               Open Pipeline
@@ -966,15 +960,18 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
           </div>
         )}
 
-        <div className="banner" data-tone={todayBannerTone}>
-          <div>
-            <p className="banner__title">
-              <span aria-hidden="true">{todayIsWeekend ? "🛋️ " : "📆 "}</span>{todayBannerMessage}
-            </p>
-            <p className="banner__helper">{todayBannerHelper}</p>
+        {/* The daily logging nudge would only push the two review tabs down. */}
+        {activeTab !== "Pipeline" && activeTab !== "Analytics" && (
+          <div className="banner" data-tone={todayBannerTone}>
+            <div>
+              <p className="banner__title">
+                <span aria-hidden="true">{todayIsWeekend ? "🛋️ " : "📆 "}</span>{todayBannerMessage}
+              </p>
+              <p className="banner__helper">{todayBannerHelper}</p>
+            </div>
+            <div className="banner__count">{todayCount} logged today</div>
           </div>
-          <div className="banner__count">{todayCount} logged today</div>
-        </div>
+        )}
 
         {activeTab === "Home" && (
           <>
@@ -1246,161 +1243,17 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
         )}
 
         {activeTab === "Pipeline" && (
-          <>
-            <div className="dash-grid dash-grid--auto">
-              <SectionCard title="Follow-Ups" subtitle="Clear the overdue queue first.">
-                {visibleFollowUps.length > 0 ? visibleFollowUps.map((a) => {
-                  const fs = FOLLOWUP_STATUS[a.followUpStatus || ""];
-                  const hasAnswered = !!a.followUpStatus;
-                  const methods = [
-                    { key: "messaged", label: "Messaged", variant: "success" },
-                    { key: "premium", label: "Premium", variant: "violet" },
-                    { key: "email_instead", label: "Emailed", variant: "accent" },
-                    { key: "no_linkedin", label: "No LinkedIn", variant: "muted" },
-                  ];
-                  return (
-                    <div key={a.id} className="followup-card" data-status={fs.statusToken}>
-                      <div className="followup-card__top">
-                        <div className="followup-card__ident">
-                          <span className="followup-card__company">{a.company}</span>
-                          <span className="followup-card__role">— {a.role} · due {a.followUpDate === today ? "today" : `${formatDate(a.followUpDate)} (${relativeDay(a.followUpDate, today)})`}</span>
-                          <span className="status-badge" data-status={fs.statusToken}><span aria-hidden="true">{fs.emoji}</span> {fs.label}</span>
-                        </div>
-                        <div className="followup-card__actions">
-                          {a.hmLinkedIn && (
-                            <a href={a.hmLinkedIn} target="_blank" rel="noreferrer" className="chip-button chip-button--accent">LinkedIn ↗</a>
-                          )}
-                          {methods.map((m) => (
-                            <button
-                              key={m.key}
-                              type="button"
-                              className={`chip-button chip-button--${m.variant}`}
-                              aria-pressed={a.followUpStatus === m.key}
-                              onClick={() => handleFollowUpStatus(a.id, m.key)}
-                            >
-                              <span aria-hidden="true">{FOLLOWUP_STATUS[m.key].emoji}</span> {m.label}
-                            </button>
-                          ))}
-                          <button
-                            type="button"
-                            className="chip-button"
-                            title="Not ready to chase yet? Move this reminder three days out."
-                            onClick={() => setFollowUpIn([a.id], 3, `${a.company} follow-up snoozed for 3 days`)}
-                          >
-                            <span aria-hidden="true">💤</span> Snooze 3d
-                          </button>
-                          {hasAnswered && (
-                            <button
-                              type="button"
-                              className="chip-button chip-button--danger"
-                              onClick={() => setDismissedFollowUps(prev => new Set([...prev, a.id]))}
-                            >
-                              Clear
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }) : <p className="muted-note">No overdue follow-ups. Good.</p>}
-                {metrics.upcomingFollowUps.length > 0 && (
-                  <>
-                    <div className="field-group__label subsection-label">Coming up this week</div>
-                    {metrics.upcomingFollowUps.map((app) => (
-                      <div key={app.id} className="queue-row">
-                        <div>
-                          <div className="queue-row__name">{app.company}</div>
-                          <div className="queue-row__detail">{app.role} · {formatDate(app.followUpDate)} ({relativeDay(app.followUpDate, today)})</div>
-                        </div>
-                        <button type="button" className="chip-button chip-button--accent" onClick={() => setDetailId(app.id)}>Open</button>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </SectionCard>
-
-              <SectionCard title="Interview & Offer Queue" subtitle="Roles that need close attention.">
-                {interviewQueue.length > 0 ? interviewQueue.map((app) => (
-                  <div key={app.id} className="queue-row">
-                    <div>
-                      <div className="queue-row__name">{app.company}</div>
-                      <div className="queue-row__detail">{app.role}{app.interviewStage ? ` · ${app.interviewStage}` : ""}</div>
-                      {app.interviewDate && app.interviewDate >= today
-                        ? <div className="queue-row__detail queue-row__detail--strong"><span aria-hidden="true">🗓️ </span>{formatDate(app.interviewDate)} ({relativeDay(app.interviewDate, today)})</div>
-                        : app.status === "Interview" && <div className="queue-row__detail">No interview date set</div>}
-                    </div>
-                    <div className="queue-row__actions">
-                      <Badge status={app.status} interviewStage={app.interviewStage} />
-                      {app.status === "Offer" && (
-                        <button type="button" className="chip-button chip-button--secured" onClick={() => openSecuredPrompt(app.id)}>
-                          <span aria-hidden="true">🏆</span> Accepted
-                        </button>
-                      )}
-                      <button type="button" className="chip-button chip-button--accent" onClick={() => setDetailId(app.id)}>Open</button>
-                    </div>
-                  </div>
-                )) : <p className="muted-note">No interviews or offers in the queue yet.</p>}
-              </SectionCard>
-            </div>
-
-            <div className="dash-grid dash-grid--auto dash-grid--flush">
-              <SectionCard title="Ghost Risk" subtitle={`Applications likely to ghost within ${GHOST_DAYS} days if untouched.`}>
-                {atRiskApps.length > 0 ? atRiskApps.map((app) => {
-                  const dLeft = daysUntilGhost(app);
-                  return (
-                    <div key={app.id} className="queue-row">
-                      <div>
-                        <div className="queue-row__name">{app.company}</div>
-                        <div className="queue-row__detail">{app.role} · {dLeft} day{dLeft !== 1 ? "s" : ""} left</div>
-                      </div>
-                      <button type="button" className="chip-button chip-button--risk" onClick={() => openEdit(app.id)}>Update</button>
-                    </div>
-                  );
-                }) : <p className="muted-note">No ghost-risk applications this week.</p>}
-              </SectionCard>
-
-              {metrics.unscheduledFollowUps.length > 0 && (
-                <SectionCard
-                  title="No Follow-Up Planned"
-                  subtitle="Applied five or more days ago with no reminder set."
-                  actions={metrics.unscheduledFollowUps.length > 1 && (
-                    <button
-                      type="button"
-                      className="soft-button"
-                      onClick={() => setFollowUpIn(metrics.unscheduledFollowUps.map(a => a.id), 2, `Follow-ups set for ${formatDate(addDays(today, 2))} on ${metrics.unscheduledFollowUps.length} applications`)}
-                    >
-                      Remind me on all in 2 days
-                    </button>
-                  )}
-                >
-                  {metrics.unscheduledFollowUps.map((app) => (
-                    <div key={app.id} className="queue-row">
-                      <div>
-                        <div className="queue-row__name">{app.company}</div>
-                        <div className="queue-row__detail">{app.role} · applied {relativeDay(app.dateApplied, today)}</div>
-                      </div>
-                      <div className="queue-row__actions">
-                        <button type="button" className="chip-button chip-button--accent" onClick={() => setFollowUpIn([app.id], 2, `Follow-up for ${app.company} set for ${formatDate(addDays(today, 2))}`)}>Remind in 2 days</button>
-                        <button type="button" className="chip-button" onClick={() => setDetailId(app.id)}>Open</button>
-                      </div>
-                    </div>
-                  ))}
-                </SectionCard>
-              )}
-
-              <SectionCard title="Pipeline Notes" subtitle="Useful reminders for keeping the process disciplined.">
-                <div className="stack">
-                  {[
-                    "Prioritise overdue follow-ups before adding low-fit new applications.",
-                    "Update interview stages immediately after each recruiter or hiring manager touchpoint.",
-                    "Export a fresh backup after large edits or imports.",
-                  ].map((tip) => (
-                    <div key={tip} className="note-item">{tip}</div>
-                  ))}
-                </div>
-              </SectionCard>
-            </div>
-          </>
+          <PipelineView
+            apps={apps}
+            metrics={metrics}
+            today={today}
+            onFollowUp={handleFollowUpStatus}
+            onSchedule={setFollowUpIn}
+            onOpen={setDetailId}
+            onSecured={openSecuredPrompt}
+            onPrep={() => setActiveTab("Interview Prep")}
+            onShowStatus={(status) => { clearFilters(); setFilterStatus(status); setActiveTab("Job Search"); }}
+          />
         )}
 
         {activeTab === "Analytics" && (

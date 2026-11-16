@@ -31,6 +31,7 @@ const TOKEN_NAMES = [
   "--muted-soft",
   "--ink",
   "--ink-soft",
+  "--surface-chart",
   "--chart-grid",
   "--chart-axis",
   "--chart-label",
