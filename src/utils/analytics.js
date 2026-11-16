@@ -6,6 +6,8 @@ import { addDays, daysBetween, parseLocalDate, todayISO } from "./dates";
 const CONTACT_METHODS = ["LinkedIn message", "Email"];
 // A segment needs this many applications before its rate is worth comparing.
 export const MIN_SAMPLE = 3;
+// Most monthly columns the outcome chart shows before older ones are dropped.
+const MAX_BUCKETS = 12;
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export const RANGES = [
@@ -86,10 +88,11 @@ function mondayOf(dateISO) {
  */
 function buildCohorts(apps, days, today) {
   const dated = apps.filter((app) => parseLocalDate(app.dateApplied) && app.dateApplied <= today);
-  if (dated.length === 0) return { unit: "week", buckets: [] };
+  if (dated.length === 0) return { unit: "week", buckets: [], trimmed: false };
   const earliest = dated.reduce((min, app) => (app.dateApplied < min ? app.dateApplied : min), today);
   const start = days ? addDays(today, -(days - 1)) : earliest;
-  const monthly = daysBetween(start, today) > 182;
+  // Up to about 14 weekly columns stay readable; longer spans go monthly.
+  const monthly = daysBetween(start, today) > 100;
   const keyOf = (dateISO) => (monthly ? dateISO.slice(0, 7) : mondayOf(dateISO));
 
   const keys = [];
@@ -117,7 +120,10 @@ function buildCohorts(apps, days, today) {
     bucket[outcomeOf(app)] += 1;
     bucket.total += 1;
   }
-  return { unit: monthly ? "month" : "week", buckets: [...buckets.values()] };
+  // One stray old application shouldn't squash a year of empty months into view.
+  const all = [...buckets.values()];
+  const shown = monthly ? all.slice(-MAX_BUCKETS) : all;
+  return { unit: monthly ? "month" : "week", buckets: shown, trimmed: shown.length < all.length };
 }
 
 const REPLY_BUCKETS = [

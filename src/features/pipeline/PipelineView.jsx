@@ -5,7 +5,7 @@ import { addDays, daysBetween, formatDate, relativeDay } from "../../utils/dates
 
 const OPEN_STAGES = ["Applied", "Follow-Up", "Interview", "Offer"];
 // Rows shown per group in the combined view before "Show all" takes over.
-const PREVIEW_ROWS = 5;
+const PREVIEW_ROWS = 6;
 
 function Row({ app, detail, tone, onOpen, children }) {
   return (

@@ -1,3 +1,4 @@
+const __t = new URLSearchParams(location.search).get("theme"); if (__t) localStorage.setItem("adil-job-tracker-theme", __t);
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./src/styles.css";

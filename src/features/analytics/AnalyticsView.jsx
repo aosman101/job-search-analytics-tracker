@@ -220,7 +220,7 @@ export default function AnalyticsView({ apps, theme }) {
 
           <SectionCard
             title="Applications and How They Turned Out"
-            subtitle={`Grouped by the ${data.cohorts.unit} each application was sent. Recent ${data.cohorts.unit}s carry more open applications because employers haven't answered yet.`}
+            subtitle={`Grouped by the ${data.cohorts.unit} each application was sent${data.cohorts.trimmed ? `, latest 12 ${data.cohorts.unit}s` : ""}. Recent ${data.cohorts.unit}s carry more open applications because employers haven't answered yet.`}
             className="section-card--spaced"
           >
             <div role="img" aria-label={`Applications per ${data.cohorts.unit} by outcome: ${data.cohorts.buckets.map((b) => `${b.label} ${b.total}`).join(", ")}`}>

@@ -53,6 +53,9 @@ describe("ranges", () => {
     expect(long.cohorts.unit).toBe("month");
     expect(long.cohorts.buckets[0].key).toBe("2025-09");
     expect(long.cohorts.buckets).toHaveLength(10);
+    const veryLong = buildAnalytics([...apps, { id: 6, dateApplied: "2024-01-10" }], { today: TODAY });
+    expect(veryLong.cohorts.buckets).toHaveLength(12);
+    expect(veryLong.cohorts.buckets[0].key).toBe("2025-07");
   });
 });
 
