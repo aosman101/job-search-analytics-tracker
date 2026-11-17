@@ -17,8 +17,10 @@ import {
   Target as TargetIcon,
   Upload,
   BarChart3 as BarChartIcon,
+  X,
 } from "lucide-react";
 import { useTheme } from "./useTheme";
+import { useDismissals } from "./useDismissals";
 import { APPLICATION_SOURCES, CLOSED_STATUSES, EMPTY_FORM, SECURED_STATUS, UNKNOWN_ROLE, hasKnownRole, FOLLOWUP_METHODS, FOLLOWUP_STATUS, GHOST_DAYS, INTERVIEW_STAGES, STATUS_CONFIG } from "./constants";
 import {
   STORAGE_KEY,
@@ -36,6 +38,7 @@ import { filterApplications, findDuplicates, needsAttention, sortApplications } 
 import { buildTrackerMetrics, daysUntilGhost } from "./utils/applicationMetrics";
 import { addDays, daysSince, formatDate, isWeekend, relativeDay, todayISO } from "./utils/dates";
 import { toCSV } from "./utils/exportCsv";
+import { dismissKey, dueBannerKey } from "./utils/dismissals";
 import { buildTimeline } from "./utils/timeline";
 import { employmentState, formatTenure, tenureDays, validateEmploymentDates } from "./utils/employment";
 import { summarizeChanges, useGmailSync } from "./gmail/useGmailSync";
@@ -661,6 +664,21 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
   const metrics = useMemo(() => buildTrackerMetrics(apps), [apps]);
   const today = metrics.today;
   const dueFollowUps = metrics.dueFollowUps;
+  const { isDismissed, dismiss, restore } = useDismissals(today);
+  // The banner only counts follow-ups still waiting in the Pipeline queue.
+  const bannerDue = dueFollowUps.filter((app) => !isDismissed(dismissKey("due", app)));
+  const bannerKey = dueBannerKey(bannerDue, today);
+  const dismissPipelineItems = (keys, company) => {
+    dismiss(keys);
+    showToast(`Dismissed ${company} reminder`, "success", {
+      label: "Undo",
+      run: () => { restore(keys); showToast(`${company} reminder is back`); },
+    });
+  };
+  const restorePipelineItems = (keys) => {
+    restore(keys);
+    showToast(`Restored ${keys.length} dismissed reminder${keys.length !== 1 ? "s" : ""}`);
+  };
 
   const sorted = useMemo(() => sortApplications(apps, sortBy), [apps, sortBy]);
 
@@ -948,15 +966,26 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
           </div>
         )}
 
-        {dueFollowUps.length > 0 && activeTab !== "Pipeline" && (
+        {bannerDue.length > 0 && activeTab !== "Pipeline" && !isDismissed(bannerKey) && (
           <div className="banner" data-tone="warning">
             <p className="banner__title">
               <span aria-hidden="true">🔔 </span>
-              {dueFollowUps.length} follow-up{dueFollowUps.length !== 1 ? "s are" : " is"} due.
+              {bannerDue.length} follow-up{bannerDue.length !== 1 ? "s are" : " is"} due.
             </p>
-            <button type="button" className="banner__count" onClick={() => setActiveTab("Pipeline")}>
-              Open Pipeline
-            </button>
+            <div className="banner__actions">
+              <button type="button" className="banner__count" onClick={() => setActiveTab("Pipeline")}>
+                Open Pipeline
+              </button>
+              <button
+                type="button"
+                className="banner__close"
+                aria-label="Dismiss follow-up notification until tomorrow"
+                title="Hide until tomorrow, or until another follow-up falls due"
+                onClick={() => dismiss([bannerKey])}
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -1247,6 +1276,9 @@ export default function JobTracker({ initialApps = [], onLogout = null }) {
             apps={apps}
             metrics={metrics}
             today={today}
+            isDismissed={isDismissed}
+            onDismiss={dismissPipelineItems}
+            onRestore={restorePipelineItems}
             onFollowUp={handleFollowUpStatus}
             onSchedule={setFollowUpIn}
             onOpen={setDetailId}
