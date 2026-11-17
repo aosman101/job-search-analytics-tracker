@@ -1,5 +1,10 @@
 [
   {
+    "date": "2026-11-17",
+    "title": "Dismissible reminders",
+    "note": "Dismiss any Pipeline reminder or the follow-ups-due banner. It comes back if anything about it changes, with Undo and Restore if you change your mind."
+  },
+  {
     "date": "2026-11-16",
     "title": "Sharper analytics, leaner pipeline",
     "note": "Analytics now has date ranges, outcome trends, reply-time and follow-up analysis, and plain-language takeaways. Pipeline is a single filterable action queue."

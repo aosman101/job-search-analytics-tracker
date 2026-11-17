@@ -32,6 +32,7 @@ flowchart LR
 - Automatically mark applications as "ghosted" after 21 days of inactivity.
 - Record interview dates, snooze or schedule follow-up reminders, and see a timeline for each application.
 - Get warned about duplicate applications and export the current list to CSV.
+- Dismiss Pipeline reminders and the follow-ups-due banner. A dismissed reminder comes back when its date, stage, or follow-ups change, and can be undone or restored.
 - Allow importing and exporting of JSON backups.
 - Sync with Gmail: add applications from confirmation emails (LinkedIn, Indeed, Greenhouse, Lever, Workday, company sites), and mark them Rejected or Interview when those emails arrive.
 - Initialise the app using an encrypted starter dataset upon first unlock.
