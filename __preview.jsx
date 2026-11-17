@@ -29,3 +29,4 @@ if (params.get("theme")) document.documentElement.dataset.theme = params.get("th
 const press = (key) => window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
 setTimeout(() => { if (params.get("tab")) press(params.get("tab")); }, 1500);
 setTimeout(() => { const label = params.get("click"); if (label) [...document.querySelectorAll("button")].find((b) => b.textContent.trim().startsWith(label))?.click(); }, 2500);
+setTimeout(() => { const n = Number(params.get("dismiss") || 0); for (let i = 0; i < n; i++) document.querySelector(".pipe-row__dismiss")?.click(); }, 3500);
